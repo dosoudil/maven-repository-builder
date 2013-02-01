@@ -1,5 +1,6 @@
 #! /usr/bin/env python
 
+import argparse
 import urllib2
 import shutil
 import urlparse
@@ -8,8 +9,8 @@ import re
 
 from maven_artifact import MavenArtifact
 
-# Download the given url to a local file
 def download(url, fileName=None):
+    """Download the given url to a local file"""
     def getFileName(url,openUrl):
         if 'Content-Disposition' in openUrl.info():
             # If the response has Content-Disposition, try to get filename from it
@@ -23,7 +24,7 @@ def download(url, fileName=None):
         return os.path.basename(urlparse.urlsplit(openUrl.url)[2])
 
     r = urllib2.urlopen(urllib2.Request(url))
-    print r
+
     try:
         fileName = fileName or getFileName(url,r)
         with open(fileName, 'wb') as f:
@@ -31,9 +32,8 @@ def download(url, fileName=None):
     finally:
         r.close()
 
-# Download artifact from a remote repository along with 
-def downloadArtifact(remoteRepoURL, localRepoPath, artifact):
-    # Download binary
+def downloadArtifact(remoteRepoUrl, localRepoDir, artifact):
+    """Download artifact from a remote repository along with"""
     artifactRelativePath = artifact.getRelativePath()
     artifactLocalDir = localRepoDir + '/' + artifactRelativePath
     if not os.path.exists(artifactLocalDir):
@@ -50,8 +50,8 @@ def downloadArtifact(remoteRepoURL, localRepoPath, artifact):
     download(artifactPomUrl, artifactPomLocalPath)
     
 
-# Convert the maven GAV to a URL relative path
 def depListToArtifactList(depList):
+    """Convert the maven GAV to a URL relative path"""
     regexComment = re.compile('#.*')
     regexLog = re.compile('^\[\w*]')
     #regexGAV = re.compile('\S*:\S*:\S')
@@ -66,26 +66,6 @@ def depListToArtifactList(depList):
             artifactList.append(MavenArtifact(nextLine))
     return artifactList
            
-# Convert a colon separated GAV to relative path groupId:artifactId:type:version
-def gavStringToArtifact(gav):
-    artifact = {}
-    gavParts = gav.split(':')
-    artifact['groupId'] = gavParts[0]
-    artifact['artifactId'] = gavParts[1]
-    artifact['type'] = gavParts[2]
-    artifact['version'] = gavParts[3]
-    return artifact
-
-def getArtifactRelativePath(artifact):
-    relativePath = artifact['groupId'].replace('.', '/') + '/'
-    relativePath += artifact['artifactId'] + '/'
-    relativePath += artifact['version'] + '/' 
-    return relativePath
-
-def getArtifactFilename(artifact):
-    filename = artifact['artifactId'] + '-' + artifact['version'] + '.' + artifact['type']
-    return filename
-
 def createRepository(remoteRepoUrl, localRepoDir, artifactList):
     if not os.path.exists(localRepoDir):
         os.makedirs(localRepoDir)
@@ -93,16 +73,33 @@ def createRepository(remoteRepoUrl, localRepoDir, artifactList):
         downloadArtifact(remoteRepoUrl, localRepoDir, artifact)
 
 # Main execution
-dependencyPaths = []
-remoteRepoUrl = 'http://repository.jboss.org/nexus/content/groups/public/'
-localRepoDir = 'local-repo'
+cliArgParser = argparse.ArgumentParser(description='Generate a Maven repository.')
+cliArgParser.add_argument('-r', '--repoUrl', default='http://repository.jboss.org/nexus/content/groups/public/', \
+                             help='URL of the remote repository')
+cliArgParser.add_argument('-p', '--path', default='local-repo', \
+                             help='Local file system path to the new repository')
+cliArgParser.add_argument('-d', '--dependencyList', default='dependency-list.txt', \
+                             help='Path to the dependency list config file')
+
+args = cliArgParser.parse_args()
 
 # Read the list of dependencies
-f = open("dependency-list.txt")
-dependencyListLines = f.readlines()
-artifacts = depListToArtifactList(dependencyListLines)
-createRepository(remoteRepoUrl, localRepoDir, artifacts)
+if os.path.isfile(args.dependencyList):
+    depListFile = open(args.dependencyList)
+    try:
+        dependencyListLines = depListFile.readlines()
+    except IOError as e:
+        print 'Unable to read file ' + args.dependencyList  
+        print e
+        sys.exit()
+    finally:
+        depListFile.close()
+else:
+    print 'Dependency List file does not exist'
+    sys.exit()
 
-#download ("http://repo1.maven.org/maven2/org/jboss/jboss-parent/10/jboss-parent-10.pom")
+artifacts = depListToArtifactList(dependencyListLines)
+createRepository(args.repoUrl, args.path, artifacts)
+
 
 
