@@ -38,17 +38,24 @@ def downloadArtifact(remoteRepoUrl, localRepoDir, artifact):
     artifactLocalDir = localRepoDir + '/' + artifactRelativePath
     if not os.path.exists(artifactLocalDir):
         os.makedirs(artifactLocalDir)
+
+    # Download main artifact
     artifactUrl = remoteRepoUrl + '/' + artifactRelativePath + '/' + artifact.getArtifactFilename()
     artifactLocalPath = localRepoDir + '/' + artifactRelativePath + '/' + artifact.getArtifactFilename()
     print 'downloading: ' + artifactUrl
     download(artifactUrl, artifactLocalPath)
+ 
+    # Download pom
+    if artifact.getArtifactFilename() != artifact.getPomFilename():
+        artifactPomUrl = remoteRepoUrl + '/' + artifactRelativePath + '/' +  artifact.getPomFilename()
+        artifactPomLocalPath = localRepoDir + '/' + artifactRelativePath + '/' +  artifact.getPomFilename()
+        download(artifactPomUrl, artifactPomLocalPath)
     
-    artifactPomUrl = remoteRepoUrl + '/' + artifactRelativePath + '/' + \
-                     artifact.getBaseFilename() + '.pom'
-    artifactPomLocalPath = localRepoDir + '/' + artifactRelativePath + '/' + \
-                           artifact.getBaseFilename() + '.pom'
-    download(artifactPomUrl, artifactPomLocalPath)
-    
+    # Download sources
+    artifactSourcesUrl = remoteRepoUrl + '/' + artifactRelativePath + '/' + artifact.getSourcesFilename()
+    artifactSourcesLocalPath = localRepoDir + '/' + artifactRelativePath + '/' + artifact.getSourcesFilename()
+    download(artifactSourcesUrl, artifactSourcesLocalPath)
+
 
 def depListToArtifactList(depList):
     """Convert the maven GAV to a URL relative path"""

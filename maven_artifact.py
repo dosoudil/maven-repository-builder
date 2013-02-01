@@ -17,14 +17,20 @@ class MavenArtifact:
         relativePath += self.version + '/'
         return relativePath
 
-    def getArtifactFilename(self):
-        """Returns the filename of the artifact"""
-        filename = self.artifactId + '-' + self.version + '.' + self.artifactType
-        return filename
-
     def getBaseFilename(self):
         """Returns the filename without the file extension"""
         filename = self.artifactId + '-' + self.version 
         return filename
-  
+
+    def getArtifactFilename(self):
+        """Returns the filename of the artifact"""
+        return self.getBaseFilename() + '.' + self.artifactType
+
+    def getPomFilename(self):
+        """Returns the filename of the pom file for this artifact"""
+        return self.getBaseFilename() + '.pom'  
+
+    def getSourcesFilename(self):
+        """Returns the filename of the sources artifact"""
+        return self.getBaseFilename() + '-sources.jar'
 
