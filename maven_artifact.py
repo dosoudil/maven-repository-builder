@@ -10,6 +10,7 @@ class MavenArtifact:
         self.artifactType = gavParts[2]
         self.version = gavParts[3]
 
+
     def getRelativePath(self):
         """Get the relative repository path to the artifact"""
         relativePath = self.groupId.replace('.', '/') + '/'
@@ -17,18 +18,22 @@ class MavenArtifact:
         relativePath += self.version + '/'
         return relativePath
 
+
     def getBaseFilename(self):
         """Returns the filename without the file extension"""
         filename = self.artifactId + '-' + self.version 
         return filename
 
+
     def getArtifactFilename(self):
         """Returns the filename of the artifact"""
         return self.getBaseFilename() + '.' + self.artifactType
 
+
     def getPomFilename(self):
         """Returns the filename of the pom file for this artifact"""
         return self.getBaseFilename() + '.pom'  
+
 
     def getSourcesFilename(self):
         """Returns the filename of the sources artifact"""

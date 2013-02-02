@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 
 import argparse
+import hashlib
 import urllib2
 import shutil
 import urlparse
@@ -9,9 +10,13 @@ import re
 
 from maven_artifact import MavenArtifact
 
+
 def download(url, fileName=None):
     """Download the given url to a local file"""
-    def getFileName(url,openUrl):
+    if os.path.exists(fileName):
+        return
+    
+    def getFileName(url, openUrl):
         if 'Content-Disposition' in openUrl.info():
             # If the response has Content-Disposition, try to get filename from it
             cd = dict(map(
@@ -23,14 +28,16 @@ def download(url, fileName=None):
         # if no filename was found above, parse it out of the final URL.
         return os.path.basename(urlparse.urlsplit(openUrl.url)[2])
 
-    r = urllib2.urlopen(urllib2.Request(url))
+    httpResponse = urllib2.urlopen(urllib2.Request(url))
 
     try:
-        fileName = fileName or getFileName(url,r)
-        with open(fileName, 'wb') as f:
-            shutil.copyfileobj(r,f)
+        fileName = fileName or getFileName(url, httpResponse)
+        print 'downloading: ' + url
+        with open(fileName, 'wb') as localfile:
+            shutil.copyfileobj(httpResponse,localfile)
     finally:
-        r.close()
+        httpResponse.close()
+
 
 def downloadArtifact(remoteRepoUrl, localRepoDir, artifact):
     """Download artifact from a remote repository along with"""
@@ -41,19 +48,18 @@ def downloadArtifact(remoteRepoUrl, localRepoDir, artifact):
 
     # Download main artifact
     artifactUrl = remoteRepoUrl + '/' + artifactRelativePath + '/' + artifact.getArtifactFilename()
-    artifactLocalPath = localRepoDir + '/' + artifactRelativePath + '/' + artifact.getArtifactFilename()
-    print 'downloading: ' + artifactUrl
+    artifactLocalPath = os.path.join(localRepoDir, artifactRelativePath, artifact.getArtifactFilename())
     download(artifactUrl, artifactLocalPath)
  
     # Download pom
     if artifact.getArtifactFilename() != artifact.getPomFilename():
         artifactPomUrl = remoteRepoUrl + '/' + artifactRelativePath + '/' +  artifact.getPomFilename()
-        artifactPomLocalPath = localRepoDir + '/' + artifactRelativePath + '/' +  artifact.getPomFilename()
+        artifactPomLocalPath = os.path.join(localRepoDir, artifactRelativePath, artifact.getPomFilename())
         download(artifactPomUrl, artifactPomLocalPath)
     
     # Download sources
     artifactSourcesUrl = remoteRepoUrl + '/' + artifactRelativePath + '/' + artifact.getSourcesFilename()
-    artifactSourcesLocalPath = localRepoDir + '/' + artifactRelativePath + '/' + artifact.getSourcesFilename()
+    artifactSourcesLocalPath = os.path.join(localRepoDir, artifactRelativePath, artifact.getSourcesFilename())
     download(artifactSourcesUrl, artifactSourcesLocalPath)
 
 
@@ -73,13 +79,51 @@ def depListToArtifactList(depList):
             artifactList.append(MavenArtifact(nextLine))
     return artifactList
            
+
 def createRepository(remoteRepoUrl, localRepoDir, artifactList):
+    """Create a Maven repository based on a remote repository url and a list of artifacts"""
     if not os.path.exists(localRepoDir):
         os.makedirs(localRepoDir)
     for artifact in artifactList:
         downloadArtifact(remoteRepoUrl, localRepoDir, artifact)
 
-# Main execution
+
+def generateChecksums(localRepoDir):
+    """Generate checksums for all maven artifacts in a repository"""
+    for root, dirs, files in os.walk(localRepoDir):
+        for filename in files:
+            print 'Next file: ' + os.path.join(root, filename)
+            generateChecksum(os.path.join(root, filename))
+    
+
+def generateChecksum(mavenfile):
+    """Generate md5 and sha1 checksums for a maven repository artifact"""
+    if os.path.splitext(mavenfile)[1] in ('.md5', '.sha1'):
+        return
+    if not os.path.isfile(mavenfile):
+        return
+    for ext, sum_constr in (('.md5', hashlib.md5()), ('.sha1', hashlib.sha1())):
+        sumfile = mavenfile + ext
+        if os.path.exists(sumfile):
+            continue
+        print 'Generate checksum: ' + sumfile
+        sum = sum_constr
+        with open(mavenfile, 'r') as fobj:
+            while True:
+                content = fobj.read(8192)
+                if not content:
+                    break
+                sum.update(content)
+        #fobj.close()
+        with open(sumfile, 'w') as sumobj:
+        #sumobj = file('%s/%s' % (mavendir, sumfile), 'w')
+            sumobj.write(sum.hexdigest())
+        #sumobj.close()
+
+    
+####################
+# Main execution ###
+####################
 cliArgParser = argparse.ArgumentParser(description='Generate a Maven repository.')
 cliArgParser.add_argument('-r', '--repoUrl', default='http://repository.jboss.org/nexus/content/groups/public/', \
                              help='URL of the remote repository')
@@ -107,6 +151,7 @@ else:
 
 artifacts = depListToArtifactList(dependencyListLines)
 createRepository(args.repoUrl, args.path, artifacts)
-
+generateChecksums(args.path)
+print 'Repository creation complete'
 
 
