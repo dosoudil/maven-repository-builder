@@ -28,15 +28,23 @@ def download(url, fileName=None):
         # if no filename was found above, parse it out of the final URL.
         return os.path.basename(urlparse.urlsplit(openUrl.url)[2])
 
-    httpResponse = urllib2.urlopen(urllib2.Request(url))
+    print 'Downloading: ' + url
 
     try:
-        fileName = fileName or getFileName(url, httpResponse)
-        print 'downloading: ' + url
-        with open(fileName, 'wb') as localfile:
-            shutil.copyfileobj(httpResponse,localfile)
-    finally:
+        httpResponse = urllib2.urlopen(urllib2.Request(url))
+        if (httpResponse.code == 200):
+            fileName = fileName or getFileName(url, httpResponse)
+            with open(fileName, 'wb') as localfile:
+                shutil.copyfileobj(httpResponse,localfile)
+        else:
+            print 'Unable to download, http code: ' + str(httpResponse.code) 
         httpResponse.close()
+    except urllib2.HTTPError, e:
+        print 'HTTPError = ' + str(e.code)
+    except urllib2.URLError, e:
+        print 'URLError = ' + str(e.reason)
+    except httplib.HTTPException, e:
+        print 'HTTPException'
 
 
 def downloadArtifact(remoteRepoUrl, localRepoDir, artifact):
@@ -65,18 +73,16 @@ def downloadArtifact(remoteRepoUrl, localRepoDir, artifact):
 
 def depListToArtifactList(depList):
     """Convert the maven GAV to a URL relative path"""
-    regexComment = re.compile('#.*')
-    regexLog = re.compile('^\[\w*]')
-    #regexGAV = re.compile('\S*:\S*:\S')
+    regexComment = re.compile('#.*$')
+    #regexLog = re.compile('^\[\w*\]')
+    regexGAV = re.compile('([\w\-.]*:){4}[\w]*\S')
     artifactList = []
     for nextLine in depList:
-        print nextLine 
         nextLine = regexComment.sub('', nextLine)
-        nextLine = regexLog.sub('', nextLine)
         nextLine = nextLine.strip()
-        print nextLine
-        if nextLine:
-            artifactList.append(MavenArtifact(nextLine))
+        gav = regexGAV.search(nextLine)
+        if gav:
+            artifactList.append(MavenArtifact(gav.group(0)))
     return artifactList
            
 
@@ -92,7 +98,6 @@ def generateChecksums(localRepoDir):
     """Generate checksums for all maven artifacts in a repository"""
     for root, dirs, files in os.walk(localRepoDir):
         for filename in files:
-            print 'Next file: ' + os.path.join(root, filename)
             generateChecksum(os.path.join(root, filename))
     
 

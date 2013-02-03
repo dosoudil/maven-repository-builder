@@ -5,10 +5,13 @@ class MavenArtifact:
     def __init__(self, gav):
         """Initialize an artifact using a colon separated GAV to relative path groupId:artifactId:type:version"""
         gavParts = gav.split(':')
-        self.groupId = gavParts[0]
-        self.artifactId = gavParts[1]
-        self.artifactType = gavParts[2]
-        self.version = gavParts[3]
+        if (len(gavParts) > 3):
+            self.groupId = gavParts[0]
+            self.artifactId = gavParts[1]
+            self.artifactType = gavParts[2]
+            self.version = gavParts[3]
+        else: 
+            print 'Invalid GAV string: ' + gav
 
 
     def getRelativePath(self):
