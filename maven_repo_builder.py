@@ -3,6 +3,7 @@
 import argparse
 import hashlib
 import urllib2
+import urlparse
 import shutil
 import urlparse
 import os
@@ -48,7 +49,7 @@ def download(url, fileName=None):
 
 
 def downloadArtifact(remoteRepoUrl, localRepoDir, artifact):
-    """Download artifact from a remote repository along with"""
+    """Download artifact from a remote repository along with pom and source jar"""
     artifactRelativePath = artifact.getRelativePath()
     artifactLocalDir = localRepoDir + '/' + artifactRelativePath
     if not os.path.exists(artifactLocalDir):
@@ -57,18 +58,50 @@ def downloadArtifact(remoteRepoUrl, localRepoDir, artifact):
     # Download main artifact
     artifactUrl = remoteRepoUrl + '/' + artifactRelativePath + '/' + artifact.getArtifactFilename()
     artifactLocalPath = os.path.join(localRepoDir, artifactRelativePath, artifact.getArtifactFilename())
-    download(artifactUrl, artifactLocalPath)
+    if not os.path.exists(artifactLocalPath):
+        download(artifactUrl, artifactLocalPath)
  
     # Download pom
     if artifact.getArtifactFilename() != artifact.getPomFilename():
         artifactPomUrl = remoteRepoUrl + '/' + artifactRelativePath + '/' +  artifact.getPomFilename()
         artifactPomLocalPath = os.path.join(localRepoDir, artifactRelativePath, artifact.getPomFilename())
-        download(artifactPomUrl, artifactPomLocalPath)
+        if not os.path.exists(artifactPomLocalPath):
+            download(artifactPomUrl, artifactPomLocalPath)
     
     # Download sources
     artifactSourcesUrl = remoteRepoUrl + '/' + artifactRelativePath + '/' + artifact.getSourcesFilename()
     artifactSourcesLocalPath = os.path.join(localRepoDir, artifactRelativePath, artifact.getSourcesFilename())
-    download(artifactSourcesUrl, artifactSourcesLocalPath)
+    if not os.path.exists(artifactSourcesLocalPath):
+        download(artifactSourcesUrl, artifactSourcesLocalPath)
+
+def copyArtifact(remoteRepoPath, localRepoDir, artifact):
+    """Download artifact from a remote repository along with pom and source jar"""
+    artifactRelativePath = artifact.getRelativePath()
+    artifactLocalDir = localRepoDir + '/' + artifactRelativePath
+    if not os.path.exists(artifactLocalDir):
+        os.makedirs(artifactLocalDir)
+
+    # Download main artifact
+    artifactPath = os.path.join(remoteRepoPath, artifactRelativePath, artifact.getArtifactFilename())
+    artifactLocalPath = os.path.join(localRepoDir, artifactRelativePath, artifact.getArtifactFilename())
+    if os.path.exists(artifactPath) and not os.path.exists(artifactLocalPath):
+        print 'Copying file: ' + artifactPath
+        shutil.copyfile(artifactPath, artifactLocalPath)
+
+    # Download pom
+    if artifact.getArtifactFilename() != artifact.getPomFilename():
+        artifactPomPath = os.path.join(remoteRepoPath, artifactRelativePath, artifact.getPomFilename())
+        artifactPomLocalPath = os.path.join(localRepoDir, artifactRelativePath, artifact.getPomFilename())
+        if os.path.exists(artifactPomPath) and not os.path.exists(artifactPomLocalPath):
+            print 'Copying file: ' + artifactPomPath
+            shutil.copyfile(artifactPomPath, artifactPomLocalPath)
+
+    # Download sources
+    artifactSourcesPath = os.path.join(remoteRepoPath, artifactRelativePath, artifact.getSourcesFilename())
+    artifactSourcesLocalPath = os.path.join(localRepoDir, artifactRelativePath, artifact.getSourcesFilename())
+    if os.path.exists(artifactSourcesPath) and not os.path.exists(artifactSourcesLocalPath):
+        print 'Copying file: ' + artifactSourcesPath
+        shutil.copyfile(artifactSourcesPath, artifactSourcesLocalPath)
 
 
 def depListToArtifactList(depList):
@@ -86,12 +119,21 @@ def depListToArtifactList(depList):
     return artifactList
            
 
-def createRepository(remoteRepoUrl, localRepoDir, artifactList):
+def retrieveArtifacts(remoteRepoUrl, localRepoDir, artifactList):
     """Create a Maven repository based on a remote repository url and a list of artifacts"""
     if not os.path.exists(localRepoDir):
         os.makedirs(localRepoDir)
-    for artifact in artifactList:
-        downloadArtifact(remoteRepoUrl, localRepoDir, artifact)
+    parsedUrl = urlparse.urlparse(remoteRepoUrl)
+    protocol = parsedUrl[0]
+    repoPath = parsedUrl[2]
+    if protocol == 'http':
+        for artifact in artifactList:
+            downloadArtifact(remoteRepoUrl, localRepoDir, artifact)
+    elif protocol == 'file':
+        for artifact in artifactList:
+            copyArtifact(repoPath, localRepoDir, artifact)
+    else:
+        print 'Unknown protocol: ' + protocol
 
 
 def generateChecksums(localRepoDir):
@@ -154,8 +196,11 @@ else:
     print 'Dependency List file does not exist'
     sys.exit()
 
+print 'Reading artifact list...'
 artifacts = depListToArtifactList(dependencyListLines)
-createRepository(args.repoUrl, args.path, artifacts)
+print 'Retrieving artifacts...'
+retrieveArtifacts(args.repoUrl, args.path, artifacts)
+print 'Generating checksums...'
 generateChecksums(args.path)
 print 'Repository creation complete'
 
