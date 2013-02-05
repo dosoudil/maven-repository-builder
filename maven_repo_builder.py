@@ -29,7 +29,7 @@ def download(url, fileName=None):
         # if no filename was found above, parse it out of the final URL.
         return os.path.basename(urlparse.urlsplit(openUrl.url)[2])
 
-    print 'Downloading: ' + url
+    print('Downloading: ' + url)
 
     try:
         httpResponse = urllib2.urlopen(urllib2.Request(url))
@@ -38,69 +38,66 @@ def download(url, fileName=None):
             with open(fileName, 'wb') as localfile:
                 shutil.copyfileobj(httpResponse,localfile)
         else:
-            print 'Unable to download, http code: ' + str(httpResponse.code) 
+            print('Unable to download, http code: ' + str(httpResponse.code))
         httpResponse.close()
     except urllib2.HTTPError, e:
-        print 'HTTPError = ' + str(e.code)
+        print('HTTPError = ' + str(e.code))
     except urllib2.URLError, e:
-        print 'URLError = ' + str(e.reason)
+        print('URLError = ' + str(e.reason))
     except httplib.HTTPException, e:
-        print 'HTTPException'
+        print('HTTPException')
 
 
 def downloadArtifact(remoteRepoUrl, localRepoDir, artifact):
     """Download artifact from a remote repository along with pom and source jar"""
-    artifactRelativePath = artifact.getRelativePath()
-    artifactLocalDir = localRepoDir + '/' + artifactRelativePath
+    artifactLocalDir = localRepoDir + '/' + artifact.getDirPath()
     if not os.path.exists(artifactLocalDir):
         os.makedirs(artifactLocalDir)
 
     # Download main artifact
-    artifactUrl = remoteRepoUrl + '/' + artifactRelativePath + '/' + artifact.getArtifactFilename()
-    artifactLocalPath = os.path.join(localRepoDir, artifactRelativePath, artifact.getArtifactFilename())
+    artifactUrl = remoteRepoUrl + '/' + artifact.getArtifactFilepath()
+    artifactLocalPath = os.path.join(localRepoDir, artifact.getArtifactFilepath())
     if not os.path.exists(artifactLocalPath):
         download(artifactUrl, artifactLocalPath)
  
     # Download pom
     if artifact.getArtifactFilename() != artifact.getPomFilename():
-        artifactPomUrl = remoteRepoUrl + '/' + artifactRelativePath + '/' +  artifact.getPomFilename()
-        artifactPomLocalPath = os.path.join(localRepoDir, artifactRelativePath, artifact.getPomFilename())
+        artifactPomUrl = remoteRepoUrl + '/' + artifact.getPomFilepath()
+        artifactPomLocalPath = os.path.join(localRepoDir, artifact.getPomFilepath())
         if not os.path.exists(artifactPomLocalPath):
             download(artifactPomUrl, artifactPomLocalPath)
     
     # Download sources
-    artifactSourcesUrl = remoteRepoUrl + '/' + artifactRelativePath + '/' + artifact.getSourcesFilename()
-    artifactSourcesLocalPath = os.path.join(localRepoDir, artifactRelativePath, artifact.getSourcesFilename())
+    artifactSourcesUrl = remoteRepoUrl + '/' + artifact.getSourcesFilepath()
+    artifactSourcesLocalPath = os.path.join(localRepoDir, artifact.getSourcesFilepath())
     if not os.path.exists(artifactSourcesLocalPath):
         download(artifactSourcesUrl, artifactSourcesLocalPath)
 
 def copyArtifact(remoteRepoPath, localRepoDir, artifact):
     """Download artifact from a remote repository along with pom and source jar"""
-    artifactRelativePath = artifact.getRelativePath()
-    artifactLocalDir = localRepoDir + '/' + artifactRelativePath
-    if not os.path.exists(artifactLocalDir):
-        os.makedirs(artifactLocalDir)
-
     # Download main artifact
-    artifactPath = os.path.join(remoteRepoPath, artifactRelativePath, artifact.getArtifactFilename())
-    artifactLocalPath = os.path.join(localRepoDir, artifactRelativePath, artifact.getArtifactFilename())
+    artifactPath = os.path.join(remoteRepoPath, artifact.getArtifactFilepath())
+    artifactLocalPath = os.path.join(localRepoDir, artifact.getArtifactFilepath())
     if os.path.exists(artifactPath) and not os.path.exists(artifactLocalPath):
-        print 'Copying file: ' + artifactPath
+        artifactLocalDir = os.path.join(localRepoDir, artifact.getDirPath())
+        if not os.path.exists(artifactLocalDir):
+            os.makedirs(artifactLocalDir)
+        print('Copying file: ' + artifactPath)
         shutil.copyfile(artifactPath, artifactLocalPath)
 
     # Download pom
     if artifact.getArtifactFilename() != artifact.getPomFilename():
-        artifactPomPath = os.path.join(remoteRepoPath, artifactRelativePath, artifact.getPomFilename())
-        artifactPomLocalPath = os.path.join(localRepoDir, artifactRelativePath, artifact.getPomFilename())
+        artifactPomPath = os.path.join(remoteRepoPath, artifact.getPomFilepath())
+        artifactPomLocalPath = os.path.join(localRepoDir, artifact.getPomFilepath())
         if os.path.exists(artifactPomPath) and not os.path.exists(artifactPomLocalPath):
-            print 'Copying file: ' + artifactPomPath
+            print('Copying file: ' + artifactPomPath)
             shutil.copyfile(artifactPomPath, artifactPomLocalPath)
 
     # Download sources
-    artifactSourcesPath = os.path.join(remoteRepoPath, artifactRelativePath, artifact.getSourcesFilename())
-    artifactSourcesLocalPath = os.path.join(localRepoDir, artifactRelativePath, artifact.getSourcesFilename())
+    artifactSourcesPath = os.path.join(remoteRepoPath, artifact.getSourcesFilepath())
+    artifactSourcesLocalPath = os.path.join(localRepoDir, artifact.getSourcesFilepath())
     if os.path.exists(artifactSourcesPath) and not os.path.exists(artifactSourcesLocalPath):
-        print 'Copying file: ' + artifactSourcesPath
+        print('Copying file: ' + artifactSourcesPath)
         shutil.copyfile(artifactSourcesPath, artifactSourcesLocalPath)
 
 
@@ -133,7 +130,7 @@ def retrieveArtifacts(remoteRepoUrl, localRepoDir, artifactList):
         for artifact in artifactList:
             copyArtifact(repoPath, localRepoDir, artifact)
     else:
-        print 'Unknown protocol: ' + protocol
+        print('Unknown protocol: ' + protocol)
 
 
 def generateChecksums(localRepoDir):
@@ -153,7 +150,7 @@ def generateChecksum(mavenfile):
         sumfile = mavenfile + ext
         if os.path.exists(sumfile):
             continue
-        print 'Generate checksum: ' + sumfile
+        print('Generate checksum: ' + sumfile)
         sum = sum_constr
         with open(mavenfile, 'r') as fobj:
             while True:
@@ -161,47 +158,48 @@ def generateChecksum(mavenfile):
                 if not content:
                     break
                 sum.update(content)
-        #fobj.close()
         with open(sumfile, 'w') as sumobj:
-        #sumobj = file('%s/%s' % (mavendir, sumfile), 'w')
             sumobj.write(sum.hexdigest())
-        #sumobj.close()
 
-    
-####################
-# Main execution ###
-####################
-cliArgParser = argparse.ArgumentParser(description='Generate a Maven repository.')
-cliArgParser.add_argument('-r', '--repoUrl', default='http://repository.jboss.org/nexus/content/groups/public/', \
-                             help='URL of the remote repository')
-cliArgParser.add_argument('-p', '--path', default='local-repo', \
-                             help='Local file system path to the new repository')
-cliArgParser.add_argument('-d', '--dependencyList', default='dependency-list.txt', \
-                             help='Path to the dependency list config file')
 
-args = cliArgParser.parse_args()
+def main():    
+    cliArgParser = argparse.ArgumentParser(description='Generate a Maven repository.')
+    cliArgParser.add_argument('-r', '--repoUrl', 
+            default='http://repository.jboss.org/nexus/content/groups/public/', 
+            help='URL of the remote repository')
+    cliArgParser.add_argument('-p', '--path', 
+            default='local-repo', 
+            help='Local file system path to the new repository')
+    cliArgParser.add_argument('-d', '--dependencyList', 
+            default='dependency-list.txt', 
+            help='Path to the dependency list config file')
 
-# Read the list of dependencies
-if os.path.isfile(args.dependencyList):
-    depListFile = open(args.dependencyList)
-    try:
-        dependencyListLines = depListFile.readlines()
-    except IOError as e:
-        print 'Unable to read file ' + args.dependencyList  
-        print e
+    args = cliArgParser.parse_args()
+
+    # Read the list of dependencies
+    if os.path.isfile(args.dependencyList):
+        depListFile = open(args.dependencyList)
+        try:
+            dependencyListLines = depListFile.readlines()
+        except IOError as e:
+            print('Unable to read file ' + args.dependencyList)
+            print(e)
+            sys.exit()
+        finally:
+            depListFile.close()
+    else:
+        print('Dependency List file does not exist')
         sys.exit()
-    finally:
-        depListFile.close()
-else:
-    print 'Dependency List file does not exist'
-    sys.exit()
 
-print 'Reading artifact list...'
-artifacts = depListToArtifactList(dependencyListLines)
-print 'Retrieving artifacts...'
-retrieveArtifacts(args.repoUrl, args.path, artifacts)
-print 'Generating checksums...'
-generateChecksums(args.path)
-print 'Repository creation complete'
+    print('Reading artifact list...')
+    artifacts = depListToArtifactList(dependencyListLines)
+    print('Retrieving artifacts...')
+    retrieveArtifacts(args.repoUrl, args.path, artifacts)
+    print('Generating checksums...')
+    generateChecksums(args.path)
+    print('Repository creation complete')
+
+
+if  __name__ =='__main__':main()
 
 
