@@ -2,11 +2,11 @@
 
 import argparse
 import hashlib
-import urllib2
-import urlparse
-import shutil
 import os
 import re
+import shutil
+import urllib2
+import urlparse
 
 from maven_artifact import MavenArtifact
 
