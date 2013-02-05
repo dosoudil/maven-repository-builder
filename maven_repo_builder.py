@@ -126,6 +126,7 @@ def retrieveArtifacts(remoteRepoUrl, localRepoDir, artifactList):
         for artifact in artifactList:
             downloadArtifact(remoteRepoUrl, localRepoDir, artifact)
     elif protocol == 'file':
+        repoPath = remoteRepoUrl.replace('file://', '')
         for artifact in artifactList:
             copyArtifact(repoPath, localRepoDir, artifact)
     else:
@@ -192,7 +193,7 @@ def main():
 
     print('Reading artifact list...')
     artifacts = depListToArtifactList(dependencyListLines)
-    print('Retrieving artifacts...')
+    print('Retrieving artifacts from repository: ' + args.repoUrl)
     retrieveArtifacts(args.repoUrl, args.path, artifacts)
     print('Generating checksums...')
     generateChecksums(args.path)
