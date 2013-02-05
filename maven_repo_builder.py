@@ -5,7 +5,6 @@ import hashlib
 import urllib2
 import urlparse
 import shutil
-import urlparse
 import os
 import re
 
@@ -40,11 +39,11 @@ def download(url, fileName=None):
         else:
             print('Unable to download, http code: ' + str(httpResponse.code))
         httpResponse.close()
-    except urllib2.HTTPError, e:
+    except urllib2.HTTPError as e:
         print('HTTPError = ' + str(e.code))
-    except urllib2.URLError, e:
+    except urllib2.URLError as e:
         print('URLError = ' + str(e.reason))
-    except httplib.HTTPException, e:
+    except httplib.HTTPException as e:
         print('HTTPException')
 
 
