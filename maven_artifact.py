@@ -15,6 +15,9 @@ class MavenArtifact:
         else: 
             print 'Invalid GAV string: ' + gav
 
+    def getArtifactType(self):
+        return self.artifactType
+
     def getDirPath(self):
         """Get the relative repository path to the artifact"""
         relativePath = self.groupId.replace('.', '/') + '/'

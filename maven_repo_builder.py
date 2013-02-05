@@ -67,10 +67,12 @@ def downloadArtifact(remoteRepoUrl, localRepoDir, artifact):
             download(artifactPomUrl, artifactPomLocalPath)
     
     # Download sources
-    artifactSourcesUrl = remoteRepoUrl + '/' + artifact.getSourcesFilepath()
-    artifactSourcesLocalPath = os.path.join(localRepoDir, artifact.getSourcesFilepath())
-    if not os.path.exists(artifactSourcesLocalPath):
-        download(artifactSourcesUrl, artifactSourcesLocalPath)
+    if artifact.getArtifactType() != 'pom':
+        artifactSourcesUrl = remoteRepoUrl + '/' + artifact.getSourcesFilepath()
+        artifactSourcesLocalPath = os.path.join(localRepoDir, artifact.getSourcesFilepath())
+        if not os.path.exists(artifactSourcesLocalPath):
+            download(artifactSourcesUrl, artifactSourcesLocalPath)
+
 
 def copyArtifact(remoteRepoPath, localRepoDir, artifact):
     """Download artifact from a remote repository along with pom and source jar"""
@@ -93,18 +95,19 @@ def copyArtifact(remoteRepoPath, localRepoDir, artifact):
             shutil.copyfile(artifactPomPath, artifactPomLocalPath)
 
     # Download sources
-    artifactSourcesPath = os.path.join(remoteRepoPath, artifact.getSourcesFilepath())
-    artifactSourcesLocalPath = os.path.join(localRepoDir, artifact.getSourcesFilepath())
-    if os.path.exists(artifactSourcesPath) and not os.path.exists(artifactSourcesLocalPath):
-        print('Copying file: ' + artifactSourcesPath)
-        shutil.copyfile(artifactSourcesPath, artifactSourcesLocalPath)
+    if artifact.getArtifactType() != 'pom':
+        artifactSourcesPath = os.path.join(remoteRepoPath, artifact.getSourcesFilepath())
+        artifactSourcesLocalPath = os.path.join(localRepoDir, artifact.getSourcesFilepath())
+        if os.path.exists(artifactSourcesPath) and not os.path.exists(artifactSourcesLocalPath):
+            print('Copying file: ' + artifactSourcesPath)
+            shutil.copyfile(artifactSourcesPath, artifactSourcesLocalPath)
 
 
 def depListToArtifactList(depList):
     """Convert the maven GAV to a URL relative path"""
     regexComment = re.compile('#.*$')
     #regexLog = re.compile('^\[\w*\]')
-    regexGAV = re.compile('([\w\-.]*:){4}[\w]*\S')
+    regexGAV = re.compile('(([\w\-.]+:){3}[\w\-.]+)(:[\w]*\S)?')
     artifactList = []
     for nextLine in depList:
         nextLine = regexComment.sub('', nextLine)
