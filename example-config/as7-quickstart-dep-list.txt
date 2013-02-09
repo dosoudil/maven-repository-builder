@@ -4,29 +4,29 @@
 org.jboss:jboss-parent:pom:10
 
 # JBoss AS Parent POMs
-org.jboss.as:jboss-as-parent:pom:7.2.0.Alpha1-redhat-3
-org.jboss.as:jboss-as-build:pom:7.2.0.Alpha1-redhat-3
-org.jboss.as:jboss-as-build-modular:pom:7.2.0.Alpha1-redhat-3
-org.jboss.as:jboss-as-ejb-client-bom:pom:7.2.0.Alpha1-redhat-3
-org.jboss.as:jboss-as-jms-client-bom:pom:7.2.0.Alpha1-redhat-3
-org.jboss.as:jboss-as-clustering:pom:7.2.0.Alpha1-redhat-3
-org.jboss.as:jboss-as-domain-http:pom:7.2.0.Alpha1-redhat-3
-org.jboss.as:jboss-as-jpa-parent:pom:7.2.0.Alpha1-redhat-3
-org.jboss.as:jboss-as-jsf-parent:pom:7.2.0.Alpha1-redhat-3
-org.jboss.as:jboss-as-osgi-integration:pom:7.2.0.Alpha1-redhat-3
-org.jboss.as:jboss-as-osgi:pom:7.2.0.Alpha1-redhat-3
-org.jboss.as:jboss-as-spec-api:pom:7.2.0.Alpha1-redhat-3
-org.jboss.as:jboss-as-webservices:pom:7.2.0.Alpha1-redhat-3
-org.jboss.as:jdr:pom:7.2.0.Alpha1-redhat-3
+org.jboss.as:jboss-as-parent:pom:7.2.0.Alpha1-redhat-4
+org.jboss.as:jboss-as-build:pom:7.2.0.Alpha1-redhat-4
+org.jboss.as:jboss-as-build-modular:pom:7.2.0.Alpha1-redhat-4
+org.jboss.as:jboss-as-ejb-client-bom:pom:7.2.0.Alpha1-redhat-4
+org.jboss.as:jboss-as-jms-client-bom:pom:7.2.0.Alpha1-redhat-4
+org.jboss.as:jboss-as-clustering:pom:7.2.0.Alpha1-redhat-4
+org.jboss.as:jboss-as-domain-http:pom:7.2.0.Alpha1-redhat-4
+org.jboss.as:jboss-as-jpa-parent:pom:7.2.0.Alpha1-redhat-4
+org.jboss.as:jboss-as-jsf-parent:pom:7.2.0.Alpha1-redhat-4
+org.jboss.as:jboss-as-osgi-integration:pom:7.2.0.Alpha1-redhat-4
+org.jboss.as:jboss-as-osgi:pom:7.2.0.Alpha1-redhat-4
+org.jboss.as:jboss-as-spec-api:pom:7.2.0.Alpha1-redhat-4
+org.jboss.as:jboss-as-webservices:pom:7.2.0.Alpha1-redhat-4
+org.jboss.as:jdr:pom:7.2.0.Alpha1-redhat-4
 
 # Arquillian artifacts, these come from the AS build
-org.jboss.as:jboss-as-arquillian:pom:7.2.0.Alpha1-redhat-3
-org.jboss.as:jboss-as-arquillian-container-managed:jar:7.2.0.Alpha1-redhat-3
-org.jboss.as:jboss-as-arquillian-container-remote:jar:7.2.0.Alpha1-redhat-3
+org.jboss.as:jboss-as-arquillian:pom:7.2.0.Alpha1-redhat-4
+org.jboss.as:jboss-as-arquillian-container-managed:jar:7.2.0.Alpha1-redhat-4
+org.jboss.as:jboss-as-arquillian-container-remote:jar:7.2.0.Alpha1-redhat-4
 
 # Java EE spec BOMs
-org.jboss.spec:jboss-javaee-6.0:pom:3.0.2.Final
-org.jboss.spec:jboss-javaee-web-6.0:pom:3.0.2.Final
+org.jboss.spec:jboss-javaee-6.0:pom:3.0.2.Final-redhat-1
+org.jboss.spec:jboss-javaee-web-6.0:pom:3.0.2.Final-redhat-1
 
 # JBoss BOMs project
 org.jboss.bom:jboss-bom-parent:pom:1.0.4.Final-redhat-1
