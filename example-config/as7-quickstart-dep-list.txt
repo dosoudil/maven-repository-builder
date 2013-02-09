@@ -29,18 +29,18 @@ org.jboss.spec:jboss-javaee-6.0:pom:3.0.2.Final
 org.jboss.spec:jboss-javaee-web-6.0:pom:3.0.2.Final
 
 # JBoss BOMs project
-org.jboss.bom:jboss-bom-parent:pom:1.0.4.Final
-org.jboss.bom:jboss-javaee-6.0-with-all:pom:1.0.4.Final
-org.jboss.bom:jboss-javaee-6.0-with-deltaspike:pom:1.0.4.Final
-org.jboss.bom:jboss-javaee-6.0-with-errai:pom:1.0.4.Final
-org.jboss.bom:jboss-javaee-6.0-with-hibernate:pom:1.0.4.Final
-org.jboss.bom:jboss-javaee-6.0-with-hibernate3:pom:1.0.4.Final
-org.jboss.bom:jboss-javaee-6.0-with-infinispan:pom:1.0.4.Final
-org.jboss.bom:jboss-javaee-6.0-with-logging:pom:1.0.4.Final
-org.jboss.bom:jboss-javaee-6.0-with-osgi:pom:1.0.4.Final
-org.jboss.bom:jboss-javaee-6.0-with-resteasy:pom:1.0.4.Final
-org.jboss.bom:jboss-javaee-6.0-with-richfaces:pom:1.0.4.Final
-org.jboss.bom:jboss-javaee-6.0-with-security:pom:1.0.4.Final
-org.jboss.bom:jboss-javaee-6.0-with-tools:pom:1.0.4.Final
-org.jboss.bom:jboss-javaee-6.0-with-transactions:pom:1.0.4.Final
+org.jboss.bom:jboss-bom-parent:pom:1.0.4.Final-redhat-1
+org.jboss.bom:jboss-javaee-6.0-with-all:pom:1.0.4.Final-redhat-1
+org.jboss.bom:jboss-javaee-6.0-with-deltaspike:pom:1.0.4.Final-redhat-1
+org.jboss.bom:jboss-javaee-6.0-with-errai:pom:1.0.4.Final-redhat-1
+org.jboss.bom:jboss-javaee-6.0-with-hibernate:pom:1.0.4.Final-redhat-1
+org.jboss.bom:jboss-javaee-6.0-with-hibernate3:pom:1.0.4.Final-redhat-1
+org.jboss.bom:jboss-javaee-6.0-with-infinispan:pom:1.0.4.Final-redhat-1
+org.jboss.bom:jboss-javaee-6.0-with-logging:pom:1.0.4.Final-redhat-1
+org.jboss.bom:jboss-javaee-6.0-with-osgi:pom:1.0.4.Final-redhat-1
+org.jboss.bom:jboss-javaee-6.0-with-resteasy:pom:1.0.4.Final-redhat-1
+org.jboss.bom:jboss-javaee-6.0-with-richfaces:pom:1.0.4.Final-redhat-1
+org.jboss.bom:jboss-javaee-6.0-with-security:pom:1.0.4.Final-redhat-1
+org.jboss.bom:jboss-javaee-6.0-with-tools:pom:1.0.4.Final-redhat-1
+org.jboss.bom:jboss-javaee-6.0-with-transactions:pom:1.0.4.Final-redhat-1
 
