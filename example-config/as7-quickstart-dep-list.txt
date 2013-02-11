@@ -49,6 +49,10 @@ org.jboss.bom:jboss-javaee-6.0-with-tools:pom:1.0.4.Final-redhat-1
 org.jboss.bom:jboss-javaee-6.0-with-transactions:pom:1.0.4.Final-redhat-1
 
 # Parent POMs required by various artifacts
+org.jacorb:jacorb-parent:pom:2.3.2.jbossorg-4
 org.jboss.metadata:jboss-as-parent-metadata:pom:7.0.8.Final
+org.jboss.security:jboss-negotiation-project:pom:2.2.2.Final
+org.picketbox:picketbox-parent:pom:4.0.15.Final
+org.scannotation:scannotation:jar:1.0.3
 
 
