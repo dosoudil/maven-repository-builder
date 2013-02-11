@@ -167,21 +167,21 @@ def generateChecksum(mavenfile):
 
 def main():    
     cliArgParser = argparse.ArgumentParser(description='Generate a Maven repository.')
-    cliArgParser.add_argument('-r', '--repoUrl', 
+    cliArgParser.add_argument('-u', '--url', 
             default='http://repository.jboss.org/nexus/content/groups/public/', 
-            help='URL of the remote repository')
-    cliArgParser.add_argument('-p', '--path', 
+            help='URL of the remote repository from which artifacts are downloaded')
+    cliArgParser.add_argument('-d', '--directory', 
             default='local-repo', 
-            help='Local file system path to the new repository')
-    cliArgParser.add_argument('-d', '--dependencyList', 
+            help='Local file system directory of the new repository')
+    cliArgParser.add_argument('-l', '--list', 
             default='dependency-list.txt', 
-            help='Path to the dependency list config file')
+            help='The path to the file containing the list of dependencies to download')
 
     args = cliArgParser.parse_args()
 
     # Read the list of dependencies
-    if os.path.isfile(args.dependencyList):
-        depListFile = open(args.dependencyList)
+    if os.path.isfile(args.list):
+        depListFile = open(args.list)
         try:
             dependencyListLines = depListFile.readlines()
         except IOError as e:
@@ -196,10 +196,10 @@ def main():
 
     print('Reading artifact list...')
     artifacts = depListToArtifactList(dependencyListLines)
-    print('Retrieving artifacts from repository: ' + args.repoUrl)
-    retrieveArtifacts(args.repoUrl, args.path, artifacts)
+    print('Retrieving artifacts from repository: ' + args.url)
+    retrieveArtifacts(args.url, args.directory, artifacts)
     print('Generating checksums...')
-    generateChecksums(args.path)
+    generateChecksums(args.directory)
     print('Repository creation complete')
 
 
