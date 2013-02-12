@@ -25,20 +25,6 @@ org.jboss.as:jboss-as-core-model-test-framework:jar:7.2.0.Alpha1-redhat-4
 org.jboss.as:jboss-as-subsystem-test:jar:7.2.0.Alpha1-redhat-4
 org.jboss.as:jboss-as-webservices-tests-integration:jar:7.2.0.Alpha1-redhat-4
 
-# Arquillian artifacts from the AS build
-org.jboss.as:jboss-as-arquillian:pom:7.2.0.Alpha1-redhat-4
-org.jboss.as:jboss-as-arquillian-common:jar:7.2.0.Alpha1-redhat-4
-org.jboss.as:jboss-as-arquillian-common-domain:jar:7.2.0.Alpha1-redhat-4
-org.jboss.as:jboss-as-arquillian-container-domain-managed:jar:7.2.0.Alpha1-redhat-4
-org.jboss.as:jboss-as-arquillian-container-domain-remote:jar:7.2.0.Alpha1-redhat-4
-org.jboss.as:jboss-as-arquillian-container-managed:jar:7.2.0.Alpha1-redhat-4
-org.jboss.as:jboss-as-arquillian-container-remote:jar:7.2.0.Alpha1-redhat-4
-org.jboss.as:jboss-as-arquillian-processor-jsfunit:jar:7.2.0.Alpha1-redhat-4
-org.jboss.as:jboss-as-arquillian-protocol-jmx:jar:7.2.0.Alpha1-redhat-4
-org.jboss.as:jboss-as-arquillian-protocol-servlet:jar:7.2.0.Alpha1-redhat-4
-org.jboss.as:jboss-as-arquillian-testenricher-msc:jar:7.2.0.Alpha1-redhat-4
-org.jboss.as:jboss-as-arquillian-testng-integration:jar:7.2.0.Alpha1-redhat-4
-
 # Java EE spec BOMs
 org.jboss.spec:jboss-javaee-6.0:pom:3.0.2.Final-redhat-1
 org.jboss.spec:jboss-javaee-web-6.0:pom:3.0.2.Final-redhat-1
