@@ -52,4 +52,7 @@ org.jboss.security:jboss-negotiation-project:pom:2.2.2.Final
 org.picketbox:picketbox-parent:pom:4.0.15.Final
 org.scannotation:scannotation:jar:1.0.3
 
+# Older version of jboss-logging-processor required to work 
+# with logging-tools quickstart
+org.jboss.logging:jboss-logging-processor:jar:1.0.3.Final:compile
 

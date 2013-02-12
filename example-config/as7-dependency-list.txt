@@ -217,6 +217,7 @@
 [INFO]    org.jboss.as:jboss-as-config-assembly:jar:7.2.0.Alpha1-redhat-4:compile
 [INFO]    org.infinispan:infinispan-client-hotrod:jar:5.2.1.Final:compile
 [INFO]    org.hamcrest:hamcrest-core:jar:1.1:test
+[INFO]    org.jboss.as:jbossweb-native:jar:2.0.10.Final:compile
 [INFO]    org.infinispan:infinispan-core:jar:5.2.1.Final:compile
 [INFO]    org.jboss.as:jboss-as-remoting:jar:7.2.0.Alpha1-redhat-4:compile
 [INFO]    org.jboss.as:jboss-as-jms-client-bom:pom:7.2.0.Alpha1-redhat-4:provided
@@ -394,7 +395,7 @@
 [INFO] ------------------------------------------------------------------------
 [INFO] BUILD SUCCESS
 [INFO] ------------------------------------------------------------------------
-[INFO] Total time: 6.287s
-[INFO] Finished at: Sat Feb 09 12:03:41 CST 2013
+[INFO] Total time: 6.910s
+[INFO] Finished at: Tue Feb 12 15:12:46 CST 2013
 [INFO] Final Memory: 37M/346M
 [INFO] ------------------------------------------------------------------------
