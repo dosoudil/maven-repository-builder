@@ -155,14 +155,14 @@ def generateChecksum(mavenfile):
             continue
         print('Generate checksum: ' + sumfile)
         sum = sum_constr
-        with open(mavenfile, 'r') as fobj:
+        with open(mavenfile, 'rb') as fobj:
             while True:
                 content = fobj.read(8192)
                 if not content:
                     break
                 sum.update(content)
         with open(sumfile, 'w') as sumobj:
-            sumobj.write(sum.hexdigest())
+            sumobj.write(sum.hexdigest() + '\n')
 
 
 def main():    
