@@ -125,7 +125,7 @@ def retrieveArtifacts(remoteRepoUrl, localRepoDir, artifactList):
     parsedUrl = urlparse.urlparse(remoteRepoUrl)
     protocol = parsedUrl[0]
     repoPath = parsedUrl[2]
-    if protocol == 'http':
+    if protocol == 'http' or protocol == 'https':
         for artifact in artifactList:
             downloadArtifact(remoteRepoUrl, localRepoDir, artifact)
     elif protocol == 'file':
