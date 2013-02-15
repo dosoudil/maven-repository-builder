@@ -1,8 +1,8 @@
 #! /usr/bin/env python
 
-import argparse
 import hashlib
 import httplib
+import optparse
 import os
 import re
 import shutil
@@ -167,19 +167,20 @@ def generateChecksum(mavenfile):
             sumobj.write(sum.hexdigest() + '\n')
 
 
-def main():    
-    cliArgParser = argparse.ArgumentParser(description='Generate a Maven repository.')
-    cliArgParser.add_argument('-u', '--url', 
+def main():
+    usage = "usage: %prog [-h] [-u URL] [-d DIRECTORY] [-l LIST]"
+    cliOptParser = optparse.OptionParser(usage=usage, description='Generate a Maven repository.')
+    cliOptParser.add_option('-u', '--url',
             default='http://repository.jboss.org/nexus/content/groups/public/', 
             help='URL of the remote repository from which artifacts are downloaded')
-    cliArgParser.add_argument('-d', '--directory', 
-            default='local-repo', 
+    cliOptParser.add_option('-d', '--directory',
+            default='local-repo',
             help='Local file system directory of the new repository')
-    cliArgParser.add_argument('-l', '--list', 
-            default='dependency-list.txt', 
+    cliOptParser.add_option('-l', '--list',
+            default='dependency-list.txt',
             help='The path to the file containing the list of dependencies to download')
 
-    args = cliArgParser.parse_args()
+    (args, opts) = cliOptParser.parse_args()
 
     # Read the list of dependencies
     if os.path.isfile(args.list):
@@ -187,7 +188,7 @@ def main():
         try:
             dependencyListLines = depListFile.readlines()
         except IOError as e:
-            print('Unable to read file ' + args.dependencyList)
+            print('Unable to read file ' + args.list)
             print(e)
             sys.exit()
         finally:
