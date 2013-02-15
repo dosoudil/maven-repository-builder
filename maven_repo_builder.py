@@ -2,9 +2,11 @@
 
 import argparse
 import hashlib
+import httplib
 import os
 import re
 import shutil
+import sys
 import urllib2
 import urlparse
 
