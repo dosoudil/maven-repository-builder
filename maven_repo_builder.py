@@ -204,7 +204,7 @@ def main():
     retrieveArtifacts(args.url, args.directory, artifacts)
     logging.info('Generating checksums...')
     generateChecksums(args.directory)
-    logging.info('Repository creation complete')
+    logging.info('Repository created in directory: %s', args.directory)
 
 
 if  __name__ =='__main__':main()
