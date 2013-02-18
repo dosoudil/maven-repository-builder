@@ -1,5 +1,7 @@
 # Python code representing a Maven artifact
 
+import logging
+
 class MavenArtifact:
 
     def __init__(self, gav):
@@ -13,7 +15,7 @@ class MavenArtifact:
             self.artifactType = gavParts[2]
             self.version = gavParts[3]
         else: 
-            print 'Invalid GAV string: ' + gav
+            logging.error('Invalid GAV string: %s', gav)
 
     def getArtifactType(self):
         return self.artifactType

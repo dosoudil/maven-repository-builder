@@ -2,6 +2,7 @@
 
 import hashlib
 import httplib
+import logging
 import optparse
 import os
 import re
@@ -22,7 +23,7 @@ def download(url, fileName=None):
         if 'Content-Disposition' in openUrl.info():
             # If the response has Content-Disposition, try to get filename from it
             cd = dict(map(
-                lambda x: x.strip().split('=') if '=' in x else (x.strip(),''),
+                lambda x: x.strip().split('=') if '=' in x else (x.strip(), ''),
                 openUrl.info()['Content-Disposition'].split(';')))
             if 'filename' in cd:
                 filename = cd['filename'].strip("\"'")
@@ -30,23 +31,23 @@ def download(url, fileName=None):
         # if no filename was found above, parse it out of the final URL.
         return os.path.basename(urlparse.urlsplit(openUrl.url)[2])
 
-    print('Downloading: ' + url)
+    logging.info('Downloading: %s', url)
 
     try:
         httpResponse = urllib2.urlopen(urllib2.Request(url))
         if (httpResponse.code == 200):
             fileName = fileName or getFileName(url, httpResponse)
             with open(fileName, 'wb') as localfile:
-                shutil.copyfileobj(httpResponse,localfile)
+                shutil.copyfileobj(httpResponse, localfile)
         else:
-            print('Unable to download, http code: ' + str(httpResponse.code))
+            logging.error('Unable to download, http code: %s', httpResponse.code)
         httpResponse.close()
     except urllib2.HTTPError as e:
-        print('HTTPError = ' + str(e.code))
+        logging.error('HTTPError = %s', e.code)
     except urllib2.URLError as e:
-        print('URLError = ' + str(e.reason))
+        logging.error('URLError = %s', e.reason)
     except httplib.HTTPException as e:
-        print('HTTPException')
+        logging.exception('HTTPException')
 
 
 def downloadArtifact(remoteRepoUrl, localRepoDir, artifact):
@@ -85,7 +86,7 @@ def copyArtifact(remoteRepoPath, localRepoDir, artifact):
         artifactLocalDir = os.path.join(localRepoDir, artifact.getDirPath())
         if not os.path.exists(artifactLocalDir):
             os.makedirs(artifactLocalDir)
-        print('Copying file: ' + artifactPath)
+        logging.info('Copying file: ' + artifactPath)
         shutil.copyfile(artifactPath, artifactLocalPath)
 
     # Download pom
@@ -93,7 +94,7 @@ def copyArtifact(remoteRepoPath, localRepoDir, artifact):
         artifactPomPath = os.path.join(remoteRepoPath, artifact.getPomFilepath())
         artifactPomLocalPath = os.path.join(localRepoDir, artifact.getPomFilepath())
         if os.path.exists(artifactPomPath) and not os.path.exists(artifactPomLocalPath):
-            print('Copying file: ' + artifactPomPath)
+            logging.info('Copying file: ' + artifactPomPath)
             shutil.copyfile(artifactPomPath, artifactPomLocalPath)
 
     # Download sources
@@ -101,7 +102,7 @@ def copyArtifact(remoteRepoPath, localRepoDir, artifact):
         artifactSourcesPath = os.path.join(remoteRepoPath, artifact.getSourcesFilepath())
         artifactSourcesLocalPath = os.path.join(localRepoDir, artifact.getSourcesFilepath())
         if os.path.exists(artifactSourcesPath) and not os.path.exists(artifactSourcesLocalPath):
-            print('Copying file: ' + artifactSourcesPath)
+            logging.info('Copying file: ' + artifactSourcesPath)
             shutil.copyfile(artifactSourcesPath, artifactSourcesLocalPath)
 
 
@@ -118,7 +119,7 @@ def depListToArtifactList(depList):
         if gav:
             artifactList.append(MavenArtifact(gav.group(0)))
     return artifactList
-           
+
 
 def retrieveArtifacts(remoteRepoUrl, localRepoDir, artifactList):
     """Create a Maven repository based on a remote repository url and a list of artifacts"""
@@ -135,7 +136,7 @@ def retrieveArtifacts(remoteRepoUrl, localRepoDir, artifactList):
         for artifact in artifactList:
             copyArtifact(repoPath, localRepoDir, artifact)
     else:
-        print('Unknown protocol: ' + protocol)
+        logging.error('Unknown protocol: %s', protocol)
 
 
 def generateChecksums(localRepoDir):
@@ -143,7 +144,7 @@ def generateChecksums(localRepoDir):
     for root, dirs, files in os.walk(localRepoDir):
         for filename in files:
             generateChecksum(os.path.join(root, filename))
-    
+
 
 def generateChecksum(mavenfile):
     """Generate md5 and sha1 checksums for a maven repository artifact"""
@@ -155,7 +156,7 @@ def generateChecksum(mavenfile):
         sumfile = mavenfile + ext
         if os.path.exists(sumfile):
             continue
-        print('Generate checksum: ' + sumfile)
+        logging.info('Generate checksum: %s', sumfile)
         sum = sum_constr
         with open(mavenfile, 'rb') as fobj:
             while True:
@@ -168,6 +169,7 @@ def generateChecksum(mavenfile):
 
 
 def main():
+    logging.basicConfig(level=logging.DEBUG)
     usage = "usage: %prog [-h] [-u URL] [-d DIRECTORY] [-l LIST]"
     cliOptParser = optparse.OptionParser(usage=usage, description='Generate a Maven repository.')
     cliOptParser.add_option('-u', '--url',
@@ -188,22 +190,21 @@ def main():
         try:
             dependencyListLines = depListFile.readlines()
         except IOError as e:
-            print('Unable to read file ' + args.list)
-            print(e)
+            logging.exception('Unable to read file %s', args.list)
             sys.exit()
         finally:
             depListFile.close()
     else:
-        print('Dependency List file does not exist')
+        logging.error('File %s does not exist', args.list)
         sys.exit()
 
-    print('Reading artifact list...')
+    logging.info('Reading artifact list...')
     artifacts = depListToArtifactList(dependencyListLines)
-    print('Retrieving artifacts from repository: ' + args.url)
+    logging.info('Retrieving artifacts from repository: %s', args.url)
     retrieveArtifacts(args.url, args.directory, artifacts)
-    print('Generating checksums...')
+    logging.info('Generating checksums...')
     generateChecksums(args.directory)
-    print('Repository creation complete')
+    logging.info('Repository creation complete')
 
 
 if  __name__ =='__main__':main()
