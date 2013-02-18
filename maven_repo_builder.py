@@ -169,21 +169,40 @@ def generateChecksum(mavenfile):
 
 
 def main():
-    logging.basicConfig(level=logging.DEBUG)
-    usage = "usage: %prog [-h] [-u URL] [-d DIRECTORY] [-l LIST]"
+    usage = "usage: %prog [-h] [-u URL] [-d DIRECTORY] [-l LIST] "
     cliOptParser = optparse.OptionParser(usage=usage, description='Generate a Maven repository.')
+    cliOptParser.add_option('-d', '--debug',
+            default='info',
+            help='Set the level of log output.  Can be set to debug, info, warning, error, or critical')
     cliOptParser.add_option('-u', '--url',
             default='http://repository.jboss.org/nexus/content/groups/public/', 
             help='URL of the remote repository from which artifacts are downloaded')
-    cliOptParser.add_option('-d', '--directory',
+    cliOptParser.add_option('-o', '--output',
             default='local-repo',
-            help='Local file system directory of the new repository')
+            help='Local output directory for the new repository')
     cliOptParser.add_option('-l', '--list',
             default='dependency-list.txt',
             help='The path to the file containing the list of dependencies to download')
 
     (args, opts) = cliOptParser.parse_args()
 
+    # Set the log level
+    log_level = args.debug.lower()
+    if (log_level == 'debug'):
+        logging.basicConfig(level=logging.DEBUG) 
+    if (log_level == 'info'):
+        logging.basicConfig(level=logging.INFO) 
+    elif (log_level == 'warning'):
+        logging.basicConfig(level=logging.WARNING)
+    elif (log_level == 'error'):
+        logging.basicConfig(level=logging.ERROR)
+    elif (log_level == 'critical'):
+        logging.basicConfig(level=logging.CRITICAL)
+    else:
+        logging.basicConfig(level=logging.INFO)
+        logging.warning('Unrecognized log level: %s  Log level set to info', args.debug)
+
+ 
     # Read the list of dependencies
     if os.path.isfile(args.list):
         depListFile = open(args.list)
@@ -201,10 +220,10 @@ def main():
     logging.info('Reading artifact list...')
     artifacts = depListToArtifactList(dependencyListLines)
     logging.info('Retrieving artifacts from repository: %s', args.url)
-    retrieveArtifacts(args.url, args.directory, artifacts)
+    retrieveArtifacts(args.url, args.output, artifacts)
     logging.info('Generating checksums...')
-    generateChecksums(args.directory)
-    logging.info('Repository created in directory: %s', args.directory)
+    generateChecksums(args.output)
+    logging.info('Repository created in directory: %s', args.output)
 
 
 if  __name__ =='__main__':main()
