@@ -1,7 +1,25 @@
 # This file contains a list of dependencies used by the AS7 quickstarts
 
 # JBoss Parent POM
+org.jboss:jboss-parent:pom:9-redhat-1
 org.jboss:jboss-parent:pom:10-redhat-1
+
+# JBoss Master BOMs
+org.jboss.component.management:jboss-component-management:pom:6.0.1-redhat-1
+org.jboss.component.management:jboss-component-version-master:pom:6.0.1-redhat-1
+org.jboss.component.management:jboss-dependency-management-all:pom:6.0.1-redhat-1
+org.jboss.component.management:jboss-dependency-management-build:pom:6.0.1-redhat-1
+org.jboss.component.management:jboss-dependency-management-eap:pom:6.0.1-redhat-1
+org.jboss.component.management:jboss-project-dependency-management:pom:6.0.1-redhat-1
+org.jboss.component.management:jboss-project-dependency-relocations:pom:6.0.1-redhat-1
+
+org.jboss.component.management:jboss-component-management:pom:6.1.0-redhat-1
+org.jboss.component.management:jboss-component-version-master:pom:6.1.0-redhat-1
+org.jboss.component.management:jboss-dependency-management-all:pom:6.1.0-redhat-1
+org.jboss.component.management:jboss-dependency-management-build:pom:6.1.0-redhat-1
+org.jboss.component.management:jboss-dependency-management-eap:pom:6.1.0-redhat-1
+org.jboss.component.management:jboss-project-dependency-management:pom:6.1.0-redhat-1
+org.jboss.component.management:jboss-project-dependency-relocations:pom:6.1.0-redhat-1
 
 # JBoss AS POMs
 org.jboss.as:jboss-as-build:pom:7.2.0.Final-redhat-1
