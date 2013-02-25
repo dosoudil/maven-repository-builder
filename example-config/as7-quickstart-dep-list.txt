@@ -75,7 +75,6 @@ org.picketbox:picketbox-parent:pom:4.0.15.Final-redhat-1
 org.scannotation:scannotation:jar:1.0.2-redhat-2
 
 # Additional jars required by quickstarts
-antlr:antlr:jar:2.7.7-redhat-2
 org.hibernate:hibernate-validator-annotation-processor:jar:4.3.1.Final-redhat-1
 
 # Older version of jboss-logging-processor required to work 
