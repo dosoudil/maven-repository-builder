@@ -62,6 +62,8 @@ org.jboss.bom:jboss-javaee-6.0-with-transactions:pom:1.0.4.Final-redhat-2
 org.jboss.bom:jboss-wfk-arquillian:pom:1.0.4.Final-redhat-2
 
 # Parent POMs required by various artifacts
+com.sun.mail:all:pom:1.4.5-redhat-1
+net.java:jvnet-parent:pom:1-redhat-2
 org.apache:apache:pom:7-redhat-2
 org.apache.commons:commons-parent:pom:22-redhat-2
 org.hibernate:hibernate-validator-parent:pom:4.3.1.Final-redhat-1
