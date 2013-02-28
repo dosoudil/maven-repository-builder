@@ -255,7 +255,7 @@
 [INFO]    org.jboss.osgi.spi:jbosgi-spi:jar:3.2.0.Final-redhat-1:compile
 [INFO]    org.jboss.osgi.vfs:jbosgi-vfs30:jar:1.2.1.Final-redhat-1:compile
 [INFO]    org.jboss.osgi.vfs:jbosgi-vfs:jar:1.2.1.Final-redhat-1:compile
-[INFO]    org.jboss.remoting3:jboss-remoting:jar:3.2.14.GA-redhat-1:compile
+[INFO]    org.jboss.remoting3:jboss-remoting:jar:3.2.15.GA-redhat-0-todo:compile
 [INFO]    org.jboss.remotingjmx:remoting-jmx:jar:1.1.0.Final-redhat-1:compile
 [INFO]    org.jboss.resteasy:async-http-servlet-3.0:jar:2.3.5.Final-redhat-1:compile
 [INFO]    org.jboss.resteasy:resteasy-atom-provider:jar:2.3.5.Final-redhat-1:compile
