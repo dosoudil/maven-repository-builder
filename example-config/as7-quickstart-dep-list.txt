@@ -70,6 +70,7 @@ org.hibernate:hibernate-validator-parent:pom:4.3.1.Final-redhat-1
 org.hornetq:hornetq-pom:pom:2.3.0.CR1-redhat-1
 org.jacorb:jacorb-parent:pom:2.3.2-redhat-3
 org.jboss.metadata:jboss-as-parent-metadata:pom:7.0.8.Final-redhat-1
+org.jboss.resteasy:resteasy-jaxrs-all:pom:2.3.5.Final-redhat-1
 org.jboss.security:jboss-negotiation-project:pom:2.2.2.Final-redhat-1
 org.jboss.weld:weld-parent:pom:17-redhat-2
 org.jboss.xnio:xnio-all:pom:3.0.7.GA-redhat-1
