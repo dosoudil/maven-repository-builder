@@ -93,10 +93,6 @@ org.sonatype.oss:oss-parent:pom:7-redhat-2
 # Additional jars required by quickstarts
 org.hibernate:hibernate-validator-annotation-processor:jar:4.3.1.Final-redhat-1
 
-# Older version of jboss-logging-processor required to work 
-# with logging-tools quickstart
-org.jboss.logging:jboss-logging-processor:jar:1.0.3.Final-redhat-2:compile
-
 # [916799] commons-logging required by jax-rs-client quickstart
 # TODO: This should be fixed
 commons-logging:commons-logging:jar:1.1.1-redhat-2
