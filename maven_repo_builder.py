@@ -111,14 +111,14 @@ def depListToArtifactList(depList):
     regexComment = re.compile('#.*$')
     #regexLog = re.compile('^\[\w*\]')
     # Match pattern groupId:artifactId:type:[classifier:]version[:scope]
-    regexGAV = re.compile('(([\w\-.]+:){3}([\w\-.]+:)?[\d][\w\-.]+)(:[\w]*\S)?')
+    regexGAV = re.compile('(([\w\-.]+:){3}([\w\-.]+:)?([\d][\w\-.]+))(:[\w]*\S)?')
     artifactList = []
     for nextLine in depList:
         nextLine = regexComment.sub('', nextLine)
         nextLine = nextLine.strip()
         gav = regexGAV.search(nextLine)
         if gav:
-            artifactList.append(MavenArtifact(gav.group(0)))
+            artifactList.append(MavenArtifact(gav.group(1)))
     return artifactList
 
 

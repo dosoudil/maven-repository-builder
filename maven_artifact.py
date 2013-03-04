@@ -9,14 +9,14 @@ class MavenArtifact:
            GAV of the form groupId:artifactId:type:[classifier:]version
         """
         gavParts = gav.split(':')
-        if (len(gavParts) >= 5):
+        if (len(gavParts) >= 4):
             self.groupId = gavParts[0]
             self.artifactId = gavParts[1]
             self.artifactType = gavParts[2]
-            if (len(gavParts) == 5):
+            if (len(gavParts) == 4):
                 self.classifier = ''
                 self.version = gavParts[3]
-            elif (len(gavParts) == 6):
+            elif (len(gavParts) == 5):
                 self.classifier = gavParts[3]
                 self.version = gavParts[4]
         else: 
