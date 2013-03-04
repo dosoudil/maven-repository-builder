@@ -48,18 +48,18 @@ org.jboss.spec:jboss-javaee-6.0:pom:3.0.2.Final-redhat-2
 org.jboss.spec:jboss-javaee-web-6.0:pom:3.0.2.Final-redhat-2
 
 # JBoss BOMs project
-org.jboss.bom:jboss-bom-parent:pom:1.0.4.Final-redhat-2
-org.jboss.bom:jboss-javaee-6.0-with-deltaspike:pom:1.0.4.Final-redhat-2
-org.jboss.bom:jboss-javaee-6.0-with-errai:pom:1.0.4.Final-redhat-2
-org.jboss.bom:jboss-javaee-6.0-with-hibernate:pom:1.0.4.Final-redhat-2
-org.jboss.bom:jboss-javaee-6.0-with-hibernate3:pom:1.0.4.Final-redhat-2
-org.jboss.bom:jboss-javaee-6.0-with-infinispan:pom:1.0.4.Final-redhat-2
-org.jboss.bom:jboss-javaee-6.0-with-logging:pom:1.0.4.Final-redhat-2
-org.jboss.bom:jboss-javaee-6.0-with-osgi:pom:1.0.4.Final-redhat-2
-org.jboss.bom:jboss-javaee-6.0-with-security:pom:1.0.4.Final-redhat-2
-org.jboss.bom:jboss-javaee-6.0-with-tools:pom:1.0.4.Final-redhat-2
-org.jboss.bom:jboss-javaee-6.0-with-transactions:pom:1.0.4.Final-redhat-2
-org.jboss.bom:jboss-wfk-arquillian:pom:1.0.4.Final-redhat-2
+org.jboss.bom:jboss-bom-parent:pom:1.0.4.Final-redhat-3
+org.jboss.bom:jboss-javaee-6.0-with-deltaspike:pom:1.0.4.Final-redhat-3
+org.jboss.bom:jboss-javaee-6.0-with-errai:pom:1.0.4.Final-redhat-3
+org.jboss.bom:jboss-javaee-6.0-with-hibernate:pom:1.0.4.Final-redhat-3
+org.jboss.bom:jboss-javaee-6.0-with-hibernate3:pom:1.0.4.Final-redhat-3
+org.jboss.bom:jboss-javaee-6.0-with-infinispan:pom:1.0.4.Final-redhat-3
+org.jboss.bom:jboss-javaee-6.0-with-logging:pom:1.0.4.Final-redhat-3
+org.jboss.bom:jboss-javaee-6.0-with-osgi:pom:1.0.4.Final-redhat-3
+org.jboss.bom:jboss-javaee-6.0-with-security:pom:1.0.4.Final-redhat-3
+org.jboss.bom:jboss-javaee-6.0-with-tools:pom:1.0.4.Final-redhat-3
+org.jboss.bom:jboss-javaee-6.0-with-transactions:pom:1.0.4.Final-redhat-3
+org.jboss.bom:jboss-wfk-arquillian:pom:1.0.4.Final-redhat-3
 
 # Parent POMs required by various artifacts
 com.sun.mail:all:pom:1.4.5-redhat-1
@@ -76,12 +76,15 @@ org.infinispan:infinispan-cachestore-parent:pom:5.2.1.Final-redhat-1
 org.infinispan:infinispan-parent:pom:5.2.1.Final-redhat-1
 org.jacorb:jacorb-parent:pom:2.3.2-redhat-3
 org.jboss.jbossts:narayana-all:pom:4.17.3.Final-redhat-1
+org.jboss.jbossts.arjunacore:arjunacore-all:pom:4.17.3.Final-redhat-1
 org.jboss.jbossts.jts:narayana-jts-all:pom:4.17.3.Final-redhat-1
+org.jboss.jbossts.xts:xts-all:pom:4.17.3.Final-redhat-1
 org.jboss.marshalling:jboss-marshalling-parent:pom:1.3.16.GA-redhat-1
 org.jboss.metadata:jboss-as-parent-metadata:pom:7.0.8.Final-redhat-1
 org.jboss.resteasy:resteasy-jaxrs-all:pom:2.3.5.Final-redhat-1
 org.jboss.security:jboss-negotiation-project:pom:2.2.2.Final-redhat-1
 org.jboss.weld:weld-parent:pom:17-redhat-2
+org.jboss.ws:jbossws-parent:pom:1.1.0.GA-redhat-1
 org.jboss.xnio:xnio-all:pom:3.0.7.GA-redhat-1
 org.picketbox:picketbox-parent:pom:4.0.15.Final-redhat-1
 org.scannotation:scannotation:jar:1.0.2-redhat-2
@@ -94,12 +97,7 @@ org.hibernate:hibernate-validator-annotation-processor:jar:4.3.1.Final-redhat-1
 # with logging-tools quickstart
 org.jboss.logging:jboss-logging-processor:jar:1.0.3.Final-redhat-2:compile
 
-# Bad dependencies required by jax-rs-client quickstart
-# Older version of slf4j a required transitive dependency
+# [916799] commons-logging required by jax-rs-client quickstart
 # TODO: This should be fixed
 commons-logging:commons-logging:jar:1.1.1-redhat-2
-org.apache.httpcomponents:httpcore:jar:4.2.1-redhat-0-todo
-org.slf4j:jcl-over-slf4j:jar:1.6.1-redhat-2
-org.slf4j:slf4j-api:jar:1.6.1-redhat-2
-org.slf4j:slf4j-parent:pom:1.6.1-redhat-2
 
