@@ -110,7 +110,8 @@ def depListToArtifactList(depList):
     """Convert the maven GAV to a URL relative path"""
     regexComment = re.compile('#.*$')
     #regexLog = re.compile('^\[\w*\]')
-    regexGAV = re.compile('(([\w\-.]+:){3}[\w\-.]+)(:[\w]*\S)?')
+    # Match pattern groupId:artifactId:type:[classifier:]version[:scope]
+    regexGAV = re.compile('(([\w\-.]+:){3}([\w\-.]+:)?[\d][\w\-.]+)(:[\w]*\S)?')
     artifactList = []
     for nextLine in depList:
         nextLine = regexComment.sub('', nextLine)

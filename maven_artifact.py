@@ -6,20 +6,28 @@ class MavenArtifact:
 
     def __init__(self, gav):
         """Initialize an artifact using a colon separated 
-           GAV to relative path groupId:artifactId:type:version
+           GAV of the form groupId:artifactId:type:[classifier:]version
         """
         gavParts = gav.split(':')
-        if (len(gavParts) > 3):
+        if (len(gavParts) >= 5):
             self.groupId = gavParts[0]
             self.artifactId = gavParts[1]
             self.artifactType = gavParts[2]
-            self.version = gavParts[3]
+            if (len(gavParts) == 5):
+                self.classifier = ''
+                self.version = gavParts[3]
+            elif (len(gavParts) == 6):
+                self.classifier = gavParts[3]
+                self.version = gavParts[4]
         else: 
             logging.error('Invalid GAV string: %s', gav)
 
     def getArtifactType(self):
         return self.artifactType
 
+    def getClassifier(self):
+        return self.classifier
+ 
     def getDirPath(self):
         """Get the relative repository path to the artifact"""
         relativePath = self.groupId.replace('.', '/') + '/'
@@ -30,6 +38,8 @@ class MavenArtifact:
     def getBaseFilename(self):
         """Returns the filename without the file extension"""
         filename = self.artifactId + '-' + self.version 
+        if (self.classifier):
+            filename += '-' + self.classifier
         return filename
 
     def getArtifactFilename(self):
