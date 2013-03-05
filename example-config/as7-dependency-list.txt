@@ -1,3 +1,4 @@
+
 [INFO]    antlr:antlr:jar:2.7.7-redhat-2:compile
 [INFO]    asm:asm:jar:3.3.1-redhat-2:compile
 [INFO]    ch.qos.cal10n:cal10n-api:jar:0.7.3-redhat-2:compile
@@ -13,7 +14,7 @@
 [INFO]    commons-lang:commons-lang:jar:2.6-redhat-2:compile
 [INFO]    commons-pool:commons-pool:jar:1.6-redhat-2:compile
 [INFO]    com.sun.codemodel:codemodel:jar:2.6-redhat-2:compile
-[INFO]    com.sun.faces:jsf-impl:jar:2.1.19-redhat-1:compile
+[INFO]    com.sun.faces:jsf-impl:jar:2.1.18-redhat-1:compile
 [INFO]    com.sun.istack:istack-commons-runtime:jar:2.6.1-redhat-2:compile
 [INFO]    com.sun.istack:istack-commons-tools:jar:2.6.1-redhat-2:compile
 [INFO]    com.sun:tools:jar:1.6:system
@@ -24,7 +25,7 @@
 [INFO]    com.sun.xsom:xsom:jar:20110809-redhat-3:compile
 [INFO]    dom4j:dom4j:jar:1.6.1-redhat-4:compile
 [INFO]    gnu-getopt:getopt:jar:1.0.13-redhat-2:compile
-[INFO]    io.netty:netty:jar:3.6.2.Final-redhat-0-todo:compile
+[INFO]    io.netty:netty:jar:3.6.2.Final-redhat-1:compile
 [INFO]    javax.activation:activation:jar:1.1.1-redhat-2:compile
 [INFO]    javax.enterprise:cdi-api:jar:1.0-SP4-redhat-2:compile
 [INFO]    javax.faces:jsf-api:jar:1.2_15-b01-redhat-2:compile
@@ -65,7 +66,7 @@
 [INFO]    org.apache.cxf:cxf-tools-wsdlto-core:jar:2.6.6-redhat-1:compile
 [INFO]    org.apache.cxf:cxf-tools-wsdlto-databinding-jaxb:jar:2.6.6-redhat-1:compile
 [INFO]    org.apache.cxf:cxf-tools-wsdlto-frontend-jaxws:jar:2.6.6-redhat-1:compile
-[INFO]    org.apache.cxf.services.sts:cxf-services-sts-core:jar:2.6.6-redhat-0-todo:compile
+[INFO]    org.apache.cxf.services.sts:cxf-services-sts-core:jar:2.6.6-redhat-1:compile
 [INFO]    org.apache.cxf.xjcplugins:cxf-xjc-boolean:jar:2.6.0-redhat-1:compile
 [INFO]    org.apache.cxf.xjcplugins:cxf-xjc-dv:jar:2.6.0-redhat-1:compile
 [INFO]    org.apache.cxf.xjcplugins:cxf-xjc-ts:jar:2.6.0-redhat-1:compile
@@ -358,4 +359,3 @@
 [INFO]    xerces:xercesImpl:jar:2.9.1-redhat-3:compile
 [INFO]    xml-resolver:xml-resolver:jar:1.2-redhat-2:compile
 [INFO]    xom:xom:jar:1.2.7-redhat-3:compile
-
