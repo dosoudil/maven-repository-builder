@@ -22,26 +22,26 @@ org.jboss.component.management:jboss-project-dependency-management:pom:6.1.0-red
 org.jboss.component.management:jboss-project-dependency-relocations:pom:6.1.0-redhat-1
 
 # JBoss AS POMs
-org.jboss.as:jboss-as-build:pom:7.2.0.Final-redhat-2
-org.jboss.as:jboss-as-build-modular:pom:7.2.0.Final-redhat-2
-org.jboss.as:jboss-as-ejb-client-bom:pom:7.2.0.Final-redhat-2
-org.jboss.as:jboss-as-jms-client-bom:pom:7.2.0.Final-redhat-2
-org.jboss.as:jboss-as-clustering:pom:7.2.0.Final-redhat-2
-org.jboss.as:jboss-as-domain-http:pom:7.2.0.Final-redhat-2
-org.jboss.as:jboss-as-jpa-parent:pom:7.2.0.Final-redhat-2
-org.jboss.as:jboss-as-jsf-parent:pom:7.2.0.Final-redhat-2
-org.jboss.as:jboss-as-osgi-integration:pom:7.2.0.Final-redhat-2
-org.jboss.as:jboss-as-osgi:pom:7.2.0.Final-redhat-2
-org.jboss.as:jboss-as-parent:pom:7.2.0.Final-redhat-2
-org.jboss.as:jboss-as-spec-api:pom:7.2.0.Final-redhat-2
-org.jboss.as:jboss-as-webservices:pom:7.2.0.Final-redhat-2
-org.jboss.as:jdr:pom:7.2.0.Final-redhat-2
+org.jboss.as:jboss-as-build:pom:7.2.0.Final-redhat-3
+org.jboss.as:jboss-as-build-modular:pom:7.2.0.Final-redhat-3
+org.jboss.as:jboss-as-ejb-client-bom:pom:7.2.0.Final-redhat-3
+org.jboss.as:jboss-as-jms-client-bom:pom:7.2.0.Final-redhat-3
+org.jboss.as:jboss-as-clustering:pom:7.2.0.Final-redhat-3
+org.jboss.as:jboss-as-domain-http:pom:7.2.0.Final-redhat-3
+org.jboss.as:jboss-as-jpa-parent:pom:7.2.0.Final-redhat-3
+org.jboss.as:jboss-as-jsf-parent:pom:7.2.0.Final-redhat-3
+org.jboss.as:jboss-as-osgi-integration:pom:7.2.0.Final-redhat-3
+org.jboss.as:jboss-as-osgi:pom:7.2.0.Final-redhat-3
+org.jboss.as:jboss-as-parent:pom:7.2.0.Final-redhat-3
+org.jboss.as:jboss-as-spec-api:pom:7.2.0.Final-redhat-3
+org.jboss.as:jboss-as-webservices:pom:7.2.0.Final-redhat-3
+org.jboss.as:jdr:pom:7.2.0.Final-redhat-3
 
 # Additional JBoss AS jars needed for testing
-# org.jboss.as:jboss-as-core-model-test:pom:7.2.0.Final-redhat-2
-# org.jboss.as:jboss-as-core-model-test-framework:jar:7.2.0.Final-redhat-2
-org.jboss.as:jboss-as-subsystem-test:jar:7.2.0.Final-redhat-2
-org.jboss.as:jboss-as-webservices-tests-integration:jar:7.2.0.Final-redhat-2
+# org.jboss.as:jboss-as-core-model-test:pom:7.2.0.Final-redhat-3
+# org.jboss.as:jboss-as-core-model-test-framework:jar:7.2.0.Final-redhat-3
+org.jboss.as:jboss-as-subsystem-test:jar:7.2.0.Final-redhat-3
+org.jboss.as:jboss-as-webservices-tests-integration:jar:7.2.0.Final-redhat-3
 
 # Java EE spec BOMs
 org.jboss.spec:jboss-javaee-6.0:pom:3.0.2.Final-redhat-2
@@ -72,8 +72,8 @@ org.apache.httpcomponents:httpcomponents-core:pom:4.2.1-redhat-1
 org.apache.httpcomponents:project:pom:6-redhat-1
 org.hibernate:hibernate-validator-parent:pom:4.3.1.Final-redhat-1
 org.hornetq:hornetq-pom:pom:2.3.0.CR1-redhat-1
-org.infinispan:infinispan-cachestore-parent:pom:5.2.1.Final-redhat-1
-org.infinispan:infinispan-parent:pom:5.2.1.Final-redhat-1
+org.infinispan:infinispan-cachestore-parent:pom:5.2.5.Final-redhat-1
+org.infinispan:infinispan-parent:pom:5.2.5.Final-redhat-1
 org.jacorb:jacorb-parent:pom:2.3.2-redhat-3
 org.jboss.jbossts:narayana-all:pom:4.17.3.Final-redhat-1
 org.jboss.jbossts.arjunacore:arjunacore-all:pom:4.17.3.Final-redhat-1
