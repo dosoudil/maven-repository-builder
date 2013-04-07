@@ -7,7 +7,7 @@ This tool requires python 2.6 or higher.
 Basic Usage
 -----------
 
-    Usage: maven_repo_builder.py [-h] [-u URL] [-d DIRECTORY] [-l ARTIFACT_LIST]
+    Usage: maven_repo_builder.py [-h] [-u URL] [-l ARTIFACT_LIST] [-o OUTPUT_DIRECTORY]
 
     Generate a Maven repository.
 
@@ -18,10 +18,10 @@ Basic Usage
                             info, warning, error, or critical
       -u URL, --url=URL     URL of the remote repository from which artifacts are
                             downloaded
-      -o OUTPUT, --output=OUTPUT
-                        Local output directory for the new repository
       -l LIST, --list=LIST  The path to the file containing the list of artifacts
                             to download
+      -o OUTPUT, --output=OUTPUT
+                            Local output directory for the new repository
 
 Example Repository List
 -----------------------

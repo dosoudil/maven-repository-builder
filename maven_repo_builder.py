@@ -170,7 +170,7 @@ def generateChecksum(mavenfile):
 
 
 def main():
-    usage = "usage: %prog [-h] [-u URL] [-d DIRECTORY] [-l ARTIFACT_LIST]"
+    usage = "usage: %prog [-h] [-u URL] [-l ARTIFACT_LIST] [-o OUTPUT_DIRECTORY]"
     cliOptParser = optparse.OptionParser(usage=usage, description='Generate a Maven repository.')
     cliOptParser.add_option('-d', '--debug',
             default='info',
@@ -178,12 +178,12 @@ def main():
     cliOptParser.add_option('-u', '--url',
             default='http://repo1.maven.org/maven2/', 
             help='URL of the remote repository from which artifacts are downloaded')
-    cliOptParser.add_option('-o', '--output',
-            default='local-maven-repository',
-            help='Local output directory for the new repository')
     cliOptParser.add_option('-l', '--list',
             default='artifact-list.txt',
             help='The path to the file containing the list of artifacts to download')
+    cliOptParser.add_option('-o', '--output',
+            default='local-maven-repository',
+            help='Local output directory for the new repository')
 
     (args, opts) = cliOptParser.parse_args()
 
