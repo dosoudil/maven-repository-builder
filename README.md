@@ -2,8 +2,12 @@ Maven Repository Builder
 ========================
 
 Build a Maven repository from a list of dependencies and the URL to an existing repository.
+This tool requires python 2.6 or higher.
 
-    Usage: maven_repo_builder.py [-h] [-u URL] [-d DIRECTORY] [-l LIST]
+Basic Usage
+-----------
+
+    Usage: maven_repo_builder.py [-h] [-u URL] [-d DIRECTORY] [-l ARTIFACT_LIST]
 
     Generate a Maven repository.
 
@@ -15,8 +19,11 @@ Build a Maven repository from a list of dependencies and the URL to an existing 
       -u URL, --url=URL     URL of the remote repository from which artifacts are
                             downloaded
       -o OUTPUT, --output=OUTPUT
-                            Local output directory for the new repository
-      -l LIST, --list=LIST  The path to the file containing the list of
-                            dependencies to download
+                        Local output directory for the new repository
+      -l LIST, --list=LIST  The path to the file containing the list of artifacts
+                            to download
 
+Example Repository List
+-----------------------
+[Example Repository List](https://github.com/jboss-eap/maven-repository-builder/blob/master/example-config/artifact-list.txt)
 
