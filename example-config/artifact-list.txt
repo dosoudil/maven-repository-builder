@@ -1,0 +1,50 @@
+# This is an example artifact list for the maven_repository_builder.py tool
+# Lines starting with a '#' are considered comments, and are ignored by the tool
+
+# The basic format for artifacts in the list is 
+# groupId:artifactId:fileType:<classifier>:version
+org.codehaus.plexus:plexus-utils:jar:3.0.8
+
+
+# Comments placed on the same line as a GAV are ok
+junit:junit:jar:4.1  # Include junit for tests
+
+
+# Whitespace before and after the artifact GAV is ignored
+    org.apache.maven:maven-artifact:3.0.1    
+
+
+# If the fileType of the artifact is set to "jar", the repository builder will 
+# attempt to download both the pom file and a matching -sources artifact for
+# the given jar artifact.
+# If the artifact type is set to "pom" then the repository builder will
+# download only the pom file, and not attempt to download a -sources artifact
+org.apache.maven:maven-parent:pom:20
+
+
+# If a classifier is included in the GAV string, the artifact with the 
+# specified classifier will be downloaded instead of the main artifact
+org.apache.maven.plugins:maven-compiler-plugin:zip:source-release:3.0
+
+
+# Dependency scope appended to a GAV will be ignored by the repository builder
+org.apache.maven:maven-plugin-api:jar:3.0.1:compile
+
+
+# A regex is used to match the GAV, so additional text which does not include
+# a matching GAV will be ignored.  For example, this is useful for properly 
+# parsing the output of a "mvn dependency:list" command. 
+
+[INFO] Scanning for projects...
+[INFO]                                                                         
+[INFO] ------------------------------------------------------------------------
+[INFO] Building Awesome Project A: Build 1.0-SNAPSHOT
+[INFO] ------------------------------------------------------------------------
+[INFO] 
+[INFO] --- maven-dependency-plugin:2.6:list (default-cli) @ awesome-project-a ---
+[INFO] 
+[INFO] The following files have been resolved:
+[INFO]    org.jboss.modules:jboss-modules:jar:1.1.0.GA:compile
+[INFO]    org.jboss.spec.javax.servlet:jboss-servlet-api_3.0_spec:jar:1.0.2.Final:compile
+
+
