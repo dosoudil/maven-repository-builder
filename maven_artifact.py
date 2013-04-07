@@ -37,14 +37,15 @@ class MavenArtifact:
 
     def getBaseFilename(self):
         """Returns the filename without the file extension"""
-        filename = self.artifactId + '-' + self.version 
-        if (self.classifier):
-            filename += '-' + self.classifier
-        return filename
+        baseFilename = self.artifactId + '-' + self.version 
+        return baseFilename
 
     def getArtifactFilename(self):
         """Returns the filename of the artifact"""
-        return self.getBaseFilename() + '.' + self.artifactType
+        filename = self.getBaseFilename()
+        if (self.classifier):
+            filename += '-' + self.classifier
+        return filename + '.' + self.artifactType
 
     def getArtifactFilepath(self):
         """Return the path to the artifact file"""
