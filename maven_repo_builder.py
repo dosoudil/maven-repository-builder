@@ -70,7 +70,7 @@ def downloadArtifact(remoteRepoUrl, localRepoDir, artifact):
             download(artifactPomUrl, artifactPomLocalPath)
     
     # Download sources
-    if artifact.getArtifactType() != 'pom':
+    if artifact.getArtifactType() != 'pom' and not artifact.getClassifier():
         artifactSourcesUrl = remoteRepoUrl + '/' + artifact.getSourcesFilepath()
         artifactSourcesLocalPath = os.path.join(localRepoDir, artifact.getSourcesFilepath())
         if not os.path.exists(artifactSourcesLocalPath):
@@ -78,7 +78,7 @@ def downloadArtifact(remoteRepoUrl, localRepoDir, artifact):
 
 
 def copyArtifact(remoteRepoPath, localRepoDir, artifact):
-    """Download artifact from a remote repository along with pom and source jar"""
+    """Copy artifact from a repository on the local file system along with pom and source jar"""
     # Download main artifact
     artifactPath = os.path.join(remoteRepoPath, artifact.getArtifactFilepath())
     artifactLocalPath = os.path.join(localRepoDir, artifact.getArtifactFilepath())
@@ -98,7 +98,7 @@ def copyArtifact(remoteRepoPath, localRepoDir, artifact):
             shutil.copyfile(artifactPomPath, artifactPomLocalPath)
 
     # Download sources
-    if artifact.getArtifactType() != 'pom':
+    if artifact.getArtifactType() != 'pom' and not artifact.getClassifier():
         artifactSourcesPath = os.path.join(remoteRepoPath, artifact.getSourcesFilepath())
         artifactSourcesLocalPath = os.path.join(localRepoDir, artifact.getSourcesFilepath())
         if os.path.exists(artifactSourcesPath) and not os.path.exists(artifactSourcesLocalPath):
