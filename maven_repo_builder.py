@@ -3,53 +3,16 @@
 """maven_repo_builder.py: Create a Maven repository given a list of artifacts and a remote repository URL."""
 
 import hashlib
-import httplib
 import logging
 import optparse
 import os
 import re
 import shutil
 import sys
-import urllib2
 import urlparse
 
+import maven_repo_util
 from maven_artifact import MavenArtifact
-
-
-def download(url, fileName=None):
-    """Download the given url to a local file"""
-    if os.path.exists(fileName):
-        return
-    
-    def getFileName(url, openUrl):
-        if 'Content-Disposition' in openUrl.info():
-            # If the response has Content-Disposition, try to get filename from it
-            cd = dict(map(
-                lambda x: x.strip().split('=') if '=' in x else (x.strip(), ''),
-                openUrl.info()['Content-Disposition'].split(';')))
-            if 'filename' in cd:
-                filename = cd['filename'].strip("\"'")
-                if filename: return filename
-        # if no filename was found above, parse it out of the final URL.
-        return os.path.basename(urlparse.urlsplit(openUrl.url)[2])
-
-    logging.info('Downloading: %s', url)
-
-    try:
-        httpResponse = urllib2.urlopen(urllib2.Request(url))
-        if (httpResponse.code == 200):
-            fileName = fileName or getFileName(url, httpResponse)
-            with open(fileName, 'wb') as localfile:
-                shutil.copyfileobj(httpResponse, localfile)
-        else:
-            logging.error('Unable to download, http code: %s', httpResponse.code)
-        httpResponse.close()
-    except urllib2.HTTPError as e:
-        logging.error('HTTPError = %s', e.code)
-    except urllib2.URLError as e:
-        logging.error('URLError = %s', e.reason)
-    except httplib.HTTPException as e:
-        logging.exception('HTTPException')
 
 
 def downloadArtifact(remoteRepoUrl, localRepoDir, artifact):
@@ -62,21 +25,21 @@ def downloadArtifact(remoteRepoUrl, localRepoDir, artifact):
     artifactUrl = remoteRepoUrl + '/' + artifact.getArtifactFilepath()
     artifactLocalPath = os.path.join(localRepoDir, artifact.getArtifactFilepath())
     if not os.path.exists(artifactLocalPath):
-        download(artifactUrl, artifactLocalPath)
+        maven_repo_util.download(artifactUrl, artifactLocalPath)
  
     # Download pom
     if artifact.getArtifactFilename() != artifact.getPomFilename():
         artifactPomUrl = remoteRepoUrl + '/' + artifact.getPomFilepath()
         artifactPomLocalPath = os.path.join(localRepoDir, artifact.getPomFilepath())
         if not os.path.exists(artifactPomLocalPath):
-            download(artifactPomUrl, artifactPomLocalPath)
+            maven_repo_util.download(artifactPomUrl, artifactPomLocalPath)
     
     # Download sources
     if artifact.getArtifactType() != 'pom' and not artifact.getClassifier():
         artifactSourcesUrl = remoteRepoUrl + '/' + artifact.getSourcesFilepath()
         artifactSourcesLocalPath = os.path.join(localRepoDir, artifact.getSourcesFilepath())
         if not os.path.exists(artifactSourcesLocalPath):
-            download(artifactSourcesUrl, artifactSourcesLocalPath)
+            maven_repo_util.download(artifactSourcesUrl, artifactSourcesLocalPath)
 
 
 def copyArtifact(remoteRepoPath, localRepoDir, artifact):
@@ -146,41 +109,34 @@ def generateChecksums(localRepoDir):
     """Generate checksums for all maven artifacts in a repository"""
     for root, dirs, files in os.walk(localRepoDir):
         for filename in files:
-            generateChecksum(os.path.join(root, filename))
+            generateChecksumFiles(os.path.join(root, filename))
 
 
-def generateChecksum(mavenfile):
+def generateChecksumFiles(filepath):
     """Generate md5 and sha1 checksums for a maven repository artifact"""
-    if os.path.splitext(mavenfile)[1] in ('.md5', '.sha1'):
+    if os.path.splitext(filepath)[1] in ('.md5', '.sha1'):
         return
-    if not os.path.isfile(mavenfile):
+    if not os.path.isfile(filepath):
         return
     for ext, sum_constr in (('.md5', hashlib.md5()), ('.sha1', hashlib.sha1())):
-        sumfile = mavenfile + ext
+        sumfile = filepath + ext
         if os.path.exists(sumfile):
             continue
-        logging.info('Generate checksum: %s', sumfile)
-        sum = sum_constr
-        with open(mavenfile, 'rb') as fobj:
-            while True:
-                content = fobj.read(8192)
-                if not content:
-                    break
-                sum.update(content)
+        sum = maven_repo_util.getChecksum(filepath, sum_constr)
         with open(sumfile, 'w') as sumobj:
-            sumobj.write(sum.hexdigest() + '\n')
+            sumobj.write(sum + '\n')
 
 
 def main():
     usage = "usage: %prog [-h] [-u URL] [-l ARTIFACT_LIST] [-o OUTPUT_DIRECTORY]"
     cliOptParser = optparse.OptionParser(usage=usage, description='Generate a Maven repository.')
-    cliOptParser.add_option('-d', '--debug',
+    cliOptParser.add_option('-l', '--loglevel',
             default='info',
             help='Set the level of log output.  Can be set to debug, info, warning, error, or critical')
     cliOptParser.add_option('-u', '--url',
             default='http://repo1.maven.org/maven2/', 
             help='URL of the remote repository from which artifacts are downloaded')
-    cliOptParser.add_option('-l', '--list',
+    cliOptParser.add_option('-f', '--file',
             default='artifact-list.txt',
             help='The path to the file containing the list of artifacts to download')
     cliOptParser.add_option('-o', '--output',
@@ -190,7 +146,7 @@ def main():
     (args, opts) = cliOptParser.parse_args()
 
     # Set the log level
-    log_level = args.debug.lower()
+    log_level = args.loglevel.lower()
     if (log_level == 'debug'):
         logging.basicConfig(level=logging.DEBUG) 
     if (log_level == 'info'):
@@ -203,21 +159,21 @@ def main():
         logging.basicConfig(level=logging.CRITICAL)
     else:
         logging.basicConfig(level=logging.INFO)
-        logging.warning('Unrecognized log level: %s  Log level set to info', args.debug)
+        logging.warning('Unrecognized log level: %s  Log level set to info', args.loglevel)
 
  
     # Read the list of dependencies
-    if os.path.isfile(args.list):
-        depListFile = open(args.list)
+    if os.path.isfile(args.file):
+        depListFile = open(args.file)
         try:
             dependencyListLines = depListFile.readlines()
         except IOError as e:
-            logging.exception('Unable to read file %s', args.list)
+            logging.exception('Unable to read file %s', args.file)
             sys.exit()
         finally:
             depListFile.close()
     else:
-        logging.error('File %s does not exist', args.list)
+        logging.error('File %s does not exist', args.file)
         sys.exit()
 
     logging.info('Reading artifact list...')

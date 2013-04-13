@@ -1,4 +1,5 @@
-# Python code representing a Maven artifact
+
+"""maven_artifact.py Python code representing a Maven artifact"""
 
 import logging
 
