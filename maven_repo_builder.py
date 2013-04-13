@@ -1,4 +1,6 @@
-#! /usr/bin/env python
+#!/usr/bin/env python
+
+"""maven_repo_builder.py: Create a Maven repository given a list of artifacts and a remote repository URL."""
 
 import hashlib
 import httplib
