@@ -43,11 +43,14 @@ def download(url, filePath=None):
             logging.warning('Unable to download, http code: %s', httpResponse.code)
         httpResponse.close()
     except urllib2.HTTPError as e:
+        logging.warning('Unable to download: %s', url)
         logging.warning('HTTPError = %s', e.code)
     except urllib2.URLError as e:
+        logging.warning('Unable to download: %s', url)
         logging.warning('URLError = %s', e.reason)
     except httplib.HTTPException as e:
-        logging.exception('HTTPException')
+        logging.warning('Unable to download: %s', url)
+        logging.exception('HTTPException = %s', e.reason)
 
 def getSha1Checksum(filepath):
     return getChecksum(filepath, hashlib.sha1())
