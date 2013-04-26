@@ -7,7 +7,7 @@ This tool requires python 2.6 or higher.
 Basic Usage
 -----------
 
-    Usage: maven_repo_builder.py [-h] [-u URL] [-l ARTIFACT_LIST] [-o OUTPUT_DIRECTORY]
+    Usage: maven_repo_builder.py [-h] [-u URL] [-f FILE] [-o OUTPUT_DIRECTORY]
 
     Generate a Maven repository.
 

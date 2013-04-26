@@ -128,7 +128,7 @@ def generateChecksumFiles(filepath):
 
 
 def main():
-    usage = "usage: %prog [-h] [-u URL] [-l ARTIFACT_LIST] [-o OUTPUT_DIRECTORY]"
+    usage = "usage: %prog [-h] [-u URL] [-f FILE] [-o OUTPUT_DIRECTORY]"
     cliOptParser = optparse.OptionParser(usage=usage, description='Generate a Maven repository.')
     cliOptParser.add_option('-l', '--loglevel',
             default='info',
