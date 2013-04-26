@@ -128,25 +128,22 @@ def generateChecksumFiles(filepath):
 
 
 def main():
-    usage = "usage: %prog [-h] [-u URL] [-f FILE] [-o OUTPUT_DIRECTORY]"
-    cliOptParser = optparse.OptionParser(usage=usage, description='Generate a Maven repository.')
+    usage = "Usage: %prog [-h] [-u URL] [-o OUTPUT_DIRECTORY] FILE..."
+    cliOptParser = optparse.OptionParser(usage=usage, description='Generate a Maven repository based on a list (or lists) of artifacts')
     cliOptParser.add_option('-l', '--loglevel',
             default='info',
             help='Set the level of log output.  Can be set to debug, info, warning, error, or critical')
     cliOptParser.add_option('-u', '--url',
             default='http://repo1.maven.org/maven2/', 
             help='URL of the remote repository from which artifacts are downloaded')
-    cliOptParser.add_option('-f', '--file',
-            default='artifact-list.txt',
-            help='The path to the file containing the list of artifacts to download')
     cliOptParser.add_option('-o', '--output',
             default='local-maven-repository',
             help='Local output directory for the new repository')
 
-    (args, opts) = cliOptParser.parse_args()
+    (options, args) = cliOptParser.parse_args()
 
     # Set the log level
-    log_level = args.loglevel.lower()
+    log_level = options.loglevel.lower()
     if (log_level == 'debug'):
         logging.basicConfig(level=logging.DEBUG) 
     if (log_level == 'info'):
@@ -159,30 +156,35 @@ def main():
         logging.basicConfig(level=logging.CRITICAL)
     else:
         logging.basicConfig(level=logging.INFO)
-        logging.warning('Unrecognized log level: %s  Log level set to info', args.loglevel)
+        logging.warning('Unrecognized log level: %s  Log level set to info', options.loglevel)
 
- 
-    # Read the list of dependencies
-    if os.path.isfile(args.file):
-        depListFile = open(args.file)
+    if len(args) < 1:
+        logging.error('Missing required command line argument: path to artifact list file')
+        sys.exit(usage)
+
+    # Read the list(s) of dependencies from the specified files
+    artifacts = []
+    for filename in args:
+        if not os.path.isfile(filename):
+            logging.warning('Dependency list file does not exist, skipping: %s', filename)
+            continue
+
+        logging.info('Reading artifact list from file: %s', filename)
+        depListFile = open(filename)
         try:
             dependencyListLines = depListFile.readlines()
+            artifacts.extend(depListToArtifactList(dependencyListLines))
         except IOError as e:
-            logging.exception('Unable to read file %s', args.file)
+            logging.exception('Unable to read file %s', filename)
             sys.exit()
         finally:
             depListFile.close()
-    else:
-        logging.error('File %s does not exist', args.file)
-        sys.exit()
 
-    logging.info('Reading artifact list...')
-    artifacts = depListToArtifactList(dependencyListLines)
-    logging.info('Retrieving artifacts from repository: %s', args.url)
-    retrieveArtifacts(args.url, args.output, artifacts)
+    logging.info('Retrieving artifacts from repository: %s', options.url)
+    retrieveArtifacts(options.url, options.output, artifacts)
     logging.info('Generating checksums...')
-    generateChecksums(args.output)
-    logging.info('Repository created in directory: %s', args.output)
+    generateChecksums(options.output)
+    logging.info('Repository created in directory: %s', options.output)
 
 
 if  __name__ =='__main__':main()
