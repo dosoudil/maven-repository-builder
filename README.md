@@ -7,9 +7,12 @@ This tool requires python 2.6 or higher.
 Basic Usage
 -----------
 
-    Usage: maven_repo_builder.py [-h] [-u URL] [-f FILE] [-o OUTPUT_DIRECTORY]
+    Usage: maven_repo_builder.py [-h] [-u URL] [-o OUTPUT_DIRECTORY] FILE...
 
-    Generate a Maven repository.
+    Generate a Maven repository based on a file (or files) containing a list of
+    artifacts.  Each list file must contain a single artifact per line in the
+    format groupId:artifactId:fileType:<classifier>:version The example artifact
+    list contains more information.
 
     Options:
       -h, --help            show this help message and exit
@@ -18,13 +21,13 @@ Basic Usage
                             info, warning, error, or critical
       -u URL, --url=URL     URL of the remote repository from which artifacts are
                             downloaded
-      -f FILE, --file=FILE  The path to the file containing the list of artifacts
-                            to download
       -o OUTPUT, --output=OUTPUT
                             Local output directory for the new repository
 
+
 Example Repository List
 -----------------------
+For a description and examples of the format of the artifact list file, see
 [Example Repository List](https://github.com/jboss-eap/maven-repository-builder/blob/master/example-config/artifact-list.txt)
 
 

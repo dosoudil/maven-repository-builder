@@ -129,7 +129,12 @@ def generateChecksumFiles(filepath):
 
 def main():
     usage = "Usage: %prog [-h] [-u URL] [-o OUTPUT_DIRECTORY] FILE..."
-    cliOptParser = optparse.OptionParser(usage=usage, description='Generate a Maven repository based on a list (or lists) of artifacts')
+    description = ("Generate a Maven repository based on a file (or files) containing "
+                   "a list of artifacts.  Each list file must contain a single artifact "
+                   "per line in the format groupId:artifactId:fileType:<classifier>:version "
+                   "The example artifact list contains more information. ") 
+                   
+    cliOptParser = optparse.OptionParser(usage=usage, description=description)
     cliOptParser.add_option('-l', '--loglevel',
             default='info',
             help='Set the level of log output.  Can be set to debug, info, warning, error, or critical')
