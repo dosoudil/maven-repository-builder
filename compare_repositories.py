@@ -29,12 +29,13 @@ def compareArtifacts(localRepoPath, remoteUrl):
              tempDownloadFile = os.path.join(tempDownloadDir, relRepoPath)
              remoteFileUrl = remoteUrl + "/" + relRepoPath
              maven_repo_util.download(remoteFileUrl, tempDownloadFile)
-             remoteFileChecksum = maven_repo_util.getSha1Checksum(tempDownloadFile)
-             
-             if (localFileChecksum != remoteFileChecksum):
-                 logging.warning('Checksums do not match for artifact %s', relRepoPath)
+             if os.path.exists(tempDownloadFile):
+                 remoteFileChecksum = maven_repo_util.getSha1Checksum(tempDownloadFile)
+                 if (localFileChecksum != remoteFileChecksum):
+                     logging.warning('Checksums do not match for artifact %s', relRepoPath)
+             else:
+                 logging.debug('File does not exist in remote repo: %s', localRepoPath)
 
-             #logging.debug(maven_repo_util.getSha1Checksum(filepath))
 
 def main():
     usage = "usage: %prog [options] REPOSITORY_PATH"
