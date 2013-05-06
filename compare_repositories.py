@@ -44,19 +44,19 @@ def main():
             help='Set the level of log output.  Can be set to debug, info, warning, error, or critical')
     cliOptParser.add_option('-u', '--url',
             default='http://repo1.maven.org/maven2/', 
-            help='URL of the remote repository to use for comparison ')
+            help='URL of the remote repository to use for comparison, defaults to Maven central')
 
-    (args, opts) = cliOptParser.parse_args()
+    (options, args) = cliOptParser.parse_args()
 
-    if (len(sys.argv) < 2):
+    if (len(args) < 1):
         logging.error('Local repository path must be specified\n')
         cliOptParser.print_help()
         sys.exit()
 
-    localRepoPath = sys.argv[1]
+    localRepoPath = args[0]
         
     # Set the log level
-    log_level = args.loglevel.lower()
+    log_level = options.loglevel.lower()
     if (log_level == 'debug'):
         logging.basicConfig(level=logging.DEBUG) 
     if (log_level == 'info'):
@@ -69,7 +69,7 @@ def main():
         logging.basicConfig(level=logging.CRITICAL)
     else:
         logging.basicConfig(level=logging.INFO)
-        logging.warning('Unrecognized log level: %s  Log level set to info', args.loglevel)
+        logging.warning('Unrecognized log level: %s  Log level set to info', options.loglevel)
 
 
     # Read the list of dependencies
@@ -81,7 +81,7 @@ def main():
         sys.exit()
 
     logging.info('Crawling repository located at: %s', localRepoPath)
-    compareArtifacts(localRepoPath, args.url)
+    compareArtifacts(localRepoPath, options.url)
 
 
 if  __name__ =='__main__':main()
