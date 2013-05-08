@@ -11,13 +11,13 @@ import urlparse
 
 def download(url, filePath=None):
     """Download the given url to a local file"""
-    if os.path.exists(filePath):
-        logging.debug('Local file already exists, skipping: %s', filePath)
-        return
-
-    localdir = os.path.dirname(filePath)
-    if not os.path.exists(localdir):
-        os.makedirs(localdir)
+    if filePath:
+        if os.path.exists(filePath):
+            logging.debug('Local file already exists, skipping: %s', filePath)
+            return
+        localdir = os.path.dirname(filePath)
+        if not os.path.exists(localdir):
+            os.makedirs(localdir)
     
     def getFileName(url, openUrl):
         if 'Content-Disposition' in openUrl.info():
@@ -43,8 +43,8 @@ def download(url, filePath=None):
             logging.warning('Unable to download, http code: %s', httpResponse.code)
         httpResponse.close()
     except urllib2.HTTPError as e:
-        logging.warning('Unable to download: %s', url)
-        logging.warning('HTTPError = %s', e.code)
+        logging.info('Unable to download: %s', url)
+        logging.info('HTTP Response code = %s, Reason = %s', e.code, e.reason)
     except urllib2.URLError as e:
         logging.warning('Unable to download: %s', url)
         logging.warning('URLError = %s', e.reason)
