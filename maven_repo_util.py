@@ -11,6 +11,9 @@ import urlparse
 
 def download(url, filePath=None):
     """Download the given url to a local file"""
+
+    logging.debug('Attempting download: %s', url)
+
     if filePath:
         if os.path.exists(filePath):
             logging.debug('Local file already exists, skipping: %s', filePath)
@@ -18,7 +21,7 @@ def download(url, filePath=None):
         localdir = os.path.dirname(filePath)
         if not os.path.exists(localdir):
             os.makedirs(localdir)
-    
+
     def getFileName(url, openUrl):
         if 'Content-Disposition' in openUrl.info():
             # If the response has Content-Disposition, try to get filename from it
@@ -31,26 +34,26 @@ def download(url, filePath=None):
         # if no filename was found above, parse it out of the final URL.
         return os.path.basename(urlparse.urlsplit(openUrl.url)[2])
 
-    logging.debug('Downloading: %s', url)
-
     try:
         httpResponse = urllib2.urlopen(urllib2.Request(url))
         if (httpResponse.code == 200):
             filePath = filePath or getFileName(url, httpResponse)
             with open(filePath, 'wb') as localfile:
                 shutil.copyfileobj(httpResponse, localfile)
+            logging.debug('Download complete')
         else:
             logging.warning('Unable to download, http code: %s', httpResponse.code)
         httpResponse.close()
+        return httpResponse.code
     except urllib2.HTTPError as e:
-        logging.info('Unable to download: %s', url)
-        logging.info('HTTP Response code = %s, Reason = %s', e.code, e.reason)
+        logging.debug('Unable to download, HTTP Response code = %s, Reason = %s', e.code, e.reason)
+        return e.code
     except urllib2.URLError as e:
-        logging.warning('Unable to download: %s', url)
-        logging.warning('URLError = %s', e.reason)
+        logging.error('Unable to download, URLError: %s', e.reason)
     except httplib.HTTPException as e:
-        logging.warning('Unable to download: %s', url)
-        logging.exception('HTTPException = %s', e.reason)
+        logging.exception('Unable to download, HTTPException: %s', e.message)
+    except ValueError as e:
+        logging.error('ValueError: %s', e.message)
 
 def getSha1Checksum(filepath):
     return getChecksum(filepath, hashlib.sha1())

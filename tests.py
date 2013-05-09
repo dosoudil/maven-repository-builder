@@ -27,7 +27,25 @@ class Tests(unittest.TestCase):
         localfilename = "jboss-parent-10.pom"
         self.assertTrue(os.path.exists(localfilename))
         if os.path.exists(localfilename):
+            logging.debug('Removing temp local file: ' + localfilename)
             os.remove(localfilename)
+
+    def test_bad_urls(self):
+        url = "junk://repo1.maven.org/maven2/org/jboss/jboss-parent/10/jboss-parent-10.p"
+        maven_repo_util.download(url)
+
+        url = "sadjfasfjsl"
+        maven_repo_util.download(url)
+
+        url = "http://1234/maven2/org/jboss/jboss-parent/10/jboss-parent-10.p"
+        maven_repo_util.download(url)
+
+    def test_http_404(self):
+        url = "http://repo1.maven.org/maven2/somefilethatdoesnotexist"   
+        code = maven_repo_util.download(url)
+        self.assertEqual(code, 404)
+        
 
 if __name__ == '__main__':
     unittest.main()
+

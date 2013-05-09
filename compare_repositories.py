@@ -34,7 +34,7 @@ def compareArtifacts(localRepoPath, remoteUrl):
                  if (localFileChecksum != remoteFileChecksum):
                      logging.warning('Checksums do not match for artifact %s', relRepoPath)
              else:
-                 logging.debug('File does not exist in remote repo: %s', localRepoPath)
+                 logging.debug('File does not exist in remote repo: %s', relRepoPath)
 
 
 def main():

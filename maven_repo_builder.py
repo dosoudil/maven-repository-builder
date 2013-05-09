@@ -14,8 +14,16 @@ import urlparse
 import maven_repo_util
 from maven_artifact import MavenArtifact
 
+def downloadArtifact(artifactUrl, artifactLocalPath):
+    if not os.path.exists(artifactLocalPath):
+        returnCode = maven_repo_util.download(artifactUrl, artifactLocalPath)
+        if (returnCode == 404):
+            logging.warning("Remote file not found: " + artifactUrl)
+    else:
+        logging.debug("Artifact already downloaded: " + artifactUrl)
+    
 
-def downloadArtifact(remoteRepoUrl, localRepoDir, artifact):
+def downloadArtifacts(remoteRepoUrl, localRepoDir, artifact):
     """Download artifact from a remote repository along with pom and source jar"""
     artifactLocalDir = localRepoDir + '/' + artifact.getDirPath()
     if not os.path.exists(artifactLocalDir):
@@ -24,22 +32,19 @@ def downloadArtifact(remoteRepoUrl, localRepoDir, artifact):
     # Download main artifact
     artifactUrl = remoteRepoUrl + '/' + artifact.getArtifactFilepath()
     artifactLocalPath = os.path.join(localRepoDir, artifact.getArtifactFilepath())
-    if not os.path.exists(artifactLocalPath):
-        maven_repo_util.download(artifactUrl, artifactLocalPath)
+    downloadArtifact(artifactUrl, artifactLocalPath)
  
     # Download pom
     if artifact.getArtifactFilename() != artifact.getPomFilename():
         artifactPomUrl = remoteRepoUrl + '/' + artifact.getPomFilepath()
         artifactPomLocalPath = os.path.join(localRepoDir, artifact.getPomFilepath())
-        if not os.path.exists(artifactPomLocalPath):
-            maven_repo_util.download(artifactPomUrl, artifactPomLocalPath)
+        downloadArtifact(artifactPomUrl, artifactPomLocalPath)
     
     # Download sources
     if artifact.getArtifactType() != 'pom' and not artifact.getClassifier():
         artifactSourcesUrl = remoteRepoUrl + '/' + artifact.getSourcesFilepath()
         artifactSourcesLocalPath = os.path.join(localRepoDir, artifact.getSourcesFilepath())
-        if not os.path.exists(artifactSourcesLocalPath):
-            maven_repo_util.download(artifactSourcesUrl, artifactSourcesLocalPath)
+        downloadArtifact(artifactSourcesUrl, artifactSourcesLocalPath)
 
 
 def copyArtifact(remoteRepoPath, localRepoDir, artifact):
@@ -96,7 +101,7 @@ def retrieveArtifacts(remoteRepoUrl, localRepoDir, artifactList):
     repoPath = parsedUrl[2]
     if protocol == 'http' or protocol == 'https':
         for artifact in artifactList:
-            downloadArtifact(remoteRepoUrl, localRepoDir, artifact)
+            downloadArtifacts(remoteRepoUrl, localRepoDir, artifact)
     elif protocol == 'file':
         repoPath = remoteRepoUrl.replace('file://', '')
         for artifact in artifactList:
