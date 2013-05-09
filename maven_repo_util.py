@@ -46,7 +46,7 @@ def download(url, filePath=None):
         httpResponse.close()
         return httpResponse.code
     except urllib2.HTTPError as e:
-        logging.debug('Unable to download, HTTP Response code = %s, Reason = %s', e.code, e.reason)
+        logging.debug('Unable to download, HTTP Response code = %s', e.code)
         return e.code
     except urllib2.URLError as e:
         logging.error('Unable to download, URLError: %s', e.reason)
