@@ -32,7 +32,7 @@ def compareArtifacts(localRepoPath, remoteUrl):
              if os.path.exists(tempDownloadFile):
                  remoteFileChecksum = maven_repo_util.getSha1Checksum(tempDownloadFile)
                  if (localFileChecksum != remoteFileChecksum):
-                     logging.warning('Checksums do not match for artifact %s', relRepoPath)
+                     logging.error('Checksums do not match for artifact %s', relRepoPath)
              else:
                  logging.debug('File does not exist in remote repo: %s', relRepoPath)
 
