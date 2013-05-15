@@ -12,7 +12,7 @@
     },
     {
       "type": "dependency-list",
-      "scm-url": "git://git.app.eng.bos.redhat.com/droolsjbpm/drools.git",
+      "git-url": "git://git.app.eng.bos.redhat.com/droolsjbpm/drools.git",
       "module": "drools-core",
       "repo-urls": [
         "https://repository-basic.engineering.redhat.com/nexus/content/repositories/jboss-public/"
