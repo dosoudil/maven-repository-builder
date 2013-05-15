@@ -1,0 +1,60 @@
+{
+  "result-filename": "maven-repo.zip",
+  "generate-metadata": "false",
+  "single-version": "false",
+  "include-high-priority": "",
+  "include-low-priority": "",
+  "artifact-sources": [
+    {
+      "type": "mead-tag",
+      "tag-name": "brms-5.3.0",
+      "koji-url": "http://brewhub.devel.redhat.com/brewhub"
+    },
+    {
+      "type": "dependency-list",
+      "scm-url": "git://git.app.eng.bos.redhat.com/droolsjbpm/drools.git",
+      "module": "drools-core",
+      "repo-urls": [
+        "https://repository-basic.engineering.redhat.com/nexus/content/repositories/jboss-public/"
+      ]
+    },
+    {
+      "type": "nexus-repository",
+      "nexus-url": "https://repository-basic.engineering.redhat.com/nexus/",
+      "repo-name": "scratch-release-soa-brms-6-build"
+    },
+    {
+      "type": "local-repository",
+      "root-dir": "/var/maven/repository/test-repo/"
+    },
+    {
+      "type": "artifacts",
+      "repo-urls": [
+        "https://repository-basic.engineering.redhat.com/nexus/content/repositories/jboss-public/"
+      ],
+      "included-gavs": [
+        "org.jboss:jboss-parent:10-redhat-1",
+        "org.jboss.component.management:jboss-component-management:6.1.0-redhat-1",
+        "org.jboss.component.management:jboss-component-version-master:6.1.0-redhat-1",
+        "org.jboss.component.management:jboss-dependency-management-all:6.1.0-redhat-1",
+        "org.jboss.component.management:jboss-dependency-management-build:6.1.0-redhat-1",
+        "org.jboss.component.management:jboss-dependency-management-eap:6.1.0-redhat-1",
+        "org.jboss.component.management:jboss-project-dependency-management:6.1.0-redhat-1",
+        "org.jboss.component.management:jboss-project-dependency-relocations:6.1.0-redhat-1"
+      ]
+    }
+  ],
+  "excluded-gavs": [
+    "org.jboss.component.management:jboss-component-management:6.0.1",
+    "org.jboss.component.management:jboss-component-version-master:6.0.1-redhat-1"
+  ],
+  "excluded-repositories": [
+    "https://repository.engineering.redhat.com/nexus/content/repositories/central/",
+    "https://repository.engineering.redhat.com/nexus/content/repositories/jboss-public-snapshot/"
+  ],
+  "excluded-file-patterns": [
+    "*.zip",
+    "*.zip.sha1",
+    "*.zip.md5"
+  ]
+}
