@@ -1,7 +1,10 @@
 import json
 
 class Configuration:
-    """Class for loading configuration"""
+    """
+    Class holding Maven Repository Builder configuration. It can be loaded
+    from a json configuration file.
+    """
 
     resultFilename = ''
     generateMetadata = ''
@@ -18,7 +21,7 @@ class Configuration:
         data=json.load(open(filename))
 
         if 'include-high-priority' in data:
-            self.loadConfig(data['include-high-priority'],False)
+            self.loadConfig(data['include-high-priority'], True)
 
         if (rewrite or self.resultFilename == '') and 'result-filename' in data:
             self.resultFilename = data['result-filename']
@@ -42,5 +45,5 @@ class Configuration:
             self.excludedFilePatterns.extend(data['excluded-file-patterns'])
 
         if 'include-low-priority' in data:
-            self.loadConfig(data['include-low-priority'],False)
+            self.loadConfig(data['include-low-priority'], False)
 
