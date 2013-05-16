@@ -2,6 +2,7 @@
 
 import re
 import koji
+import os
 from maven_artifact import MavenArtifact
 
 
@@ -56,7 +57,16 @@ def listNexusRepository(nexusUrl, repoName):
 
 
 def listDirectoryArtifacts(directoryPath):
-    pass
+    artifacts = {}
+    regexGAV = re.compile(r'(^.*)/([^/]*)/([^/]*$)')
+    for dirname, dirnames, filenames in os.walk(directoryPath):
+        if not dirnames:
+            gavPath = dirname.replace(directoryPath,'')
+            gav = regexGAV.search(gavPath)
+            mavenArtifact = MavenArtifact(gav.group(1).replace('/','.'), gav.group(2),
+                                          '', gav.group(3), '')
+            artifacts[mavenArtifact] = 'file://' + dirname
+    return artifacts
 
 def slashAtTheEnd(url):
     if url.endswith('/'):
