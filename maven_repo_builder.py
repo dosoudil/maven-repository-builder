@@ -4,6 +4,7 @@ import re
 import koji
 import os
 import urllib
+import urlparse
 from maven_artifact import MavenArtifact
 
 
@@ -85,6 +86,28 @@ def listDirectoryArtifacts(directoryPath):
                                           '', gav.group(3), '')
             artifacts[mavenArtifact] = 'file://' + dirname
     return artifacts
+
+def listArtifacts(urls, gavs):
+    artifacts = {}
+    for gav in gavs:
+        artifact = maven_artifact.createFromGAV(gav)
+        for url in urls:
+            gavUrl = url + artifact.getDirPath()
+            if _gavExistsInUrl(gavUrl):
+                artifacts[artifact] = gavUrl
+                break
+        if not artifact in artifacts:
+            print 'artifact ' + artifact.__str__() + ' not found in any url!'
+
+def _gavExistsInUrl(gavUrl):
+    parsedUrl = urlparse.urlparse(gavUrl)
+    protocol = parsedUrl[0]
+    if protocol == 'http' or protocol == 'https':
+        return urllib.urlopen(gavUrl).getcode() == 200
+    else:
+        return os.path.exists(gavUrl)
+
+
 
 def slashAtTheEnd(url):
     if url.endswith('/'):

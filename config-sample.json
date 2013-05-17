@@ -31,17 +31,17 @@
     {
       "type": "artifacts",
       "repo-urls": [
-        "https://repository-basic.engineering.redhat.com/nexus/content/repositories/jboss-public/"
+        "https://repository.engineering.redhat.com/nexus/content/repositories/jboss-public/"
       ],
       "included-gavs": [
-        "org.jboss:jboss-parent:10-redhat-1",
-        "org.jboss.component.management:jboss-component-management:6.1.0-redhat-1",
-        "org.jboss.component.management:jboss-component-version-master:6.1.0-redhat-1",
-        "org.jboss.component.management:jboss-dependency-management-all:6.1.0-redhat-1",
-        "org.jboss.component.management:jboss-dependency-management-build:6.1.0-redhat-1",
-        "org.jboss.component.management:jboss-dependency-management-eap:6.1.0-redhat-1",
-        "org.jboss.component.management:jboss-project-dependency-management:6.1.0-redhat-1",
-        "org.jboss.component.management:jboss-project-dependency-relocations:6.1.0-redhat-1"
+        "org.jboss:jboss-parent:jar:8",
+        "org.jboss.arquillian:arquillian-bom:jar:1.0.0.Final",
+        "org.jboss.arquillian:arquillian-build:jar:1.0.0.Final",
+        "org.jboss.arquillian:arquillian-parent:jar:1.0.0.Final",
+        "org.jboss.arquillian.config:arquillian-config-api:jar:1.0.0.Final",
+        "org.jboss.arquillian.container:arquillian-container-osgi:jar:1.0.0.Final",
+        "org.jboss.arquillian.core:arquillian-core-api:jar:1.0.3.Final",
+        "org.jboss.arquillian.extension:arquillian-jacoco:jar:1.0.0.Alpha3"
       ]
     }
   ],
