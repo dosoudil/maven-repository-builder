@@ -55,7 +55,7 @@ def localFind(gavUrl):
 
 def remoteFind(gavUrl):
     files = []
-    (out,_) = Popen(r'echo ./path/to/file.jar', stdout=PIPE, shell=True).communicate()
+    (out,_) = Popen(r'lftp -c "set ssl:verify-certificate no ; open '+gavurl+' ; find "', stdout=PIPE, shell=True).communicate()
     for line in out.split('\n'):
         if line == '': continue
         files.append(gavUrl + line)
