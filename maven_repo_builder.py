@@ -3,6 +3,7 @@
 import re
 import koji
 import os
+import urllib
 from maven_artifact import MavenArtifact
 
 
@@ -21,10 +22,10 @@ def listMeadTagArtifacts(kojiUrl, downloadRootUrl, tagName):
                         _findArtifactType(artifact['type_id'], kojiArchiveTypes)['name'],
                         artifact['version'], _parseClassifier(artifact['filename']))
 
-        gavUrl = slashAtTheEnd(downloadRootUrl) + artifact['build_name'] + '/' 
-                + artifact['build_version'] + '/' + artifact['build_release']
-                + '/maven/' +  artifact['group_id'].replace('.', '/') + '/'
-                +  artifact['artifact_id'] + '/' +  artifact['version'] + '/'
+        gavUrl = slashAtTheEnd(downloadRootUrl) + artifact['build_name'] + '/'\
+                 + artifact['build_version'] + '/' + artifact['build_release']\
+                 + '/maven/' +  artifact['group_id'].replace('.', '/') + '/'\
+                 +  artifact['artifact_id'] + '/' +  artifact['version'] + '/'
         artifacts[mavenArtifact] = gavUrl
     return artifacts
 
@@ -52,8 +53,25 @@ def listDependencies(scmUrl, moduleName, srcRepoRoot):
 
 
 def listNexusRepository(nexusUrl, repoName):
-    repoUrl = slashAtTheEnd(nexusUrl) + 'content/repositories/' + repoName + '/'
-    
+    from xml.etree import ElementTree
+
+    nexusBase = slashAtTheEnd(nexusUrl)
+    repoUrl = nexusBase + 'content/repositories/' + repoName + '/'
+    artifacts = {}
+    for index in range(ord('a'), ord('z')):
+        qUrl = nexusBase + "service/local/lucene/search?q=" + chr(index) + "*&repositoryId=" + repoName
+        xmlResult = urllib.urlopen(qUrl).read()
+        et = ElementTree.fromstring(xmlResult)
+        data = et.find('data')
+        for artifact in data.findall("artifact"):
+            mavenArtifact = MavenArtifact(artifact.find('groupId').text, artifact.find('artifactId').text,
+                            '', artifact.find('version').text)
+
+            gavUrl = repoUrl + mavenArtifact.groupId.replace('.', '/') + '/'\
+                    +  mavenArtifact.artifactId + '/' +  mavenArtifact.version + '/'
+            artifacts[mavenArtifact] = gavUrl
+
+    return artifacts
 
 
 def listDirectoryArtifacts(directoryPath):
@@ -76,11 +94,10 @@ def slashAtTheEnd(url):
 
 
 def main():
-    artifacts = listMeadTagArtifacts('http://brewhub.devel.redhat.com/brewhub',
-                                     'http://download.devel.redhat.com/brewroot/packages/',
-                                     'brms-5.3.0')
+    artifacts = listNexusRepository("https://repository-basic.engineering.redhat.com/nexus/",
+                                    "scratch-release-soa-brms-6-build")
 
-    print '[%s]' % ', '.join(map(str, artifacts))
+    print '[%s]' % ',\n'.join(map(str, artifacts))
 
 
 if __name__ == '__main__':
