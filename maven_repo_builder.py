@@ -1,12 +1,8 @@
 #!/usr/bin/env python
 
-import re
-import koji
-import os
 import urllib
 import urlparse
 from configuration import Configuration
-from maven_artifact import MavenArtifact
 from artifact_list_builder import ArtifactListBuilder
 
 
@@ -15,7 +11,6 @@ def createRepo():
     # load configuration
     config = Configuration()
     config.load()
-    config.tempdir = tempdir
 
     # build list
     listBuilder = ArtifactListBuilder(config)

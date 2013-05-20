@@ -1,5 +1,6 @@
 import urlparse
 import os
+import koji
 from subprocess import Popen
 from subprocess import PIPE
 from xml.etree import ElementTree
@@ -26,7 +27,7 @@ class ArtifactListBuilder:
         """
         artifactList = {}
         priority = 0
-        for source in configuration.artifactSources:
+        for source in self.configuration.artifactSources:
             priority += 1
 
             if source['type'] == 'mead-tag':
@@ -163,7 +164,7 @@ class ArtifactListBuilder:
 
     def _remoteFind(self, gavUrl):
         files = []
-        (out,_) = Popen(r'lftp -c "set ssl:verify-certificate no ; open ' + gavurl + ' ; find "', stdout = PIPE, shell = True).communicate()
+        (out,_) = Popen(r'lftp -c "set ssl:verify-certificate no ; open ' + gavUrl + ' ; find "', stdout = PIPE, shell = True).communicate()
         for line in out.split('\n'):
             if line == '': continue
             files.append(gavUrl + line)
