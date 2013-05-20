@@ -3,6 +3,7 @@ import os
 from subprocess import Popen
 from subprocess import PIPE
 from xml.etree import ElementTree
+from maven_artifact import MavenArtifact
 
 
 class ArtifactListBuilder:
@@ -42,7 +43,7 @@ class ArtifactListBuilder:
                 print "Unsupported source type: ", source['type']
 
             for artifact in artifacts:
-                ga = artifact.groupId + ':' + artifact.artifactId
+                ga = artifact.getGA()
 
                 if not ga in artifactList:
                     artifactList[ga] = {}
@@ -67,8 +68,7 @@ class ArtifactListBuilder:
         artifacts = {}
         for artifact in kojiArtifacts:
             mavenArtifact = MavenArtifact(artifact['group_id'], artifact['artifact_id'],
-                            self._findArtifactType(artifact['type_id'], kojiArchiveTypes)['name'],
-                            artifact['version'], self._parseClassifier(artifact['filename']))
+                            artifact['version'])
 
             gavUrl = self._slashAtTheEnd(downloadRootUrl) + artifact['build_name'] + '/'\
                     + artifact['build_version'] + '/' + artifact['build_release']\
@@ -98,7 +98,7 @@ class ArtifactListBuilder:
             data = et.find('data')
             for artifact in data.findall("artifact"):
                 mavenArtifact = MavenArtifact(artifact.find('groupId').text, artifact.find('artifactId').text,
-                                '', artifact.find('version').text)
+                                artifact.find('version').text)
 
                 gavUrl = repoUrl + mavenArtifact.groupId.replace('.', '/') + '/'\
                         +  mavenArtifact.artifactId + '/' +  mavenArtifact.version + '/'
@@ -119,7 +119,7 @@ class ArtifactListBuilder:
                 gavPath = dirname.replace(directoryPath, '')
                 gav = regexGAV.search(gavPath)
                 mavenArtifact = MavenArtifact(gav.group(1).replace('/', '.'), gav.group(2),
-                                            '', gav.group(3), '')
+                                            gav.group(3))
                 artifacts[mavenArtifact] = 'file://' + dirname
 
         return artifacts
@@ -131,7 +131,7 @@ class ArtifactListBuilder:
         """
         artifacts = {}
         for gav in gavs:
-            artifact = maven_artifact.createFromGAV(gav)
+            artifact = MavenArtifact.createFromGAV(gav)
             for url in urls:
                 gavUrl = url + artifact.getDirPath()
                 if self._gavExistsInUrl(gavUrl):

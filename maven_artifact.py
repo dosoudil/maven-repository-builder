@@ -2,22 +2,28 @@
 """maven_artifact.py Python code representing a Maven artifact"""
 
 import logging
+import re
+import os
 
 
 class MavenArtifact:
 
-    def __init__(self, groupId, artifactId, artifactType, version, classifier=None):
+    def __init__(self, groupId, artifactId, version):
         self.groupId = groupId
         self.artifactId = artifactId
-        self.artifactType = artifactType
         self.version = version
-        self.classifier = classifier
 
-    def getArtifactType(self):
-        return self.artifactType
-
-    def getClassifier(self):
-        return self.classifier
+    @staticmethod
+    def createFromGAV(gav):
+        """Initialize an artifact using a colon separated
+           GAV of the form groupId:artifactId:[type:][classifier:]version[:scope]
+        """
+        regexGAV = re.compile('([\w._-]+):([\w._-]+):([\w._-]+:)?([\w._-]+:)?([\d][\w._-]*)(:[\w._-]+)?')
+        gavParts = regexGAV.search(gav)
+        if gavParts is None:
+            print "Invalid GAV string:",gav
+            os._exit(1)
+        return MavenArtifact(gavParts.group(1), gavParts.group(2), gavParts.group(5))
 
     def getDirPath(self):
         """Get the relative repository path to the artifact"""
@@ -26,21 +32,13 @@ class MavenArtifact:
         relativePath += self.version + '/'
         return relativePath
 
+    def getGA(self):
+        return groupId + ":" + artifactId
+
     def getBaseFilename(self):
         """Returns the filename without the file extension"""
         baseFilename = self.artifactId + '-' + self.version
         return baseFilename
-
-    def getArtifactFilename(self):
-        """Returns the filename of the artifact"""
-        filename = self.getBaseFilename()
-        if (self.classifier):
-            filename += '-' + self.classifier
-        return filename + '.' + self.artifactType
-
-    def getArtifactFilepath(self):
-        """Return the path to the artifact file"""
-        return self.getDirPath() + '/' + self.getArtifactFilename()
 
     def getPomFilename(self):
         """Returns the filename of the pom file for this artifact"""
@@ -59,24 +57,6 @@ class MavenArtifact:
         return self.getDirPath() + '/' + self.getSourcesFilename()
 
     def __str__(self):
-        result = self.groupId + ':' + self.artifactId + ':' + self.artifactType
-        if self.classifier:
-            result = result + ':' + self.classifier
-        result = result + ':' + self.version
+        result = self.groupId + ':' + self.artifactId + ':' + self.version
         return result
 
-
-def createFromGAV(gav):
-    """Initialize an artifact using a colon separated
-       GAV of the form groupId:artifactId:type:[classifier:]version
-    """
-    gavParts = gav.split(':')
-    if (len(gavParts) >= 4):
-        if (len(gavParts) == 4):
-            return MavenArtifact(gavParts[0], gavParts[1],
-                gavParts[2], gavParts[3])
-        elif (len(gavParts) == 5):
-            return MavenArtifact(gavParts[0], gavParts[1],
-                gavParts[2], gavParts[3], gavParts[4])
-    else:
-        logging.error('Invalid GAV string: %s', gav)
