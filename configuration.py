@@ -1,4 +1,6 @@
 import json
+import os
+from optparse import OptionParser
 
 class Configuration:
     """
@@ -13,15 +15,35 @@ class Configuration:
     excludedGAVs = []
     excludedRepositories = []
     excludedFilePatterns = []
+    tempdir = '/tmp/maven-repo-builder/'
+    targetdir = './'
 
-    def __init__(self, filename):
-        self.loadConfig(filename)
+    def load(self):
+        parser = OptionParser(usage = '%prog [options]')
+        parser.add_option('-c', '--config', dest = 'config',
+                          help = 'Configuration file to use to drive the repository builder')
+        parser.add_option('-t', '--tempdir', dest = 'tempdir',
+                          help = 'Temporary directory where repository will be built',
+                          default = '/tmp/maven-repo-builder/')
+        parser.add_option('--targetdir', dest = 'targetdir',
+                          help = 'Target directory where built repository archive will be placed')
+        (opts, args) = parser.parse_args()
 
-    def loadConfig(self, filename, rewrite=True):
+        if opts.config is None:
+            print 'Must specify a config file'
+            os._exit(1)
+
+        self._loadFromFile(opts.config)
+        self.tempdir = opts.tempdir
+        if not opts.targetdir is None:
+            self.targetdir = opts.targetdir
+
+
+    def _loadFromFile(self, filename, rewrite = True):
         data=json.load(open(filename))
 
         if 'include-high-priority' in data:
-            self.loadConfig(data['include-high-priority'], True)
+            self._loadFromFile(data['include-high-priority'], True)
 
         if (rewrite or self.resultFilename == '') and 'result-filename' in data:
             self.resultFilename = data['result-filename']
@@ -45,5 +67,5 @@ class Configuration:
             self.excludedFilePatterns.extend(data['excluded-file-patterns'])
 
         if 'include-low-priority' in data:
-            self.loadConfig(data['include-low-priority'], False)
+            self._loadFromFile(data['include-low-priority'], False)
 
