@@ -13,13 +13,16 @@ class ArtifactListBuilder:
     "<groupId>:<artifactId>" (string)
       L <artifact source priority> (int)
          L <version> (string)
-            L <file url> (string)
+            L <file url> (list of strings)
     """
 
     def __init__(self, configuration):
         self.configuration = configuration
 
     def buildList(self):
+        """
+        Build the artifact "list" from sources defined in the given configuration.
+        """
         artifactList = {}
         priority = 0
         for source in configuration.artifactSources:
@@ -54,8 +57,7 @@ class ArtifactListBuilder:
     def _listMeadTagArtifacts(self, kojiUrl, downloadRootUrl, tagName):
         """
         Loads maven artifacts from koji (brew/mead).
-
-        Returns dictionary where index is MavenArtifact object and value is the artifact URL
+        Returns dictionary where index is MavenArtifact object and value is the artifact URL.
         """
 
         kojiSession = koji.ClientSession(kojiUrl)
@@ -82,6 +84,10 @@ class ArtifactListBuilder:
 
 
     def _listNexusRepository(self, nexusUrl, repoName):
+        """
+        Loads maven artifacts from nexus repository.
+        Returns dictionary where index is MavenArtifact object and value is the artifact URL.
+        """
         nexusBase = self._slashAtTheEnd(nexusUrl)
         repoUrl = nexusBase + 'content/repositories/' + repoName + '/'
         artifacts = {}
@@ -102,6 +108,10 @@ class ArtifactListBuilder:
 
 
     def _listDirectoryArtifacts(self, directoryPath):
+        """
+        Loads maven artifacts from local directory.
+        Returns dictionary where index is MavenArtifact object and value is the artifact URL starting with 'file://'.
+        """
         artifacts = {}
         regexGAV = re.compile(r'(^.*)/([^/]*)/([^/]*$)')
         for dirname, dirnames, filenames in os.walk(directoryPath):
@@ -115,6 +125,10 @@ class ArtifactListBuilder:
         return artifacts
 
     def _listArtifacts(self, urls, gavs):
+        """
+        Loads maven artifacts from list of GAVs and tries to locate the artifacts in one of the specified repositories.
+        Returns dictionary where index is MavenArtifact object and value is the artifact URL.
+        """
         artifacts = {}
         for gav in gavs:
             artifact = maven_artifact.createFromGAV(gav)

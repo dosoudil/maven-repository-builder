@@ -19,6 +19,7 @@ class Configuration:
     targetdir = './'
 
     def load(self):
+        """ Load confiugration from command line arguments """
         parser = OptionParser(usage = '%prog [options]')
         parser.add_option('-c', '--config', dest = 'config',
                           help = 'Configuration file to use to drive the repository builder')
@@ -40,6 +41,7 @@ class Configuration:
 
 
     def _loadFromFile(self, filename, rewrite = True):
+        """ Load confiugration from json confi file. """
         data=json.load(open(filename))
 
         if 'include-high-priority' in data:
