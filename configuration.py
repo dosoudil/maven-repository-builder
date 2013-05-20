@@ -44,7 +44,7 @@ class Configuration:
         """ Load confiugration from json confi file. """
         data=json.load(open(filename))
 
-        if 'include-high-priority' in data:
+        if 'include-high-priority' in data and data['include-high-priority']:
             self._loadFromFile(data['include-high-priority'], True)
 
         if (rewrite or self.resultFilename == '') and 'result-filename' in data:
@@ -68,6 +68,6 @@ class Configuration:
         if 'excluded-file-patterns' in data:
             self.excludedFilePatterns.extend(data['excluded-file-patterns'])
 
-        if 'include-low-priority' in data:
+        if 'include-low-priority' in data and data['include-low-priority']:
             self._loadFromFile(data['include-low-priority'], False)
 
