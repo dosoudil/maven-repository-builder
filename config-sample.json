@@ -54,8 +54,8 @@
     "https://repository.engineering.redhat.com/nexus/content/repositories/jboss-public-snapshot/"
   ],
   "excluded-file-patterns": [
-    "*.zip",
-    "*.zip.sha1",
-    "*.zip.md5"
+    ".*\.zip",
+    ".*\.zip\.sha1",
+    ".*\.zip\.md5"
   ]
 }
