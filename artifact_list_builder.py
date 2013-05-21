@@ -64,7 +64,6 @@ class ArtifactListBuilder:
 
         kojiSession = koji.ClientSession(kojiUrl)
         kojiArtifacts = kojiSession.getLatestMavenArchives(tagName)
-        kojiArchiveTypes = kojiSession.getArchiveTypes()
 
         artifacts = {}
         for artifact in kojiArtifacts:
@@ -169,22 +168,6 @@ class ArtifactListBuilder:
             if line == '': continue
             files.append(gavUrl + line)
         return files
-
-    def _findArtifactType(self, typeId, artifactTypes):
-        """Finds artifactType in dictionary artifactTypes by typeId."""
-        for artifactType in artifactTypes:
-            if artifactType['id'] == typeId:
-                return artifactType
-
-    def _parseClassifier(self, filename):
-        """Parse artifact classifier from filename, returns None if
-        no classifier were retrieved.
-        """
-        result = re.findall(r'-(\w+).\w+$', filename)
-        if len(result) == 1:
-            return result[0]
-        else:
-            return None
 
     def _gavExistsInUrl(self, gavUrl):
         parsedUrl = urlparse.urlparse(gavUrl)
