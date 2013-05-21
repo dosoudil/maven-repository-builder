@@ -3,6 +3,7 @@
 import urllib
 import urlparse
 from configuration import Configuration
+from download import fetchArtifacts
 from artifact_list_builder import ArtifactListBuilder
 
 
@@ -20,7 +21,7 @@ def createRepo():
     # TODO
 
     # fetch artifacts
-    # TODO
+    fetchArtifacts(artifactList, config)
 
     # package repository
     # TODO
