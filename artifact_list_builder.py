@@ -2,6 +2,7 @@ import urlparse
 import os
 import koji
 import re
+import urllib
 from subprocess import Popen
 from subprocess import PIPE
 from subprocess import call
