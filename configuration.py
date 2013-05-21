@@ -8,7 +8,7 @@ class Configuration:
     from a json configuration file.
     """
 
-    resultFilename = ''
+    resultRepoName = ''
     generateMetadata = ''
     singleVersion = ''
     artifactSources = []
@@ -47,8 +47,8 @@ class Configuration:
         if 'include-high-priority' in data and data['include-high-priority']:
             self._loadFromFile(data['include-high-priority'], True)
 
-        if (rewrite or self.resultFilename == '') and 'result-filename' in data:
-            self.resultFilename = data['result-filename']
+        if (rewrite or self.resultRepoName == '') and 'result-repo-name' in data:
+            self.resultRepoName = data['result-repo-name']
 
         if (rewrite or self.generateMetadata == '') and 'generate-metadata' in data:
             self.generateMetadata = data['generate-metadata']

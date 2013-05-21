@@ -1,5 +1,5 @@
 {
-  "result-filename": "maven-repo.zip",
+  "result-repo-name": "maven-repo",
   "generate-metadata": "false",
   "single-version": "false",
   "include-high-priority": "",
