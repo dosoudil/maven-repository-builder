@@ -1,8 +1,10 @@
 import urlparse
 import os
 import koji
+import re
 from subprocess import Popen
 from subprocess import PIPE
+from subprocess import call
 from xml.etree import ElementTree
 from maven_artifact import MavenArtifact
 
@@ -80,7 +82,33 @@ class ArtifactListBuilder:
 
 
     def _listDependencies(self, gitUrl, moduleName, repoUrls):
-        pass
+        """
+        Loads maven artifacts from mvn dependency:list.
+        Returns dictionary where index is MavenArtifact object and value is the artifact URL.
+        """
+
+        repoName = self._parseRepoName(gitUrl)
+        repoPath = 'repos/' + repoName + '/'
+
+        # Clone Git Repository
+        call(['git', 'clone', gitUrl, repoPath])
+
+        # Build dependency:list
+        mvnOutFile = "mvn-output-" + repoName + ".log"
+        with open(mvnOutFile, "w") as mvnOutput:
+            command = ['mvn', 'dependency:list', '-f']
+            if moduleName:
+                call(['mvn', 'install', '-f', repoPath + 'pom.xml'])
+                call(command + [repoPath + moduleName + '/pom.xml'], stdout=mvnOutput)
+            else:
+                call(command + [repoPath + 'pom.xml'], stdout=mvnOutput)
+
+        # Parse GAVs from maven output
+        with open(mvnOutFile, "r") as mvnOutput:
+            depListLines = mvnOutput.readlines()
+            gavList = self._parseDepList(depListLines)
+
+        return self._listArtifacts(repoUrls, gavList)
 
 
     def _listNexusRepository(self, nexusUrl, repoName):
@@ -182,3 +210,26 @@ class ArtifactListBuilder:
             return url
         else:
             return url + '/'
+
+    def _parseDepList(self, depList):
+        """Parse maven dependency:list output and return a list of GAVs"""
+        regexComment = re.compile('#.*$')
+        # Match pattern groupId:artifactId:type:[classifier:]version[:scope]
+        regexGAV = re.compile('(([\w\-.]+:){3}([\w\-.]+:)?([\d][\w\-.]+))(:[\w]*\S)?')
+        gavList = []
+        for nextLine in depList:
+            nextLine = regexComment.sub('', nextLine)
+            nextLine = nextLine.strip()
+            gav = regexGAV.search(nextLine)
+            if gav:
+                gavList.append(gav.group(1))
+        return gavList
+
+    def _parseRepoName(self, repoUrl):
+        """Parse repository name from the URL"""
+        repoName = re.search('[/:]([^/]+)/{0,1}$', repoUrl)
+        print repoUrl
+        if repoName:
+            return repoName.group(1)
+        else:
+            return None
