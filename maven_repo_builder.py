@@ -5,6 +5,7 @@ import urlparse
 from configuration import Configuration
 from download import fetchArtifacts
 from artifact_list_builder import ArtifactListBuilder
+from filter import Filter
 
 
 def createRepo():
@@ -18,7 +19,8 @@ def createRepo():
     artifactList = listBuilder.buildList()
 
     #filter list
-    # TODO
+    listFilter = Filter(config)
+    artifactList = listFilter.filter(artifactList)
 
     # fetch artifacts
     fetchArtifacts(artifactList, config)
