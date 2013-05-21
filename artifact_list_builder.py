@@ -3,6 +3,7 @@ import os
 import koji
 import re
 import urllib
+import mrbutils
 from subprocess import Popen
 from subprocess import PIPE
 from subprocess import call
@@ -73,7 +74,7 @@ class ArtifactListBuilder:
             mavenArtifact = MavenArtifact(artifact['group_id'], artifact['artifact_id'],
                             artifact['version'])
 
-            gavUrl = self._slashAtTheEnd(downloadRootUrl) + artifact['build_name'] + '/'\
+            gavUrl = mrbutils.slashAtTheEnd(downloadRootUrl) + artifact['build_name'] + '/'\
                     + artifact['build_version'] + '/' + artifact['build_release']\
                     + '/maven/' +  artifact['group_id'].replace('.', '/') + '/'\
                     +  artifact['artifact_id'] + '/' +  artifact['version'] + '/'
@@ -117,7 +118,7 @@ class ArtifactListBuilder:
         Loads maven artifacts from nexus repository.
         Returns dictionary where index is MavenArtifact object and value is the artifact URL.
         """
-        nexusBase = self._slashAtTheEnd(nexusUrl)
+        nexusBase = mrbutils.slashAtTheEnd(nexusUrl)
         repoUrl = nexusBase + 'content/repositories/' + repoName + '/'
         artifacts = {}
         for index in range(ord('a'), ord('z')):
@@ -163,7 +164,7 @@ class ArtifactListBuilder:
             artifact = MavenArtifact.createFromGAV(gav)
             for url in urls:
                 gavUrl = url + artifact.getDirPath()
-                if self._gavExistsInUrl(gavUrl):
+                if mrbutils.urlExists(gavUrl):
                     artifacts[artifact] = gavUrl
                     break
             if not artifact in artifacts:
@@ -197,20 +198,6 @@ class ArtifactListBuilder:
             if line == '': continue
             files.append(gavUrl + line)
         return files
-
-    def _gavExistsInUrl(self, gavUrl):
-        parsedUrl = urlparse.urlparse(gavUrl)
-        protocol = parsedUrl[0]
-        if protocol == 'http' or protocol == 'https':
-            return urllib.urlopen(gavUrl).getcode() == 200
-        else:
-            return os.path.exists(gavUrl)
-
-    def _slashAtTheEnd(self, url):
-        if url.endswith('/'):
-            return url
-        else:
-            return url + '/'
 
     def _parseDepList(self, depList):
         """Parse maven dependency:list output and return a list of GAVs"""
