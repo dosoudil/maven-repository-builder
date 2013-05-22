@@ -98,7 +98,7 @@ class ArtifactListBuilder:
         # Build dependency:list
         mvnOutFile = "mvn-output-" + repoName + ".log"
         with open(mvnOutFile, "w") as mvnOutput:
-            command = ['mvn', 'dependency:list', '-f']
+            command = ['mvn', 'dependency:list', '-Dmaven.test.skip', '-f']
             if moduleName:
                 call(['mvn', 'install', '-f', repoPath + 'pom.xml'])
                 call(command + [repoPath + moduleName + '/pom.xml'], stdout=mvnOutput)
