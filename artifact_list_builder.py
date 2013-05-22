@@ -40,7 +40,7 @@ class ArtifactListBuilder:
                 artifacts = self._listMeadTagArtifacts(source['koji-url'], source['download-root-url'], source['tag-name'])
             elif source['type'] == 'dependency-list':
                 logging.info("Building artifact list from maven dependency:list output of repository %s", source['git-url'])
-                artifacts = self._listDependencies(source['git-url'], source['module'], source['repo-urls'])
+                artifacts = self._listDependencies(source['git-url'], source['git-checkout-ref'], source['module'], source['repo-urls'])
             elif source['type'] == 'nexus-repository':
                 logging.info("Building artifact list from nexus %s", source['nexus-url'])
                 artifacts = self._listNexusRepository(source['nexus-url'], source['repo-name'])
@@ -89,7 +89,7 @@ class ArtifactListBuilder:
         return artifacts
 
 
-    def _listDependencies(self, gitUrl, moduleName, repoUrls):
+    def _listDependencies(self, gitUrl, gitRef, moduleName, repoUrls):
         """
         Loads maven artifacts from mvn dependency:list.
         Returns dictionary where index is MavenArtifact object and value is the artifact URL.
@@ -99,17 +99,32 @@ class ArtifactListBuilder:
         repoPath = 'repos/' + repoName + '/'
 
         # Clone Git Repository
-        call(['git', 'clone', gitUrl, repoPath])
+        retCode = call(['git', 'clone', gitUrl, repoPath])
+        if retCode != 0:
+            logging.warning("Git repository %s could not be cloned. Skipping this artifact source.", gitUrl)
+            return {}
+
+        if gitRef:
+            retCode += call(['git', '--git-dir=' + repoPath + '/.git',
+                             '--work-tree=' + repoPath, 'checkout', gitRef])
+            if retCode != 0:
+                logging.warning("Git reference (branch, tag, commit) %s does " + \
+                    "not seem to exist. Skipping this artifact source.", gitRef)
+                return {}
 
         # Build dependency:list
-        mvnOutFile = "mvn-output-" + repoName + ".log"
+        mvnOutFile = "mvn-" + repoName + "-output.out"
         with open(mvnOutFile, "w") as mvnOutput:
             command = ['mvn', 'dependency:list', '-Dmaven.test.skip', '-f']
             if moduleName:
-                call(['mvn', 'install', '-f', repoPath + 'pom.xml'])
-                call(command + [repoPath + moduleName + '/pom.xml'], stdout=mvnOutput)
+                retCode += call(['mvn', 'install', '-Dmaven.test.skip', '-f', repoPath + 'pom.xml'])
+                retCode += call(command + [repoPath + moduleName + '/pom.xml'], stdout=mvnOutput)
             else:
-                call(command + [repoPath + 'pom.xml'], stdout=mvnOutput)
+                retCode += call(command + [repoPath + 'pom.xml'], stdout=mvnOutput)
+
+            if retCode != 0:
+                logging.warning("Maven failed to finish with success. Skipping this artifact source.")
+                return {}
 
         # Parse GAVs from maven output
         with open(mvnOutFile, "r") as mvnOutput:

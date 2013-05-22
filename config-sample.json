@@ -14,6 +14,7 @@
     {
       "type": "dependency-list",
       "git-url": "git://git.app.eng.bos.redhat.com/droolsjbpm/drools.git",
+      "git-checkout-ref": "master",
       "module": "drools-core",
       "repo-urls": [
         "https://repository-basic.engineering.redhat.com/nexus/content/repositories/jboss-public/"
