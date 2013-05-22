@@ -3,7 +3,7 @@
 
 import logging
 import re
-import os
+import sys
 
 
 class MavenArtifact:
@@ -22,7 +22,7 @@ class MavenArtifact:
         gavParts = regexGAV.search(gav)
         if gavParts is None:
             logging.error("Invalid GAV string: %s", gav)
-            os._exit(1)
+            sys.exit(1)
         return MavenArtifact(gavParts.group(1), gavParts.group(2), gavParts.group(5))
 
     def getDirPath(self):

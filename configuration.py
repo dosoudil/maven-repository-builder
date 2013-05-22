@@ -1,5 +1,5 @@
 import json
-import os
+import sys
 import logging
 from optparse import OptionParser
 
@@ -33,7 +33,7 @@ class Configuration:
 
         if opts.config is None:
             logging.error('You must specify a config file')
-            os._exit(1)
+            sys.exit(1)
 
         self._loadFromFile(opts.config)
         self.tempdir = opts.tempdir
