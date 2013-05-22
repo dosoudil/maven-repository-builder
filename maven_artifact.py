@@ -21,7 +21,7 @@ class MavenArtifact:
         regexGAV = re.compile('([\w._-]+):([\w._-]+):([\w._-]+:)?([\w._-]+:)?([\d][\w._-]*)(:[\w._-]+)?')
         gavParts = regexGAV.search(gav)
         if gavParts is None:
-            print "Invalid GAV string:",gav
+            logging.error("Invalid GAV string: %s", gav)
             os._exit(1)
         return MavenArtifact(gavParts.group(1), gavParts.group(2), gavParts.group(5))
 
@@ -59,4 +59,3 @@ class MavenArtifact:
     def __str__(self):
         result = self.groupId + ':' + self.artifactId + ':' + self.version
         return result
-

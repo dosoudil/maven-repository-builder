@@ -4,6 +4,7 @@ import koji
 import re
 import urllib
 import mrbutils
+import logging
 from subprocess import Popen
 from subprocess import PIPE
 from subprocess import call
@@ -35,17 +36,22 @@ class ArtifactListBuilder:
             priority += 1
 
             if source['type'] == 'mead-tag':
+                logging.info("Building artifact list from tag %s", source['tag-name'])
                 artifacts = self._listMeadTagArtifacts(source['koji-url'], source['download-root-url'], source['tag-name'])
             elif source['type'] == 'dependency-list':
+                logging.info("Building artifact list from maven dependency:list output of repository %s", source['git-url'])
                 artifacts = self._listDependencies(source['git-url'], source['module'], source['repo-urls'])
             elif source['type'] == 'nexus-repository':
+                logging.info("Building artifact list from nexus %s", source['nexus-url'])
                 artifacts = self._listNexusRepository(source['nexus-url'], source['repo-name'])
             elif source['type'] == 'local-repository':
+                logging.info("Building artifact list from local repository %s", source['root-dir'])
                 artifacts = self._listDirectoryArtifacts(source['root-dir'])
             elif source['type'] == 'artifacts':
+                logging.info("Building artifact list from list of artifacts")
                 artifacts = self._listArtifacts(source['repo-urls'], source['included-gavs'])
             else:
-                print "Unsupported source type: ", source['type']
+                logging.warning("Unsupported source type: %s", source['type'])
 
             for artifact in artifacts:
                 ga = artifact.getGA()
@@ -168,7 +174,7 @@ class ArtifactListBuilder:
                     artifacts[artifact] = gavUrl
                     break
             if not artifact in artifacts:
-                print 'artifact ' + artifact.__str__() + ' not found in any url!'
+                logging.warning('artifact %s not found in any url!', artifact)
 
         return artifacts
 
@@ -181,7 +187,7 @@ class ArtifactListBuilder:
         elif protocol == 'file':
             return self._localFind(gavUrl)
         else:
-            print 'Unknown protocol: ', protocol
+            logging.warning('Unknown protocol: %s', protocol)
 
     def _localFind(self, gavUrl):
         files = []
@@ -216,7 +222,6 @@ class ArtifactListBuilder:
     def _parseRepoName(self, repoUrl):
         """Parse repository name from the URL"""
         repoName = re.search('[/:]([^/]+)/{0,1}$', repoUrl)
-        print repoUrl
         if repoName:
             return repoName.group(1)
         else:

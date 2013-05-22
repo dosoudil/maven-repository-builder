@@ -1,5 +1,6 @@
 import json
 import os
+import logging
 from optparse import OptionParser
 
 class Configuration:
@@ -31,7 +32,7 @@ class Configuration:
         (opts, args) = parser.parse_args()
 
         if opts.config is None:
-            print 'Must specify a config file'
+            logging.error('You must specify a config file')
             os._exit(1)
 
         self._loadFromFile(opts.config)
@@ -70,4 +71,3 @@ class Configuration:
 
         if 'include-low-priority' in data and data['include-low-priority']:
             self._loadFromFile(data['include-low-priority'], False)
-
