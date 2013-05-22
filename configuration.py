@@ -9,9 +9,9 @@ class Configuration:
     from a json configuration file.
     """
 
-    resultRepoName = ''
-    generateMetadata = ''
-    singleVersion = ''
+    resultRepoName = None
+    generateMetadata = None
+    singleVersion = None
     artifactSources = []
     excludedGAVs = []
     excludedRepositories = []
@@ -40,22 +40,43 @@ class Configuration:
         if not opts.targetdir is None:
             self.targetdir = opts.targetdir
 
+    def _setDefaults(self):
+        if self.generateMetadata is None: self.generateMetadata = False
+        if self.singleVersion is None: self.singleVersion = False
+
+    def _validate(self):
+        valid = True
+        if self.resultRepoName is None:
+            logging.error("Option result-repo-name not set in configuration file.")
+            valid = False
+        if self.generateMetadata is None:
+            logging.error("Option generate-metadata not set in configuration file.")
+            valid = False
+        if self.singleVersion is None:
+            logging.error("Option single-version not set in configuration file.")
+            valid = False
+        if not self.artifact-sources:
+            logging.error("No artifact-sources set in configuration file.")
+            valid = False
+
+        if not valid:
+            sys.exit(1)
 
     def _loadFromFile(self, filename, rewrite = True):
         """ Load confiugration from json confi file. """
-        data=json.load(open(filename))
+        data = json.load(open(filename))
 
         if 'include-high-priority' in data and data['include-high-priority']:
             self._loadFromFile(data['include-high-priority'], True)
 
-        if (rewrite or self.resultRepoName == '') and 'result-repo-name' in data:
+        if (rewrite or self.resultRepoName is None) and 'result-repo-name' in data:
             self.resultRepoName = data['result-repo-name']
 
-        if (rewrite or self.generateMetadata == '') and 'generate-metadata' in data:
-            self.generateMetadata = data['generate-metadata']
+        if (rewrite or self.generateMetadata is None) and 'generate-metadata' in data:
+            self.generateMetadata = _str2bool(data['generate-metadata'])
 
-        if (rewrite or self.singleVersion == '') and 'single-version' in data:
-            self.singleVersion = data['single-version']
+        if (rewrite or self.singleVersion is None) and 'single-version' in data:
+            self.singleVersion = _str2bool(data['single-version'])
 
         if 'artifact-sources' in data:
             self.artifactSources.extend(data['artifact-sources'])
@@ -71,3 +92,11 @@ class Configuration:
 
         if 'include-low-priority' in data and data['include-low-priority']:
             self._loadFromFile(data['include-low-priority'], False)
+
+def _str2bool(v):
+    if v.lower() in ['true', 'yes', 't', 'y', '1']:
+        return True
+    elif v.lower() in ['false', 'no', 'f', 'n', '0']:
+        return False
+    else:
+        raise ValueError("Failed to convert '"+v+"' to boolean")
