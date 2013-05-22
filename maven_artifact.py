@@ -15,8 +15,11 @@ class MavenArtifact:
 
     @staticmethod
     def createFromGAV(gav):
-        """Initialize an artifact using a colon separated
-           GAV of the form groupId:artifactId:[type:][classifier:]version[:scope]
+        """
+        Initialize an artifact using a colon separated
+        GAV of the form groupId:artifactId:[type:][classifier:]version[:scope]
+
+        :returns: MavenArtifact instance
         """
         regexGAV = re.compile('([\w._-]+):([\w._-]+):([\w._-]+:)?([\w._-]+:)?([\d][\w._-]*)(:[\w._-]+)?')
         gavParts = regexGAV.search(gav)

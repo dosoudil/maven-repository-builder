@@ -29,6 +29,8 @@ class ArtifactListBuilder:
     def buildList(self):
         """
         Build the artifact "list" from sources defined in the given configuration.
+
+        :returns: Dictionary descirebed above.
         """
         artifactList = {}
         priority = 0
@@ -69,7 +71,11 @@ class ArtifactListBuilder:
     def _listMeadTagArtifacts(self, kojiUrl, downloadRootUrl, tagName):
         """
         Loads maven artifacts from koji (brew/mead).
-        Returns dictionary where index is MavenArtifact object and value is the artifact URL.
+
+        :param kojiUrl: Koji/Brew/Mead URL
+        :param downloadRootUrl: Download root URL of the artifacts
+        :param tagName: Koji/Brew/Mead tag name
+        :returns: Dictionary where index is MavenArtifact object and value is the artifact URL.
         """
 
         kojiSession = koji.ClientSession(kojiUrl)
@@ -92,7 +98,13 @@ class ArtifactListBuilder:
     def _listDependencies(self, gitUrl, gitRef, moduleName, repoUrls):
         """
         Loads maven artifacts from mvn dependency:list.
-        Returns dictionary where index is MavenArtifact object and value is the artifact URL.
+
+        :param gitUrl: Git repository URL
+        :param gitRef: Either the name of branch, tag or commit to be checked out
+        :param moduleName: Name of the module on which Maven runs dependency:list
+        :param repoUrls: URL of the repositories that contains the listed artifacts
+        :returns: Dictionary where index is MavenArtifact object and value is
+                  the artifact URL, or empty dictionary if something goes wrong.
         """
 
         repoName = self._parseRepoName(gitUrl)
@@ -137,7 +149,10 @@ class ArtifactListBuilder:
     def _listNexusRepository(self, nexusUrl, repoName):
         """
         Loads maven artifacts from nexus repository.
-        Returns dictionary where index is MavenArtifact object and value is the artifact URL.
+
+        :param nexusUrl: Nexus repository URL
+        :param repoName: Repository name
+        :returns: Dictionary where index is MavenArtifact object and value is the artifact URL.
         """
         nexusBase = mrbutils.slashAtTheEnd(nexusUrl)
         repoUrl = nexusBase + 'content/repositories/' + repoName + '/'
@@ -161,7 +176,9 @@ class ArtifactListBuilder:
     def _listDirectoryArtifacts(self, directoryPath):
         """
         Loads maven artifacts from local directory.
-        Returns dictionary where index is MavenArtifact object and value is the artifact URL starting with 'file://'.
+
+        :param directoryPath: Path of the local directory.
+        :returns: Dictionary where index is MavenArtifact object and value is the artifact URL starting with 'file://'.
         """
         artifacts = {}
         regexGAV = re.compile(r'(^.*)/([^/]*)/([^/]*$)')
@@ -178,7 +195,10 @@ class ArtifactListBuilder:
     def _listArtifacts(self, urls, gavs):
         """
         Loads maven artifacts from list of GAVs and tries to locate the artifacts in one of the specified repositories.
-        Returns dictionary where index is MavenArtifact object and value is the artifact URL.
+
+        :param urls: URLs where the given GAVs can be located
+        :param gavs: List of GAVs
+        :returns: Dictionary where index is MavenArtifact object and value is the artifact URL.
         """
         artifacts = {}
         for gav in gavs:
