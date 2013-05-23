@@ -19,13 +19,12 @@
       "top-level-gavs-ref": "tope-level-gavs.list"
     },
     {
-      "type": "nexus-repository",
-      "nexus-url": "https://repository-basic.engineering.redhat.com/nexus/",
-      "repo-name": "scratch-release-soa-brms-6-build"
+      "type": "repository",
+      "repo-url": "https://repository-basic.engineering.redhat.com/nexus/content/repositories/scratch-release-soa-brms-6-build"
     },
     {
-      "type": "local-repository",
-      "root-dir": "/var/maven/repository/test-repo/"
+      "type": "repository",
+      "repo-url": "file:///var/maven/repository/test-repo/"
     },
     {
       "type": "artifacts",

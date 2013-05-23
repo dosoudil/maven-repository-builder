@@ -3,6 +3,7 @@ import os
 import koji
 import re
 import urllib
+import urlparse
 import mrbutils
 import logging
 from subprocess import Popen
@@ -44,12 +45,9 @@ class ArtifactListBuilder:
             elif source['type'] == 'dependency-list':
                 logging.info("Building artifact list from top level list of GAVs")
                 artifacts = self._listDependencies(source['repo-urls'], self._parseDepList(source['top-level-gavs-ref']))
-            elif source['type'] == 'nexus-repository':
-                logging.info("Building artifact list from nexus %s", source['nexus-url'])
-                artifacts = self._listNexusRepository(source['nexus-url'], source['repo-name'])
-            elif source['type'] == 'local-repository':
-                logging.info("Building artifact list from local repository %s", source['root-dir'])
-                artifacts = self._listDirectoryArtifacts(source['root-dir'])
+            elif source['type'] == 'repository':
+                logging.info("Building artifact list from repository %s", source['repo-url'])
+                artifacts = self._listRepository(source['repo-url'])
             elif source['type'] == 'artifacts':
                 logging.info("Building artifact list from list of artifacts")
                 artifacts = self._listArtifacts(source['repo-urls'], self._parseDepList(source['included-gavs-ref']))
@@ -141,34 +139,43 @@ class ArtifactListBuilder:
 
         return artifacts
 
-    def _listNexusRepository(self, nexusUrl, repoName):
+    def _listRepository(self, repoUrl):
         """
-        Loads maven artifacts from nexus repository.
+        Loads maven artifacts from a repository.
 
-        :param nexusUrl: Nexus repository URL
-        :param repoName: Repository name
+        :param repoUrl: repository URL (local or remote, supported are [file://], http:// and https:// urls)
         :returns: Dictionary where index is MavenArtifact object and value is the artifact URL.
         """
-        nexusBase = mrbutils.slashAtTheEnd(nexusUrl)
-        repoUrl = nexusBase + 'content/repositories/' + repoName + '/'
+        protocol = mrbutils.urlProtocol(repoUrl)
+        if protocol == 'file':
+            return self._listLocalRepository(repoUrl[7:])
+        elif protocol == '':
+            return self._listLocalRepository(repoUrl)
+        elif protocol == 'http' or protocol == 'https':
+            return self._listRemoteRepository(repoUrl)
+        else:
+            raise "Invalid protocol!", protocol
+
+    def _listRemoteRepository(self, repoUrl):
         artifacts = {}
-        for index in range(ord('a'), ord('z')):
-            qUrl = nexusBase + "service/local/lucene/search?q=" + chr(index) + "*&repositoryId=" + repoName
-            xmlResult = urllib.urlopen(qUrl).read()
-            et = ElementTree.fromstring(xmlResult)
-            data = et.find('data')
-            for artifact in data.findall("artifact"):
-                mavenArtifact = MavenArtifact(artifact.find('groupId').text, artifact.find('artifactId').text,
-                                artifact.find('version').text)
+        (out, _) = Popen(r'lftp -c "set ssl:verify-certificate no ; open ' + repoUrl + ' ; find " | egrep "^\./.*/[0-9].*/$"', stdout = PIPE, shell = True).communicate()
+
+        regexGAV = re.compile(r'\./(.*)/([^/]*)/([^/]*)/$')
+
+        for line in out.split('\n'):
+            if (line):
+                print line
+                gav = regexGAV.search(line)
+                mavenArtifact = MavenArtifact(gav.group(1).replace('/', '.'), gav.group(2),
+                                            gav.group(3))
 
                 gavUrl = repoUrl + mavenArtifact.groupId.replace('.', '/') + '/'\
                         +  mavenArtifact.artifactId + '/' +  mavenArtifact.version + '/'
                 artifacts[mavenArtifact] = gavUrl
-
         return artifacts
 
 
-    def _listDirectoryArtifacts(self, directoryPath):
+    def _listLocalRepository(self, directoryPath):
         """
         Loads maven artifacts from local directory.
 
