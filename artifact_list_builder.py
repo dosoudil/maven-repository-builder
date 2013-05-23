@@ -10,6 +10,7 @@ from subprocess import PIPE
 from subprocess import call
 from xml.etree import ElementTree
 from maven_artifact import MavenArtifact
+from download import fetchArtifact
 
 
 class ArtifactListBuilder:
@@ -41,8 +42,8 @@ class ArtifactListBuilder:
                 logging.info("Building artifact list from tag %s", source['tag-name'])
                 artifacts = self._listMeadTagArtifacts(source['koji-url'], source['download-root-url'], source['tag-name'])
             elif source['type'] == 'dependency-list':
-                logging.info("Building artifact list from maven dependency:list output of repository %s", source['git-url'])
-                artifacts = self._listDependencies(source['git-url'], source['git-checkout-ref'], source['module'], source['repo-urls'])
+                logging.info("Building artifact list from top level list of GAVs")
+                artifacts = self._listDependencies(source['repo-urls'], source['top-level-gavs'])
             elif source['type'] == 'nexus-repository':
                 logging.info("Building artifact list from nexus %s", source['nexus-url'])
                 artifacts = self._listNexusRepository(source['nexus-url'], source['repo-name'])
@@ -95,56 +96,52 @@ class ArtifactListBuilder:
         return artifacts
 
 
-    def _listDependencies(self, gitUrl, gitRef, moduleName, repoUrls):
+    def _listDependencies(self, repoUrls, gavs):
         """
         Loads maven artifacts from mvn dependency:list.
 
-        :param gitUrl: Git repository URL
-        :param gitRef: Either the name of branch, tag or commit to be checked out
-        :param moduleName: Name of the module on which Maven runs dependency:list
         :param repoUrls: URL of the repositories that contains the listed artifacts
+        :param gavs: List of top level GAVs
         :returns: Dictionary where index is MavenArtifact object and value is
                   the artifact URL, or empty dictionary if something goes wrong.
         """
+        artifacts = {}
 
-        repoName = self._parseRepoName(gitUrl)
-        repoPath = 'repos/' + repoName + '/'
+        for gav in gavs:
+            artifact = MavenArtifact.createFromGAV(gav)
 
-        # Clone Git Repository
-        retCode = call(['git', 'clone', gitUrl, repoPath])
-        if retCode != 0:
-            logging.warning("Git repository %s could not be cloned. Skipping this artifact source.", gitUrl)
-            return {}
+            pomDir = 'poms'
+            fetched = False
+            for repoUrl in repoUrls:
+                pomUrl = repoUrl + '/' + artifact.getPomFilepath()
+                if fetchArtifact(pomUrl, pomDir):
+                    fetched = True
+                    break
 
-        if gitRef:
-            retCode += call(['git', '--git-dir=' + repoPath + '/.git',
-                             '--work-tree=' + repoPath, 'checkout', gitRef])
-            if retCode != 0:
-                logging.warning("Git reference (branch, tag, commit) %s does " + \
-                    "not seem to exist. Skipping this artifact source.", gitRef)
-                return {}
+            if not fetched:
+                logging.warning("Failed to retrieve pom file for artifact %s",
+                                gav)
+                continue
 
-        # Build dependency:list
-        mvnOutFile = "mvn-" + repoName + "-output.out"
-        with open(mvnOutFile, "w") as mvnOutput:
-            command = ['mvn', 'dependency:list', '-Dmaven.test.skip', '-f']
-            if moduleName:
-                retCode += call(['mvn', 'install', '-Dmaven.test.skip', '-f', repoPath + 'pom.xml'])
-                retCode += call(command + [repoPath + moduleName + '/pom.xml'], stdout=mvnOutput)
-            else:
-                retCode += call(command + [repoPath + 'pom.xml'], stdout=mvnOutput)
+            # Build dependency:list
+            mvnOutFile = artifact.getBaseFilename() + "-maven.out"
+            with open(mvnOutFile, "w") as mvnOutput:
+                retCode = call(['mvn', 'dependency:list', '-N', '-f',
+                                pomDir + '/' + artifact.getPomFilename()], stdout=mvnOutput)
 
-            if retCode != 0:
-                logging.warning("Maven failed to finish with success. Skipping this artifact source.")
-                return {}
+                if retCode != 0:
+                    logging.warning("Maven failed to finish with success. Skipping artifact %s",
+                                    gav)
+                    continue
 
-        # Parse GAVs from maven output
-        with open(mvnOutFile, "r") as mvnOutput:
-            depListLines = mvnOutput.readlines()
-            gavList = self._parseDepList(depListLines)
+            # Parse GAVs from maven output
+            with open(mvnOutFile, "r") as mvnOutput:
+                depListLines = mvnOutput.readlines()
+                gavList = self._parseDepList(depListLines)
 
-        return self._listArtifacts(repoUrls, gavList)
+            artifacts.update(self._listArtifacts(repoUrls, gavList))
 
+        return artifacts
 
     def _listNexusRepository(self, nexusUrl, repoName):
         """
@@ -204,7 +201,7 @@ class ArtifactListBuilder:
         for gav in gavs:
             artifact = MavenArtifact.createFromGAV(gav)
             for url in urls:
-                gavUrl = url + artifact.getDirPath()
+                gavUrl = url + '/' + artifact.getDirPath()
                 if mrbutils.urlExists(gavUrl):
                     artifacts[artifact] = gavUrl
                     break
