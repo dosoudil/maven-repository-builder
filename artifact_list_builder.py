@@ -43,7 +43,7 @@ class ArtifactListBuilder:
                 artifacts = self._listMeadTagArtifacts(source['koji-url'], source['download-root-url'], source['tag-name'])
             elif source['type'] == 'dependency-list':
                 logging.info("Building artifact list from top level list of GAVs")
-                artifacts = self._listDependencies(source['repo-urls'], source['top-level-gavs'])
+                artifacts = self._listDependencies(source['repo-urls'], self._parseDepList(source['top-level-gavs-ref']))
             elif source['type'] == 'nexus-repository':
                 logging.info("Building artifact list from nexus %s", source['nexus-url'])
                 artifacts = self._listNexusRepository(source['nexus-url'], source['repo-name'])
@@ -52,7 +52,7 @@ class ArtifactListBuilder:
                 artifacts = self._listDirectoryArtifacts(source['root-dir'])
             elif source['type'] == 'artifacts':
                 logging.info("Building artifact list from list of artifacts")
-                artifacts = self._listArtifacts(source['repo-urls'], source['included-gavs'])
+                artifacts = self._listArtifacts(source['repo-urls'], self._parseDepList(source['included-gavs-ref']))
             else:
                 logging.warning("Unsupported source type: %s", source['type'])
 
@@ -124,10 +124,10 @@ class ArtifactListBuilder:
                 continue
 
             # Build dependency:list
-            mvnOutFile = artifact.getBaseFilename() + "-maven.out"
-            with open(mvnOutFile, "w") as mvnOutput:
+            mvnOutFilename = artifact.getBaseFilename() + "-maven.out"
+            with open(mvnOutFilename, "w") as mvnOutputFile:
                 retCode = call(['mvn', 'dependency:list', '-N', '-f',
-                                pomDir + '/' + artifact.getPomFilename()], stdout=mvnOutput)
+                                pomDir + '/' + artifact.getPomFilename()], stdout=mvnOutputFile)
 
                 if retCode != 0:
                     logging.warning("Maven failed to finish with success. Skipping artifact %s",
@@ -135,9 +135,7 @@ class ArtifactListBuilder:
                     continue
 
             # Parse GAVs from maven output
-            with open(mvnOutFile, "r") as mvnOutput:
-                depListLines = mvnOutput.readlines()
-                gavList = self._parseDepList(depListLines)
+            gavList = self._parseDepList(mvnOutFilename)
 
             artifacts.update(self._listArtifacts(repoUrls, gavList))
 
@@ -237,11 +235,14 @@ class ArtifactListBuilder:
             files.append(gavUrl + line)
         return files
 
-    def _parseDepList(self, depList):
+    def _parseDepList(self, depListFilename):
         """Parse maven dependency:list output and return a list of GAVs"""
+        with open(depListFilename, "r") as depListFile:
+            depList = depListFile.readlines()
+
         regexComment = re.compile('#.*$')
-        # Match pattern groupId:artifactId:type:[classifier:]version[:scope]
-        regexGAV = re.compile('(([\w\-.]+:){3}([\w\-.]+:)?([\d][\w\-.]+))(:[\w]*\S)?')
+        # Match pattern groupId:artifactId:[type:][classifier:]version[:scope]
+        regexGAV = re.compile('(([\w\-.]+:){2,3}([\w\-.]+:)?([\d][\w\-.]+))(:[\w]*\S)?')
         gavList = []
         for nextLine in depList:
             nextLine = regexComment.sub('', nextLine)
@@ -249,12 +250,5 @@ class ArtifactListBuilder:
             gav = regexGAV.search(nextLine)
             if gav:
                 gavList.append(gav.group(1))
-        return gavList
 
-    def _parseRepoName(self, repoUrl):
-        """Parse repository name from the URL"""
-        repoName = re.search('[/:]([^/]+)/{0,1}$', repoUrl)
-        if repoName:
-            return repoName.group(1)
-        else:
-            return None
+        return gavList
