@@ -53,6 +53,7 @@ class ArtifactListBuilder:
                 artifacts = self._listArtifacts(source['repo-urls'], self._parseDepList(source['included-gavs-ref']))
             else:
                 logging.warning("Unsupported source type: %s", source['type'])
+                continue
 
             for artifact in artifacts:
                 ga = artifact.getGA()
