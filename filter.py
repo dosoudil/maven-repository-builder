@@ -9,6 +9,7 @@ class Filter:
 
     def filter(self, artifactList):
         artifactList = self._filterExcludedGAVs(artifactList, self.config.excludedGAVs)
+        artifactList = self._filterDuplicates(artifactList)
         artifactList = self._filterExcludedFilePatterns(artifactList, self.config.excludedFilePatterns)
         artifactList = self._filterExcludedRepositories(artifactList, self.config.excludedRepositories)
         return artifactList
@@ -54,10 +55,25 @@ class Filter:
                         del artifactList[ga][priority][version]
                 if not artifactList[ga][priority]:
                     del artifactList[ga][priority]
-            if not not artifactList[ga]:
+            if not artifactList[ga]:
                 del artifactList[ga]
 
         return artifactList
+
+    def _filterDuplicates(self, artifactList):
+        for ga in artifactList.keys():
+            for priority in artifactList[ga].keys():
+                for version in artifactList[ga][priority].keys():
+                    for pr in artifactList[ga].keys():
+                        if pr <= priority: continue
+                        if version in artifactList[ga][pr]:
+                            del artifactList[ga][pr][version]
+                if not artifactList[ga][priority]:
+                    del artifactList[ga][priority]
+            if not artifactList[ga]:
+                del artifactList[ga]
+        return artifactList
+
 
 def _somethingMatch(regexs, filename):
     for regex in regexs:
