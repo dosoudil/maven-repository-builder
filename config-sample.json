@@ -9,7 +9,8 @@
       "type": "mead-tag",
       "tag-name": "brms-5.3.0",
       "koji-url": "http://brewhub.devel.redhat.com/brewhub/",
-      "download-root-url": "http://download.devel.redhat.com/brewroot/packages/"
+      "download-root-url": "http://download.devel.redhat.com/brewroot/packages/",
+      "included-gav-patterns-ref": "gav-patterns.list"
     },
     {
       "type": "dependency-list",
@@ -20,31 +21,27 @@
     },
     {
       "type": "repository",
-      "repo-url": "https://repository-basic.engineering.redhat.com/nexus/content/repositories/scratch-release-soa-brms-6-build"
+      "repo-url": "https://repository-basic.engineering.redhat.com/nexus/content/repositories/scratch-release-soa-brms-6-build",
+      "included-gav-patterns-ref": "gav-patterns.list"
     },
     {
       "type": "repository",
-      "repo-url": "file:///var/maven/repository/test-repo/"
-    },
-    {
-      "type": "artifacts",
       "repo-urls": [
-        "https://repository.engineering.redhat.com/nexus/content/repositories/jboss-public/"
+        "https://repository.engineering.redhat.com/nexus/content/repositories/jboss-public/",
+        "file:///var/maven/repository/test-repo/"
       ],
-      "included-gavs-ref": "included-gavs.list"
+      "included-gav-patterns-ref": "gav-patterns.list"
     }
   ],
-  "excluded-gavs": [
-    "org.jboss.component.management:jboss-component-management:6.0.1",
-    "org.jboss.component.management:jboss-component-version-master:6.0.1-redhat-1"
+  "excluded-gav-patterns-ref": [
+    "gav-patterns-excl.list",
+    "gav-patterns-excl2.list"
   ],
   "excluded-repositories": [
     "https://repository.engineering.redhat.com/nexus/content/repositories/central/",
     "https://repository.engineering.redhat.com/nexus/content/repositories/jboss-public-snapshot/"
   ],
-  "excluded-file-patterns": [
-    ".*\\.zip",
-    ".*\\.zip\\.sha1",
-    ".*\\.zip\\.md5"
-  ]
+  "multi-version-ga-patterns-ref": [
+    "multi-version-ga-patterns.list"
+  ],
 }
