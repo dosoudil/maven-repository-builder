@@ -2,14 +2,11 @@ import urlparse
 import os
 import koji
 import re
-import urllib
-import urlparse
 import mrbutils
 import logging
 from subprocess import Popen
 from subprocess import PIPE
 from subprocess import call
-from xml.etree import ElementTree
 from maven_artifact import MavenArtifact
 from download import fetchArtifact
 
@@ -41,16 +38,20 @@ class ArtifactListBuilder:
 
             if source['type'] == 'mead-tag':
                 logging.info("Building artifact list from tag %s", source['tag-name'])
-                artifacts = self._listMeadTagArtifacts(source['koji-url'], source['download-root-url'], source['tag-name'])
+                artifacts = self._listMeadTagArtifacts(source['koji-url'],
+                                                       source['download-root-url'],
+                                                       source['tag-name'])
             elif source['type'] == 'dependency-list':
                 logging.info("Building artifact list from top level list of GAVs")
-                artifacts = self._listDependencies(source['repo-urls'], self._parseDepList(source['top-level-gavs-ref']))
+                artifacts = self._listDependencies(source['repo-urls'],
+                                                   self._parseDepList(source['top-level-gavs-ref']))
             elif source['type'] == 'repository':
                 logging.info("Building artifact list from repository %s", source['repo-url'])
                 artifacts = self._listRepository(source['repo-url'])
             elif source['type'] == 'artifacts':
                 logging.info("Building artifact list from list of artifacts")
-                artifacts = self._listArtifacts(source['repo-urls'], self._parseDepList(source['included-gavs-ref']))
+                artifacts = self._listArtifacts(source['repo-urls'],
+                                                self._parseDepList(source['included-gavs-ref']))
             else:
                 logging.warning("Unsupported source type: %s", source['type'])
                 continue
@@ -66,7 +67,6 @@ class ArtifactListBuilder:
                 artifactList[ga][priority][artifact.version] = self._getFiles(artifacts[artifact])
 
         return artifactList
-
 
     def _listMeadTagArtifacts(self, kojiUrl, downloadRootUrl, tagName):
         """
@@ -88,12 +88,11 @@ class ArtifactListBuilder:
 
             gavUrl = mrbutils.slashAtTheEnd(downloadRootUrl) + artifact['build_name'] + '/'\
                     + artifact['build_version'] + '/' + artifact['build_release']\
-                    + '/maven/' +  artifact['group_id'].replace('.', '/') + '/'\
-                    +  artifact['artifact_id'] + '/' +  artifact['version'] + '/'
+                    + '/maven/' + artifact['group_id'].replace('.', '/') + '/'\
+                    + artifact['artifact_id'] + '/' + artifact['version'] + '/'
             artifacts[mavenArtifact] = gavUrl
 
         return artifacts
-
 
     def _listDependencies(self, repoUrls, gavs):
         """
@@ -144,7 +143,8 @@ class ArtifactListBuilder:
         """
         Loads maven artifacts from a repository.
 
-        :param repoUrl: repository URL (local or remote, supported are [file://], http:// and https:// urls)
+        :param repoUrl: repository URL (local or remote, supported are [file://], http:// and
+                        https:// urls)
         :returns: Dictionary where index is MavenArtifact object and value is the artifact URL.
         """
         protocol = mrbutils.urlProtocol(repoUrl)
@@ -159,7 +159,9 @@ class ArtifactListBuilder:
 
     def _listRemoteRepository(self, repoUrl):
         artifacts = {}
-        (out, _) = Popen(r'lftp -c "set ssl:verify-certificate no ; open ' + repoUrl + ' ; find " | egrep "^\./.*/[0-9].*/$"', stdout = PIPE, shell = True).communicate()
+        (out, _) = Popen(r'lftp -c "set ssl:verify-certificate no ; open ' + repoUrl
+                         + ' ; find " | egrep "^\./.*/[0-9].*/$"', stdout=PIPE, shell=True)\
+                         .communicate()
 
         regexGAV = re.compile(r'\./(.*)/([^/]*)/([^/]*)/$')
 
@@ -171,17 +173,17 @@ class ArtifactListBuilder:
                                             gav.group(3))
 
                 gavUrl = repoUrl + mavenArtifact.groupId.replace('.', '/') + '/'\
-                        +  mavenArtifact.artifactId + '/' +  mavenArtifact.version + '/'
+                        + mavenArtifact.artifactId + '/' + mavenArtifact.version + '/'
                 artifacts[mavenArtifact] = gavUrl
         return artifacts
-
 
     def _listLocalRepository(self, directoryPath):
         """
         Loads maven artifacts from local directory.
 
         :param directoryPath: Path of the local directory.
-        :returns: Dictionary where index is MavenArtifact object and value is the artifact URL starting with 'file://'.
+        :returns: Dictionary where index is MavenArtifact object and value is the artifact URL
+                  starting with 'file://'.
         """
         artifacts = {}
         regexGAV = re.compile(r'(^.*)/([^/]*)/([^/]*$)')
@@ -197,7 +199,8 @@ class ArtifactListBuilder:
 
     def _listArtifacts(self, urls, gavs):
         """
-        Loads maven artifacts from list of GAVs and tries to locate the artifacts in one of the specified repositories.
+        Loads maven artifacts from list of GAVs and tries to locate the artifacts in one of the
+        specified repositories.
 
         :param urls: URLs where the given GAVs can be located
         :param gavs: List of GAVs
@@ -215,7 +218,6 @@ class ArtifactListBuilder:
                 logging.warning('artifact %s not found in any url!', artifact)
 
         return artifacts
-
 
     def _getFiles(self, gavUrl):
         parsedUrl = urlparse.urlparse(gavUrl)
@@ -237,9 +239,11 @@ class ArtifactListBuilder:
 
     def _remoteFind(self, gavUrl):
         files = []
-        (out,_) = Popen(r'lftp -c "set ssl:verify-certificate no ; open ' + gavUrl + ' ; find "', stdout = PIPE, shell = True).communicate()
+        (out, _) = Popen(r'lftp -c "set ssl:verify-certificate no ; open ' + gavUrl + ' ; find "',
+                        stdout=PIPE, shell=True).communicate()
         for line in out.split('\n'):
-            if line == '': continue
+            if line == '':
+                continue
             files.append(gavUrl + line)
         return files
 

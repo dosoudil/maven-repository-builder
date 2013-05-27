@@ -5,22 +5,26 @@ from maven_artifact import MavenArtifact
 class Filter:
 
     def __init__(self, config):
-        self.config= config
+        self.config = config
 
     def filter(self, artifactList):
         artifactList = self._filterExcludedGAVs(artifactList, self.config.excludedGAVs)
         artifactList = self._filterDuplicates(artifactList)
-        artifactList = self._filterExcludedFilePatterns(artifactList, self.config.excludedFilePatterns)
-        artifactList = self._filterExcludedRepositories(artifactList, self.config.excludedRepositories)
+        artifactList = self._filterExcludedFilePatterns(artifactList,
+                                                        self.config.excludedFilePatterns)
+        artifactList = self._filterExcludedRepositories(artifactList,
+                                                        self.config.excludedRepositories)
         return artifactList
 
     def _filterExcludedGAVs(self, artifactList, gavs):
         for gav in gavs:
             artifact = MavenArtifact.createFromGAV(gav)
             ga = artifact.getGA()
-            if not ga in artifactList: continue
+            if not ga in artifactList:
+                continue
             for priority in artifactList[ga].keys():
-                if not artifact.version in artifactList[ga][priority]: continue
+                if not artifact.version in artifactList[ga][priority]:
+                    continue
                 del artifactList[ga][priority][artifact.version]
                 if not artifactList[ga][priority]:
                     del artifactList[ga][priority]
@@ -35,7 +39,9 @@ class Filter:
         for ga in artifactList.keys():
             for priority in artifactList[ga].keys():
                 for version in artifactList[ga][priority].keys():
-                    artifactList[ga][priority][version][:] = [ filename for filename in artifactList[ga][priority][version] if not _somethingMatch(regexs, filename) ]
+                    artifactList[ga][priority][version][:] = \
+                            [filename for filename in artifactList[ga][priority][version]
+                                      if not _somethingMatch(regexs, filename)]
                     if not artifactList[ga][priority][version]:
                         del artifactList[ga][priority][version]
                 if not artifactList[ga][priority]:
@@ -65,7 +71,8 @@ class Filter:
             for priority in artifactList[ga].keys():
                 for version in artifactList[ga][priority].keys():
                     for pr in artifactList[ga].keys():
-                        if pr <= priority: continue
+                        if pr <= priority:
+                            continue
                         if version in artifactList[ga][pr]:
                             del artifactList[ga][pr][version]
                 if not artifactList[ga][priority]:
@@ -80,6 +87,7 @@ def _somethingMatch(regexs, filename):
         if regex.match(filename):
             return True
     return False
+
 
 def _isArtifactInRepos(repositories, artifact):
     for repository in repositories:

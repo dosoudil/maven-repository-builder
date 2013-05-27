@@ -2,6 +2,7 @@ import urlparse
 import urllib
 import os
 
+
 def urlExists(url):
     protocol = urlProtocol(url)
     if protocol == 'http' or protocol == 'https':
@@ -11,10 +12,12 @@ def urlExists(url):
             url = url[7:]
         return os.path.exists(url)
 
+
 def urlProtocol(url):
     """Determines the protocol in the url, can be empty if there is none in the url."""
     parsedUrl = urlparse.urlparse(url)
     return parsedUrl[0]
+
 
 def slashAtTheEnd(url):
     """

@@ -1,7 +1,5 @@
 #!/usr/bin/env python
 
-import urllib
-import urlparse
 import logging
 from configuration import Configuration
 from download import fetchArtifacts

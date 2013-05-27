@@ -3,6 +3,7 @@ import sys
 import logging
 from optparse import OptionParser
 
+
 class Configuration:
     """
     Class holding Maven Repository Builder configuration. It can be loaded
@@ -21,14 +22,14 @@ class Configuration:
 
     def load(self):
         """ Load confiugration from command line arguments """
-        parser = OptionParser(usage = '%prog [options]')
-        parser.add_option('-c', '--config', dest = 'config',
-                          help = 'Configuration file to use to drive the repository builder')
-        parser.add_option('-t', '--tempdir', dest = 'tempdir',
-                          help = 'Temporary directory where repository will be built',
-                          default = '/tmp/maven-repo-builder/')
-        parser.add_option('--targetdir', dest = 'targetdir',
-                          help = 'Target directory where built repository archive will be placed')
+        parser = OptionParser(usage='%prog [options]')
+        parser.add_option('-c', '--config', dest='config',
+                          help='Configuration file to use to drive the repository builder')
+        parser.add_option('-t', '--tempdir', dest='tempdir',
+                          help='Temporary directory where repository will be built',
+                          default='/tmp/maven-repo-builder/')
+        parser.add_option('--targetdir', dest='targetdir',
+                          help='Target directory where built repository archive will be placed')
         (opts, args) = parser.parse_args()
 
         if opts.config is None:
@@ -41,8 +42,10 @@ class Configuration:
             self.targetdir = opts.targetdir
 
     def _setDefaults(self):
-        if self.generateMetadata is None: self.generateMetadata = False
-        if self.singleVersion is None: self.singleVersion = False
+        if self.generateMetadata is None:
+            self.generateMetadata = False
+        if self.singleVersion is None:
+            self.singleVersion = False
 
     def _validate(self):
         valid = True
@@ -55,14 +58,14 @@ class Configuration:
         if self.singleVersion is None:
             logging.error("Option single-version not set in configuration file.")
             valid = False
-        if not self.artifact-sources:
+        if not self.artifactSources:
             logging.error("No artifact-sources set in configuration file.")
             valid = False
 
         if not valid:
             sys.exit(1)
 
-    def _loadFromFile(self, filename, rewrite = True):
+    def _loadFromFile(self, filename, rewrite=True):
         """ Load confiugration from json confi file. """
         data = json.load(open(filename))
 
@@ -93,10 +96,11 @@ class Configuration:
         if 'include-low-priority' in data and data['include-low-priority']:
             self._loadFromFile(data['include-low-priority'], False)
 
+
 def _str2bool(v):
     if v.lower() in ['true', 'yes', 't', 'y', '1']:
         return True
     elif v.lower() in ['false', 'no', 'f', 'n', '0']:
         return False
     else:
-        raise ValueError("Failed to convert '"+v+"' to boolean")
+        raise ValueError("Failed to convert '" + v + "' to boolean")

@@ -21,7 +21,8 @@ class MavenArtifact:
 
         :returns: MavenArtifact instance
         """
-        regexGAV = re.compile('([\w._-]+):([\w._-]+):([\w._-]+:)?([\w._-]+:)?([\d][\w._-]*)(:[\w._-]+)?')
+        regexGAV =\
+            re.compile('([\w._-]+):([\w._-]+):([\w._-]+:)?([\w._-]+:)?([\d][\w._-]*)(:[\w._-]+)?')
         gavParts = regexGAV.search(gav)
         if gavParts is None:
             logging.error("Invalid GAV string: %s", gav)
