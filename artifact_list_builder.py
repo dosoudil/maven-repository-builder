@@ -122,7 +122,10 @@ class ArtifactListBuilder:
                 continue
 
             # Build dependency:list
-            mvnOutFilename = artifact.getBaseFilename() + "-maven.out"
+            mvnOutDir = "maven"
+            if not os.path.isdir(mvnOutDir):
+                os.makedirs(mvnOutDir)
+            mvnOutFilename = mvnOutDir + "/" + artifact.getBaseFilename() + "-maven.out"
             with open(mvnOutFilename, "w") as mvnOutputFile:
                 retCode = call(['mvn', 'dependency:list', '-N', '-f',
                                 pomDir + '/' + artifact.getPomFilename()], stdout=mvnOutputFile)
