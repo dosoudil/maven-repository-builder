@@ -1,6 +1,7 @@
 import urlparse
 import urllib
 import os
+import re
 
 
 def urlExists(url):
@@ -31,3 +32,6 @@ def slashAtTheEnd(url):
     else:
         return url + '/'
 
+
+def transformAsterixStringToRegexp(string):
+    return re.escape(string).replace("\\*",".*")
