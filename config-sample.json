@@ -16,7 +16,7 @@
       "repo-urls": [
         "https://repository.jboss.org/nexus/content/repositories/public-jboss/"
       ],
-      "top-level-gavs-ref": "tope-level-gavs.list"
+      "top-level-gavs-ref": "top-level-gavs.list"
     },
     {
       "type": "repository",
