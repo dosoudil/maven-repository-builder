@@ -83,14 +83,17 @@ class ArtifactListBuilder:
 
         artifacts = {}
         for artifact in kojiArtifacts:
+            artifactType = re.search('.*\.(.+)$', artifact['filename']).group(1)
             mavenArtifact = MavenArtifact(artifact['group_id'], artifact['artifact_id'],
-                            artifact['version'])
+                                          artifactType, artifact['version'])
 
             gavUrl = mrbutils.slashAtTheEnd(downloadRootUrl) + artifact['build_name'] + '/'\
-                    + artifact['build_version'] + '/' + artifact['build_release']\
-                    + '/maven/' + artifact['group_id'].replace('.', '/') + '/'\
-                    + artifact['artifact_id'] + '/' + artifact['version'] + '/'
+                     + artifact['build_version'] + '/' + artifact['build_release']\
+                     + '/maven/' + artifact['group_id'].replace('.', '/') + '/'\
+                     + artifact['artifact_id'] + '/' + artifact['version'] + '/'
             artifacts[mavenArtifact] = gavUrl
+
+        print '[%s]' % ', '.join(map(str, artifacts))
 
         return artifacts
 

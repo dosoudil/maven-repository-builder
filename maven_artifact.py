@@ -8,9 +8,10 @@ import sys
 
 class MavenArtifact:
 
-    def __init__(self, groupId, artifactId, version):
+    def __init__(self, groupId, artifactId, type, version):
         self.groupId = groupId
         self.artifactId = artifactId
+        self.type = type
         self.version = version
 
     @staticmethod
@@ -22,12 +23,12 @@ class MavenArtifact:
         :returns: MavenArtifact instance
         """
         regexGAV =\
-            re.compile('([\w._-]+):([\w._-]+):([\w._-]+:)?([\w._-]+:)?([\d][\w._-]*)(:[\w._-]+)?')
+            re.compile('([\w._-]+):([\w._-]+):(?:([\w._-]+)?:)?([\w._-]+:)?([\d][\w._-]*)(:[\w._-]+)?')
         gavParts = regexGAV.search(gav)
         if gavParts is None:
             logging.error("Invalid GAV string: %s", gav)
             sys.exit(1)
-        return MavenArtifact(gavParts.group(1), gavParts.group(2), gavParts.group(5))
+        return MavenArtifact(gavParts.group(1), gavParts.group(2), gavParts.group(3), gavParts.group(5))
 
     def getDirPath(self):
         """Get the relative repository path to the artifact"""
@@ -61,5 +62,8 @@ class MavenArtifact:
         return self.getDirPath() + '/' + self.getSourcesFilename()
 
     def __str__(self):
-        result = self.groupId + ':' + self.artifactId + ':' + self.version
+        result = self.groupId + ':' + self.artifactId
+        if self.type:
+            result += ':' + self.type
+        result += ':' + self.version
         return result
