@@ -34,7 +34,7 @@ class Configuration:
         if self.generateMetadata is None:
             self.generateMetadata = False
         if self.singleVersion is None:
-            self.singleVersion = False
+            self.singleVersion = True
 
     def _validate(self):
         valid = True
