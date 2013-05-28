@@ -2,7 +2,6 @@
 
 import logging
 from configuration import Configuration
-from download import fetchArtifacts
 from artifact_list_builder import ArtifactListBuilder
 from filter import Filter
 
@@ -24,15 +23,8 @@ def createRepo():
     listFilter = Filter(config)
     artifactList = listFilter.filter(artifactList)
 
-    # fetch artifacts
-    logging.info("Retrieving artifacts...")
-    fetchArtifacts(artifactList, config)
-
-    # package repository
-    # TODO
-
-    # test repository
-    # TODO
+    # produce the filtered GA(T)V list
+    #TODO
 
     logging.info("Done")
 

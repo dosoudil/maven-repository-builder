@@ -1,4 +1,3 @@
-import urlparse
 import os
 import koji
 import re
@@ -19,7 +18,7 @@ class ArtifactListBuilder:
     "<groupId>:<artifactId>" (string)
       L <artifact source priority> (int)
          L <version> (string)
-            L <file url> (list of strings)
+            L <repo url> (string)
     """
 
     def __init__(self, configuration):
@@ -64,7 +63,7 @@ class ArtifactListBuilder:
                 if not priority in artifactList[ga]:
                     artifactList[ga][priority] = {}
 
-                artifactList[ga][priority][artifact.version] = self._getFiles(artifacts[artifact])
+                artifactList[ga][priority][artifact.version] = artifacts[artifact]
 
         return artifactList
 
@@ -75,7 +74,7 @@ class ArtifactListBuilder:
         :param kojiUrl: Koji/Brew/Mead URL
         :param downloadRootUrl: Download root URL of the artifacts
         :param tagName: Koji/Brew/Mead tag name
-        :returns: Dictionary where index is MavenArtifact object and value is the artifact URL.
+        :returns: Dictionary where index is MavenArtifact object and value is it's repo root URL.
         """
 
         kojiSession = koji.ClientSession(kojiUrl)
@@ -90,9 +89,7 @@ class ArtifactListBuilder:
                                           artifactType, artifact['version'])
 
             gavUrl = mrbutils.slashAtTheEnd(downloadRootUrl) + artifact['build_name'] + '/'\
-                     + artifact['build_version'] + '/' + artifact['build_release']\
-                     + '/maven/' + artifact['group_id'].replace('.', '/') + '/'\
-                     + artifact['artifact_id'] + '/' + artifact['version'] + '/'
+                     + artifact['build_version'] + '/' + artifact['build_release'] + '/maven/'
             artifacts[mavenArtifact] = gavUrl
 
         print '[%s]' % ', '.join(map(str, artifacts))
@@ -106,7 +103,7 @@ class ArtifactListBuilder:
         :param repoUrls: URL of the repositories that contains the listed artifacts
         :param gavs: List of top level GAVs
         :returns: Dictionary where index is MavenArtifact object and value is
-                  the artifact URL, or empty dictionary if something goes wrong.
+                  it's repo root URL, or empty dictionary if something goes wrong.
         """
         artifacts = {}
 
@@ -153,7 +150,7 @@ class ArtifactListBuilder:
 
         :param repoUrl: repository URL (local or remote, supported are [file://], http:// and
                         https:// urls)
-        :returns: Dictionary where index is MavenArtifact object and value is the artifact URL.
+        :returns: Dictionary where index is MavenArtifact object and value is it's repo root URL.
         """
         protocol = mrbutils.urlProtocol(repoUrl)
         if protocol == 'file':
@@ -190,9 +187,10 @@ class ArtifactListBuilder:
         Loads maven artifacts from local directory.
 
         :param directoryPath: Path of the local directory.
-        :returns: Dictionary where index is MavenArtifact object and value is the artifact URL
+        :returns: Dictionary where index is MavenArtifact object and value is it's repo root URL
                   starting with 'file://'.
         """
+        repoRoot = mrbutils.slashAtTheEnd(directoryPath)
         artifacts = {}
         regexGAV = re.compile(r'(^.*)/([^/]*)/([^/]*$)')
         for dirname, dirnames, filenames in os.walk(directoryPath):
@@ -201,7 +199,7 @@ class ArtifactListBuilder:
                 gav = regexGAV.search(gavPath)
                 mavenArtifact = MavenArtifact(gav.group(1).replace('/', '.'), gav.group(2),
                                             gav.group(3))
-                artifacts[mavenArtifact] = 'file://' + dirname
+                artifacts[mavenArtifact] = 'file://' + repoRoot
 
         return artifacts
 
@@ -210,9 +208,9 @@ class ArtifactListBuilder:
         Loads maven artifacts from list of GAVs and tries to locate the artifacts in one of the
         specified repositories.
 
-        :param urls: URLs where the given GAVs can be located
+        :param urls: repository URLs where the given GAVs can be located
         :param gavs: List of GAVs
-        :returns: Dictionary where index is MavenArtifact object and value is the artifact URL.
+        :returns: Dictionary where index is MavenArtifact object and value is it's repo root URL.
         """
         artifacts = {}
         for gav in gavs:
@@ -220,40 +218,12 @@ class ArtifactListBuilder:
             for url in urls:
                 gavUrl = url + '/' + artifact.getDirPath()
                 if mrbutils.urlExists(gavUrl):
-                    artifacts[artifact] = gavUrl
+                    artifacts[artifact] = url
                     break
             if not artifact in artifacts:
                 logging.warning('artifact %s not found in any url!', artifact)
 
         return artifacts
-
-    def _getFiles(self, gavUrl):
-        parsedUrl = urlparse.urlparse(gavUrl)
-        protocol = parsedUrl[0]
-        if protocol == 'http' or protocol == 'https':
-            return self._remoteFind(gavUrl)
-        elif protocol == 'file':
-            return self._localFind(gavUrl)
-        else:
-            logging.warning('Unknown protocol: %s', protocol)
-
-    def _localFind(self, gavUrl):
-        files = []
-        gavPath = gavUrl.replace('file://', '')
-        for dirname, dirnames, filenames in os.walk(gavPath):
-            for filename in filenames:
-                files.append('file://' + os.path.join(gavPath, dirname, filename))
-        return files
-
-    def _remoteFind(self, gavUrl):
-        files = []
-        (out, _) = Popen(r'lftp -c "set ssl:verify-certificate no ; open ' + gavUrl + ' ; find "',
-                        stdout=PIPE, shell=True).communicate()
-        for line in out.split('\n'):
-            if line == '':
-                continue
-            files.append(gavUrl + line)
-        return files
 
     def _parseDepList(self, depListFilename):
         """Parse maven dependency:list output and return a list of GAVs"""
