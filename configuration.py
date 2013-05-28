@@ -10,26 +10,18 @@ class Configuration:
     from a json configuration file.
     """
 
-    resultRepoName = None
     generateMetadata = None
     singleVersion = None
     artifactSources = []
     excludedGAVs = []
     excludedRepositories = []
     excludedFilePatterns = []
-    tempdir = '/tmp/maven-repo-builder/'
-    targetdir = './'
 
     def load(self):
         """ Load confiugration from command line arguments """
         parser = OptionParser(usage='%prog [options]')
         parser.add_option('-c', '--config', dest='config',
                           help='Configuration file to use to drive the repository builder')
-        parser.add_option('-t', '--tempdir', dest='tempdir',
-                          help='Temporary directory where repository will be built',
-                          default='/tmp/maven-repo-builder/')
-        parser.add_option('--targetdir', dest='targetdir',
-                          help='Target directory where built repository archive will be placed')
         (opts, args) = parser.parse_args()
 
         if opts.config is None:
@@ -37,9 +29,6 @@ class Configuration:
             sys.exit(1)
 
         self._loadFromFile(opts.config)
-        self.tempdir = opts.tempdir
-        if not opts.targetdir is None:
-            self.targetdir = opts.targetdir
 
     def _setDefaults(self):
         if self.generateMetadata is None:
@@ -49,9 +38,6 @@ class Configuration:
 
     def _validate(self):
         valid = True
-        if self.resultRepoName is None:
-            logging.error("Option result-repo-name not set in configuration file.")
-            valid = False
         if self.generateMetadata is None:
             logging.error("Option generate-metadata not set in configuration file.")
             valid = False
