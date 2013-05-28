@@ -196,11 +196,20 @@ class ArtifactListBuilder:
         regexGAV = re.compile(r'(^.*)/([^/]*)/([^/]*$)')
         for dirname, dirnames, filenames in os.walk(directoryPath):
             if not dirnames:
+                artifactTypes = []
+                extRegexp = re.compile('.*\.([^.]+)$')
+                for filename in filenames:
+                    artifactType = extRegexp.search(filename).group(1)
+                    if artifactType in ['repositories','lastUpdated','sha1','pom']: continue
+                    artifactTypes.append(artifactType)
+                if not artifactTypes:
+                    artifactTypes.append('pom')
                 gavPath = dirname.replace(directoryPath, '')
                 gav = regexGAV.search(gavPath)
-                mavenArtifact = MavenArtifact(gav.group(1).replace('/', '.'), gav.group(2),
-                                            gav.group(3))
-                artifacts[mavenArtifact] = 'file://' + repoRoot
+                for artifactType in artifactTypes:
+                    mavenArtifact = MavenArtifact(gav.group(1).replace('/', '.'), gav.group(2),
+                                                  artifactType, gav.group(3))
+                    artifacts[mavenArtifact] = "file://" + directoryPath
 
         return artifacts
 
