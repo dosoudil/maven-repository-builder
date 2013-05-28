@@ -15,7 +15,7 @@ class Configuration:
     artifactSources = []
     excludedGAVs = []
     excludedRepositories = []
-    excludedFilePatterns = []
+    multiVersionGAs = []
 
     def load(self):
         """ Load confiugration from command line arguments """
@@ -29,6 +29,8 @@ class Configuration:
             sys.exit(1)
 
         self._loadFromFile(opts.config)
+        self._setDefaults()
+        self._validate()
 
     def _setDefaults(self):
         if self.generateMetadata is None:
@@ -47,7 +49,6 @@ class Configuration:
         if not self.artifactSources:
             logging.error("No artifact-sources set in configuration file.")
             valid = False
-
         if not valid:
             sys.exit(1)
 
@@ -68,19 +69,51 @@ class Configuration:
             self.singleVersion = _str2bool(data['single-version'])
 
         if 'artifact-sources' in data:
-            self.artifactSources.extend(data['artifact-sources'])
+            self._loadArtifactSources(data['artifact-sources'])
 
-        if 'excluded-gavs' in data:
-            self.excludedGAVs.extend(data['excluded-gavs'])
+        if 'excluded-gav-patterns-ref' in data:
+            for filename in data['excluded-gav-patterns-ref']:
+                self.excludedGAVs.extend(self._loadFlatFile(filename))
 
         if 'excluded-repositories' in data:
             self.excludedRepositories.extend(data['excluded-repositories'])
 
-        if 'excluded-file-patterns' in data:
-            self.excludedFilePatterns.extend(data['excluded-file-patterns'])
+        if 'multi-version-ga-patterns-ref' in data:
+            for filename in data['multi-version-ga-patterns-ref']:
+                self.multiVersionGAs.extend(self._loadFlatFile(filename))
 
         if 'include-low-priority' in data and data['include-low-priority']:
             self._loadFromFile(data['include-low-priority'], False)
+
+    def _loadArtifactSources(self, artifactSources):
+        for source in artifactSources:
+            if not 'type' in source:
+                logging.error("Source doesn't have type.\n %s", str(source))
+                sys.exit(1)
+            if source['type'] == 'mead-tag':
+                if 'included-gav-patterns-ref' in source:
+                    source['included-gav-patterns'] = self._loadFlatFile(source['included-gav-patterns-ref'])
+            elif source['type'] == 'dependency-list':
+                source['repo-url'] = self._getRepoUrl(source)
+                if 'top-level-gavs-ref' in source:
+                    source['top-level-gavs'] = self._loadFlatFile(source['top-level-gavs-ref'])
+            elif source['type'] == 'repository':
+                source['repo-url'] = self._getRepoUrl(source)
+                if 'included-gav-patterns-ref' in source:
+                    source['included-gav-patterns'] = self._loadFlatFile(source['included-gav-patterns-ref'])
+            self.artifactSources.append(source)
+
+    def _loadFlatFile(self, filename):
+        return []
+
+    def _getRepoUrl(self, source):
+        if not 'repo-url' in source:
+            logging.error("Source %s must have specified repo-url.", source['type'])
+            sys.exit(1)
+        if isinstance(source['repo-url'], basestring):
+            return [source['repo-url']]
+        else:
+            return source['repo-url']
 
 
 def _str2bool(v):

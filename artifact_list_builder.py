@@ -42,14 +42,14 @@ class ArtifactListBuilder:
                                                        source['tag-name'])
             elif source['type'] == 'dependency-list':
                 logging.info("Building artifact list from top level list of GAVs")
-                artifacts = self._listDependencies(source['repo-urls'],
+                artifacts = self._listDependencies(source['repo-url'],
                                                    self._parseDepList(source['top-level-gavs-ref']))
             elif source['type'] == 'repository':
                 logging.info("Building artifact list from repository %s", source['repo-url'])
                 artifacts = self._listRepository(source['repo-url'])
             elif source['type'] == 'artifacts':
                 logging.info("Building artifact list from list of artifacts")
-                artifacts = self._listArtifacts(source['repo-urls'],
+                artifacts = self._listArtifacts(source['repo-url'],
                                                 self._parseDepList(source['included-gavs-ref']))
             else:
                 logging.warning("Unsupported source type: %s", source['type'])
@@ -144,7 +144,7 @@ class ArtifactListBuilder:
 
         return artifacts
 
-    def _listRepository(self, repoUrl):
+    def _listRepository(self, repoUrls):
         """
         Loads maven artifacts from a repository.
 
@@ -152,15 +152,16 @@ class ArtifactListBuilder:
                         https:// urls)
         :returns: Dictionary where index is MavenArtifact object and value is it's repo root URL.
         """
-        protocol = mrbutils.urlProtocol(repoUrl)
-        if protocol == 'file':
-            return self._listLocalRepository(repoUrl[7:])
-        elif protocol == '':
-            return self._listLocalRepository(repoUrl)
-        elif protocol == 'http' or protocol == 'https':
-            return self._listRemoteRepository(repoUrl)
-        else:
-            raise "Invalid protocol!", protocol
+        for repoUrl in repoUrls:
+            protocol = mrbutils.urlProtocol(repoUrl)
+            if protocol == 'file':
+                return self._listLocalRepository(repoUrl[7:])
+            elif protocol == '':
+                return self._listLocalRepository(repoUrl)
+            elif protocol == 'http' or protocol == 'https':
+                return self._listRemoteRepository(repoUrl)
+            else:
+                raise "Invalid protocol!", protocol
 
     def _listRemoteRepository(self, repoUrl):
         artifacts = {}

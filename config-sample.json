@@ -13,7 +13,7 @@
     },
     {
       "type": "dependency-list",
-      "repo-urls": [
+      "repo-url": [
         "https://repository.jboss.org/nexus/content/repositories/public-jboss/"
       ],
       "top-level-gavs-ref": "top-level-gavs.list"
@@ -25,7 +25,7 @@
     },
     {
       "type": "repository",
-      "repo-urls": [
+      "repo-url": [
         "https://repository.engineering.redhat.com/nexus/content/repositories/jboss-public/",
         "file:///var/maven/repository/test-repo/"
       ],
