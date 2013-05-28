@@ -38,7 +38,7 @@ class MavenArtifact:
         return relativePath
 
     def getGA(self):
-        return self.groupId + ":" + self.artifactId
+        return self.groupId + ":" + self.artifactId + ":" + self.type
 
     def getBaseFilename(self):
         """Returns the filename without the file extension"""

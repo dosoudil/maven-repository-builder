@@ -10,8 +10,6 @@ class Filter:
     def filter(self, artifactList):
         artifactList = self._filterExcludedGAVs(artifactList, self.config.excludedGAVs)
         artifactList = self._filterDuplicates(artifactList)
-        artifactList = self._filterExcludedFilePatterns(artifactList,
-                                                        self.config.excludedFilePatterns)
         artifactList = self._filterExcludedRepositories(artifactList,
                                                         self.config.excludedRepositories)
         return artifactList
@@ -32,31 +30,14 @@ class Filter:
                 del artifactList[ga]
         return artifactList
 
-    def _filterExcludedFilePatterns(self, artifactList, patterns):
-        regexs = []
-        for pattern in patterns:
-            regexs.append(re.compile(pattern))
-        for ga in artifactList.keys():
-            for priority in artifactList[ga].keys():
-                for version in artifactList[ga][priority].keys():
-                    artifactList[ga][priority][version][:] = \
-                            [filename for filename in artifactList[ga][priority][version]
-                                      if not _somethingMatch(regexs, filename)]
-                    if not artifactList[ga][priority][version]:
-                        del artifactList[ga][priority][version]
-                if not artifactList[ga][priority]:
-                    del artifactList[ga][priority]
-            if not artifactList[ga]:
-                del artifactList[ga]
-        return artifactList
-
     def _filterExcludedRepositories(self, artifactList, repositories):
         for ga in artifactList.keys():
             groupId = ga.split(':')[0]
             artifactId = ga.split(':')[1]
+            type = ga.split(':')[2]
             for priority in artifactList[ga].keys():
                 for version in artifactList[ga][priority].keys():
-                    artifact = MavenArtifact(groupId, artifactId, version)
+                    artifact = MavenArtifact(groupId, artifactId, type, version)
                     if _isArtifactInRepos(repositories, artifact):
                         del artifactList[ga][priority][version]
                 if not artifactList[ga][priority]:
