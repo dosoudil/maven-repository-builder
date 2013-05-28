@@ -83,6 +83,8 @@ class ArtifactListBuilder:
 
         artifacts = {}
         for artifact in kojiArtifacts:
+            # FIXME: This isn't reliable as file extension is not equal to
+            # maven type, e.g. jar != ejb
             artifactType = re.search('.*\.(.+)$', artifact['filename']).group(1)
             mavenArtifact = MavenArtifact(artifact['group_id'], artifact['artifact_id'],
                                           artifactType, artifact['version'])
