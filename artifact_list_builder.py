@@ -39,14 +39,16 @@ class ArtifactListBuilder:
                 logging.info("Building artifact list from tag %s", source['tag-name'])
                 artifacts = self._listMeadTagArtifacts(source['koji-url'],
                                                        source['download-root-url'],
-                                                       source['tag-name'])
+                                                       source['tag-name'],
+                                                       self._readLines(source['included-gav-patterns-ref']))
             elif source['type'] == 'dependency-list':
                 logging.info("Building artifact list from top level list of GAVs")
                 artifacts = self._listDependencies(source['repo-url'],
                                                    self._parseDepList(source['top-level-gavs-ref']))
             elif source['type'] == 'repository':
                 logging.info("Building artifact list from repository %s", source['repo-url'])
-                artifacts = self._listRepository(source['repo-url'])
+                artifacts = self._listRepository(source['repo-url'],
+                                                 self._readLines(source['included-gav-patterns-ref']))
             elif source['type'] == 'artifacts':
                 logging.info("Building artifact list from list of artifacts")
                 artifacts = self._listArtifacts(source['repo-url'],
@@ -67,7 +69,7 @@ class ArtifactListBuilder:
 
         return artifactList
 
-    def _listMeadTagArtifacts(self, kojiUrl, downloadRootUrl, tagName):
+    def _listMeadTagArtifacts(self, kojiUrl, downloadRootUrl, tagName, gavPatterns):
         """
         Loads maven artifacts from koji (brew/mead).
 
@@ -92,9 +94,7 @@ class ArtifactListBuilder:
                      + artifact['build_version'] + '/' + artifact['build_release'] + '/maven/'
             artifacts[mavenArtifact] = gavUrl
 
-        print '[%s]' % ', '.join(map(str, artifacts))
-
-        return artifacts
+        return self._filterArtifactsByPatterns(artifacts, gavPatterns)
 
     def _listDependencies(self, repoUrls, gavs):
         """
@@ -144,7 +144,7 @@ class ArtifactListBuilder:
 
         return artifacts
 
-    def _listRepository(self, repoUrls):
+    def _listRepository(self, repoUrls, gavPatterns):
         """
         Loads maven artifacts from a repository.
 
@@ -152,16 +152,19 @@ class ArtifactListBuilder:
                         https:// urls)
         :returns: Dictionary where index is MavenArtifact object and value is it's repo root URL.
         """
+        artifacts = {}
         for repoUrl in repoUrls:
             protocol = mrbutils.urlProtocol(repoUrl)
             if protocol == 'file':
-                return self._listLocalRepository(repoUrl[7:])
+                artifacts = self._listLocalRepository(repoUrl[7:])
             elif protocol == '':
-                return self._listLocalRepository(repoUrl)
+                artifacts = self._listLocalRepository(repoUrl)
             elif protocol == 'http' or protocol == 'https':
-                return self._listRemoteRepository(repoUrl)
+                artifacts = self._listRemoteRepository(repoUrl)
             else:
                 raise "Invalid protocol!", protocol
+
+        return self._filterArtifactsByPatterns(artifacts, gavPatterns)
 
     def _listRemoteRepository(self, repoUrl):
         artifacts = {}
@@ -199,7 +202,13 @@ class ArtifactListBuilder:
                 artifactTypes = []
                 extRegexp = re.compile('.*\.([^.]+)$')
                 for filename in filenames:
-                    artifactType = extRegexp.search(filename).group(1)
+                    extension = extRegexp.search(filename)
+                    # Could be a file without extension
+                    if extension:
+                        artifactType = extension.group(1)
+                    else:
+                        artifactType = filename
+
                     if artifactType in ['repositories','lastUpdated','sha1','pom']: continue
                     artifactTypes.append(artifactType)
                 if not artifactTypes:
@@ -207,7 +216,10 @@ class ArtifactListBuilder:
                 gavPath = dirname.replace(directoryPath, '')
                 gav = regexGAV.search(gavPath)
                 for artifactType in artifactTypes:
-                    mavenArtifact = MavenArtifact(gav.group(1).replace('/', '.'), gav.group(2),
+                    groupId = gav.group(1).replace('/', '.')
+                    if groupId.startswith("."):
+                        groupId = groupId.replace(".", "", 1)
+                    mavenArtifact = MavenArtifact(groupId, gav.group(2),
                                                   artifactType, gav.group(3))
                     artifacts[mavenArtifact] = "file://" + directoryPath
 
@@ -237,8 +249,7 @@ class ArtifactListBuilder:
 
     def _parseDepList(self, depListFilename):
         """Parse maven dependency:list output and return a list of GAVs"""
-        with open(depListFilename, "r") as depListFile:
-            depList = depListFile.readlines()
+        depList = self._readLines(depListFilename)
 
         regexComment = re.compile('#.*$')
         # Match pattern groupId:artifactId:[type:][classifier:]version[:scope]
@@ -252,3 +263,19 @@ class ArtifactListBuilder:
                 gavList.append(gav.group(1))
 
         return gavList
+
+    def _readLines(self, filepath):
+        if filepath:
+            with open(filepath, "r") as file:
+                return file.readlines()
+
+    def _filterArtifactsByPatterns(self, artifacts, gavPatterns):
+        if not gavPatterns:
+            return artifacts
+
+        includedArtifacts = {}
+        for artifact in artifacts:
+            matches = map(lambda x: re.match(x, artifact.getGAV()), gavPatterns)
+            if any(matches):
+                includedArtifacts[artifact] = artifacts[artifact]
+        return includedArtifacts

@@ -40,6 +40,9 @@ class MavenArtifact:
     def getGA(self):
         return self.groupId + ":" + self.artifactId + ":" + self.type
 
+    def getGAV(self):
+        return self.groupId + ":" + self.artifactId + ":" + self.version
+
     def getBaseFilename(self):
         """Returns the filename without the file extension"""
         baseFilename = self.artifactId + '-' + self.version
