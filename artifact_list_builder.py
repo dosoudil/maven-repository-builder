@@ -168,7 +168,7 @@ class ArtifactListBuilder:
 
     def _listRemoteRepository(self, repoUrl, prefix=""):
         artifacts = {}
-        (out, _) = Popen(r'lftp -c "set ssl:verify-certificate no ; open ' + repoUrl
+        (out, _) = Popen(r'lftp -c "set ssl:verify-certificate no ; open ' + repoUrl + prefix
                          + ' ; find  ."', stdout=PIPE, shell=True).communicate()
 
         # ^./(groupId)/(artifactId)/(version)/(filename)$
