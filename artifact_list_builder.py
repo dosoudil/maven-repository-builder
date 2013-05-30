@@ -153,14 +153,14 @@ class ArtifactListBuilder:
         :returns: Dictionary where index is MavenArtifact object and value is it's repo root URL.
         """
         artifacts = {}
-        for repoUrl in repoUrls:
+        for repoUrl in reversed(repoUrls):
             protocol = mrbutils.urlProtocol(repoUrl)
             if protocol == 'file':
-                artifacts = self._listLocalRepository(repoUrl[7:])
+                artifacts.update(self._listLocalRepository(repoUrl[7:]))
             elif protocol == '':
-                artifacts = self._listLocalRepository(repoUrl)
+                artifacts.update(self._listLocalRepository(repoUrl))
             elif protocol == 'http' or protocol == 'https':
-                artifacts = self._listRemoteRepository(repoUrl)
+                artifacts.update(self._listRemoteRepository(repoUrl))
             else:
                 raise "Invalid protocol!", protocol
 
