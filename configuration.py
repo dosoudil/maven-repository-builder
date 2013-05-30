@@ -91,20 +91,25 @@ class Configuration:
                 logging.error("Source doesn't have type.\n %s", str(source))
                 sys.exit(1)
             if source['type'] == 'mead-tag':
-                if 'included-gav-patterns-ref' in source:
-                    source['included-gav-patterns'] = self._loadFlatFile(source['included-gav-patterns-ref'])
+                source['included-gav-patterns'] = self._loadFlatFileBySourceParameter(source, 'included-gav-patterns-ref')
             elif source['type'] == 'dependency-list':
                 source['repo-url'] = self._getRepoUrl(source)
-                if 'top-level-gavs-ref' in source:
-                    source['top-level-gavs'] = self._loadFlatFile(source['top-level-gavs-ref'])
+                source['top-level-gavs'] = self._loadFlatFileBySourceParameter(source, 'top-level-gavs-ref')
             elif source['type'] == 'repository':
                 source['repo-url'] = self._getRepoUrl(source)
-                if 'included-gav-patterns-ref' in source:
-                    source['included-gav-patterns'] = self._loadFlatFile(source['included-gav-patterns-ref'])
+                source['included-gav-patterns'] = self._loadFlatFileBySourceParameter(source, 'included-gav-patterns-ref')
             self.artifactSources.append(source)
 
+    def _loadFlatFileBySourceParameter(self, source, parameter):
+        if parameter in source:
+            return self._load_FlatFile(source[parameter])
+        else:
+            return []
+
     def _loadFlatFile(self, filename):
-        return []
+        if filepath:
+            with open(filepath, "r") as file:
+                return file.readlines()
 
     def _getRepoUrl(self, source):
         if not 'repo-url' in source:

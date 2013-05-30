@@ -40,19 +40,19 @@ class ArtifactListBuilder:
                 artifacts = self._listMeadTagArtifacts(source['koji-url'],
                                                        source['download-root-url'],
                                                        source['tag-name'],
-                                                       self._readLines(source['included-gav-patterns-ref']))
+                                                       source['included-gav-patterns'])
             elif source['type'] == 'dependency-list':
                 logging.info("Building artifact list from top level list of GAVs")
                 artifacts = self._listDependencies(source['repo-url'],
-                                                   self._parseDepList(source['top-level-gavs-ref']))
+                                                   self._parseDepList(source['top-level-gavs']))
             elif source['type'] == 'repository':
                 logging.info("Building artifact list from repository %s", source['repo-url'])
                 artifacts = self._listRepository(source['repo-url'],
-                                                 self._readLines(source['included-gav-patterns-ref']))
+                                                 source['included-gav-patterns'])
             elif source['type'] == 'artifacts':
                 logging.info("Building artifact list from list of artifacts")
                 artifacts = self._listArtifacts(source['repo-url'],
-                                                self._parseDepList(source['included-gavs-ref']))
+                                                self._parseDepList(source['included-gavs']))
             else:
                 logging.warning("Unsupported source type: %s", source['type'])
                 continue
@@ -247,10 +247,8 @@ class ArtifactListBuilder:
 
         return artifacts
 
-    def _parseDepList(self, depListFilename):
+    def _parseDepList(self, depList):
         """Parse maven dependency:list output and return a list of GAVs"""
-        depList = self._readLines(depListFilename)
-
         regexComment = re.compile('#.*$')
         # Match pattern groupId:artifactId:[type:][classifier:]version[:scope]
         regexGAV = re.compile('(([\w\-.]+:){2,3}([\w\-.]+:)?([\d][\w\-.]+))(:[\w]*\S)?')
@@ -263,11 +261,6 @@ class ArtifactListBuilder:
                 gavList.append(gav.group(1))
 
         return gavList
-
-    def _readLines(self, filepath):
-        if filepath:
-            with open(filepath, "r") as file:
-                return file.readlines()
 
     def _filterArtifactsByPatterns(self, artifacts, gavPatterns):
         if not gavPatterns:
