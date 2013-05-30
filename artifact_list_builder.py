@@ -166,24 +166,32 @@ class ArtifactListBuilder:
 
         return self._filterArtifactsByPatterns(artifacts, gavPatterns)
 
-    def _listRemoteRepository(self, repoUrl):
+    def _listRemoteRepository(self, repoUrl, prefix=""):
         artifacts = {}
         (out, _) = Popen(r'lftp -c "set ssl:verify-certificate no ; open ' + repoUrl
-                         + ' ; find " | egrep "^\./.*/[0-9].*/$"', stdout=PIPE, shell=True)\
-                         .communicate()
+                         + ' ; find  ."', stdout=PIPE, shell=True).communicate()
 
-        regexGAV = re.compile(r'\./(.*)/([^/]*)/([^/]*)/$')
-
+        # ^./(groupId)/(artifactId)/(version)/(filename)$
+        regexGAVF = re.compile(r'\./(.+)/([^/]+)/([^/]+)/([^/]+\.[^/.]+)$')
+        gavsWithExts = {}
         for line in out.split('\n'):
             if (line):
-                print line
-                gav = regexGAV.search(line)
-                mavenArtifact = MavenArtifact(gav.group(1).replace('/', '.'), gav.group(2),
-                                            gav.group(3))
+                line = "./" + prefix + line[2:]
+                gavf = regexGAVF.match(line)
+                if gavf is not None:
+                    av = re.escape(gavf.group(2) + "-" + gavf.group(3) + ".")
+                    regexExt = re.compile(av + "([^.]+)$")
+                    ext = regexExt.match(gavf.group(4))
+                    if ext is not None:
+                        gav = (gavf.group(1).replace('/', '.'), gavf.group(2), gavf.group(3))
+                        gavsWithExts.setdefault(gav, []).append(ext.group(1))
 
-                gavUrl = repoUrl + mavenArtifact.groupId.replace('.', '/') + '/'\
-                        + mavenArtifact.artifactId + '/' + mavenArtifact.version + '/'
-                artifacts[mavenArtifact] = gavUrl
+        for gav in gavsWithExts:
+            if len(gavsWithExts[gav]) > 1:
+                gavsWithExts[gav].remove("pom")
+            for ext in gavsWithExts[gav]:
+                mavenArtifact = MavenArtifact(gav[0], gav[1], ext, gav[2])
+                artifacts[mavenArtifact] = repoUrl
         return artifacts
 
     def _listLocalRepository(self, directoryPath):
