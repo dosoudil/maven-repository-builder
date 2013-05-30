@@ -194,7 +194,7 @@ class ArtifactListBuilder:
                 artifacts[mavenArtifact] = repoUrl
         return artifacts
 
-    def _listLocalRepository(self, directoryPath):
+    def _listLocalRepository(self, directoryPath, prefix=""):
         """
         Loads maven artifacts from local directory.
 
@@ -202,35 +202,27 @@ class ArtifactListBuilder:
         :returns: Dictionary where index is MavenArtifact object and value is it's repo root URL
                   starting with 'file://'.
         """
-        repoRoot = mrbutils.slashAtTheEnd(directoryPath)
         artifacts = {}
-        regexGAV = re.compile(r'(^.*)/([^/]*)/([^/]*$)')
-        for dirname, dirnames, filenames in os.walk(directoryPath):
+        # ^(groupId)/(artifactId)/(version)$
+        regexGAV = re.compile(r'^(.*)/([^/]*)/([^/]*)$')
+        for dirname, dirnames, filenames in os.walk(directoryPath + prefix):
             if not dirnames:
-                artifactTypes = []
-                extRegexp = re.compile('.*\.([^.]+)$')
-                for filename in filenames:
-                    extension = extRegexp.search(filename)
-                    # Could be a file without extension
-                    if extension:
-                        artifactType = extension.group(1)
-                    else:
-                        artifactType = filename
-
-                    if artifactType in ['repositories','lastUpdated','sha1','pom']: continue
-                    artifactTypes.append(artifactType)
-                if not artifactTypes:
-                    artifactTypes.append('pom')
                 gavPath = dirname.replace(directoryPath, '')
                 gav = regexGAV.search(gavPath)
-                for artifactType in artifactTypes:
-                    groupId = gav.group(1).replace('/', '.')
-                    if groupId.startswith("."):
-                        groupId = groupId.replace(".", "", 1)
-                    mavenArtifact = MavenArtifact(groupId, gav.group(2),
-                                                  artifactType, gav.group(3))
-                    artifacts[mavenArtifact] = "file://" + directoryPath
+                av = re.escape(gav.group(2) + "-" + gav.group(3) + ".")
+                regexExt = re.compile(av + "([^.]+)$")
+                exts = []
+                for filename in filenames:
+                    ext = regexExt.match(filename)
+                    if ext is not None:
+                        exts.append(ext.group(1))
 
+                if len(exts) > 1:
+                    exts.remove("pom")
+                for ext in exts:
+                    mavenArtifact = MavenArtifact(gav.group(1).replace('/', '.'),
+                                                  gav.group(2), ext, gav.group(3))
+                    artifacts[mavenArtifact] = directoryPath
         return artifacts
 
     def _listArtifacts(self, urls, gavs):
