@@ -50,7 +50,7 @@ class MavenArtifact:
 
     def getArtifactFilepath(self):
         """Return the path to the artifact file"""
-        return self.getDirPath() + '/' + self.getArtifactFilename()
+        return self.getDirPath() + self.getArtifactFilename()
 
     def getPomFilename(self):
         """Returns the filename of the pom file for this artifact"""
@@ -58,7 +58,7 @@ class MavenArtifact:
 
     def getPomFilepath(self):
         """Return the path to the artifact file"""
-        return self.getDirPath() + '/' + self.getPomFilename()
+        return self.getDirPath() + self.getPomFilename()
 
     def getSourcesFilename(self):
         """Returns the filename of the sources artifact"""
@@ -66,5 +66,5 @@ class MavenArtifact:
 
     def getSourcesFilepath(self):
         """Return the path to the artifact file"""
-        return self.getDirPath() + '/' + self.getSourcesFilename()
+        return self.getDirPath() + self.getSourcesFilename()
 
