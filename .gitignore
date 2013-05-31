@@ -2,3 +2,10 @@
 .pydevproject
 local-maven-repository
 *.pyc
+
+/repos
+*-maven.out
+/versionSorter/target/
+/versionSorter/dependency-reduced-pom.xml
+/versionSorter/nbactions.xml
+
