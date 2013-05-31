@@ -88,7 +88,7 @@ def depListToArtifactList(depList):
         nextLine = nextLine.strip()
         gav = regexGAV.search(nextLine)
         if gav:
-            artifactList.append(MavenArtifact(gav.group(1)))
+            artifactList.append(MavenArtifact.createFromGAV(gav.group(1)))
     return artifactList
 
 
