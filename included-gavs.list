@@ -1,0 +1,8 @@
+org.jboss:jboss-parent:8
+org.jboss.arquillian:arquillian-bom:1.0.0.Final
+org.jboss.arquillian:arquillian-build:1.0.0.Final
+org.jboss.arquillian:arquillian-parent:1.0.0.Final
+org.jboss.arquillian.config:arquillian-config-api:1.0.0.Final
+org.jboss.arquillian.container:arquillian-container-osgi:1.0.0.Final
+org.jboss.arquillian.core:arquillian-core-api:1.0.3.Final
+org.jboss.arquillian.extension:arquillian-jacoco:1.0.0.Alpha3
