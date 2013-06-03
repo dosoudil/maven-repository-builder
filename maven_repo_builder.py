@@ -18,13 +18,14 @@ import maven_repo_util
 from maven_artifact import MavenArtifact
 
 
-def downloadArtifact(artifactUrl, artifactLocalPath):
-    if not os.path.exists(artifactLocalPath):
-        returnCode = maven_repo_util.download(artifactUrl, artifactLocalPath)
-        if (returnCode == 404):
-            logging.warning("Remote file not found: " + artifactUrl)
+def downloadFile(fileUrl, fileLocalPath):
+    """Downloads file from the given URL to local path if the path does not exist yet."""
+    if os.path.exists(fileLocalPath):
+        logging.debug("Artifact already downloaded: " + fileUrl)
     else:
-        logging.debug("Artifact already downloaded: " + artifactUrl)
+        returnCode = maven_repo_util.download(fileUrl, fileLocalPath)
+        if (returnCode == 404):
+            logging.warning("Remote file not found: " + fileUrl)
 
 
 def downloadArtifacts(remoteRepoUrl, localRepoDir, artifact):
@@ -36,19 +37,19 @@ def downloadArtifacts(remoteRepoUrl, localRepoDir, artifact):
     # Download main artifact
     artifactUrl = remoteRepoUrl + '/' + artifact.getArtifactFilepath()
     artifactLocalPath = os.path.join(localRepoDir, artifact.getArtifactFilepath())
-    downloadArtifact(artifactUrl, artifactLocalPath)
+    downloadFile(artifactUrl, artifactLocalPath)
 
     # Download pom
     if artifact.getArtifactFilename() != artifact.getPomFilename():
         artifactPomUrl = remoteRepoUrl + '/' + artifact.getPomFilepath()
         artifactPomLocalPath = os.path.join(localRepoDir, artifact.getPomFilepath())
-        downloadArtifact(artifactPomUrl, artifactPomLocalPath)
+        downloadFile(artifactPomUrl, artifactPomLocalPath)
 
     # Download sources
     if artifact.getArtifactType() != 'pom' and not artifact.getClassifier():
         artifactSourcesUrl = remoteRepoUrl + '/' + artifact.getSourcesFilepath()
         artifactSourcesLocalPath = os.path.join(localRepoDir, artifact.getSourcesFilepath())
-        downloadArtifact(artifactSourcesUrl, artifactSourcesLocalPath)
+        downloadFile(artifactSourcesUrl, artifactSourcesLocalPath)
 
 
 def copyArtifact(remoteRepoPath, localRepoDir, artifact):
