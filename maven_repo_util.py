@@ -9,6 +9,7 @@ import shutil
 import urllib2
 import urlparse
 
+
 def download(url, filePath=None):
     """Download the given url to a local file"""
 

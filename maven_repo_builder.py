@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 
-"""maven_repo_builder.py: Create a Maven repository given a list of artifacts and a remote repository URL."""
+"""
+maven_repo_builder.py: Fetch artifacts into a location, where a Maven repository is being built given
+a list of artifacts and a remote repository URL.
+"""
 
 import hashlib
 import logging
@@ -14,6 +17,7 @@ import urlparse
 import maven_repo_util
 from maven_artifact import MavenArtifact
 
+
 def downloadArtifact(artifactUrl, artifactLocalPath):
     if not os.path.exists(artifactLocalPath):
         returnCode = maven_repo_util.download(artifactUrl, artifactLocalPath)
@@ -21,7 +25,7 @@ def downloadArtifact(artifactUrl, artifactLocalPath):
             logging.warning("Remote file not found: " + artifactUrl)
     else:
         logging.debug("Artifact already downloaded: " + artifactUrl)
-    
+
 
 def downloadArtifacts(remoteRepoUrl, localRepoDir, artifact):
     """Download artifact from a remote repository along with pom and source jar"""
@@ -33,13 +37,13 @@ def downloadArtifacts(remoteRepoUrl, localRepoDir, artifact):
     artifactUrl = remoteRepoUrl + '/' + artifact.getArtifactFilepath()
     artifactLocalPath = os.path.join(localRepoDir, artifact.getArtifactFilepath())
     downloadArtifact(artifactUrl, artifactLocalPath)
- 
+
     # Download pom
     if artifact.getArtifactFilename() != artifact.getPomFilename():
         artifactPomUrl = remoteRepoUrl + '/' + artifact.getPomFilepath()
         artifactPomLocalPath = os.path.join(localRepoDir, artifact.getPomFilepath())
         downloadArtifact(artifactPomUrl, artifactPomLocalPath)
-    
+
     # Download sources
     if artifact.getArtifactType() != 'pom' and not artifact.getClassifier():
         artifactSourcesUrl = remoteRepoUrl + '/' + artifact.getSourcesFilepath()
@@ -127,9 +131,9 @@ def generateChecksumFiles(filepath):
         sumfile = filepath + ext
         if os.path.exists(sumfile):
             continue
-        sum = maven_repo_util.getChecksum(filepath, sum_constr)
+        checksum = maven_repo_util.getChecksum(filepath, sum_constr)
         with open(sumfile, 'w') as sumobj:
-            sumobj.write(sum + '\n')
+            sumobj.write(checksum + '\n')
 
 
 def main():
@@ -137,14 +141,14 @@ def main():
     description = ("Generate a Maven repository based on a file (or files) containing "
                    "a list of artifacts.  Each list file must contain a single artifact "
                    "per line in the format groupId:artifactId:fileType:<classifier>:version "
-                   "The example artifact list contains more information. ") 
-                   
+                   "The example artifact list contains more information. ")
+
     cliOptParser = optparse.OptionParser(usage=usage, description=description)
     cliOptParser.add_option('-l', '--loglevel',
             default='info',
             help='Set the level of log output.  Can be set to debug, info, warning, error, or critical')
     cliOptParser.add_option('-u', '--url',
-            default='http://repo1.maven.org/maven2/', 
+            default='http://repo1.maven.org/maven2/',
             help='URL of the remote repository from which artifacts are downloaded')
     cliOptParser.add_option('-o', '--output',
             default='local-maven-repository',
@@ -155,9 +159,9 @@ def main():
     # Set the log level
     log_level = options.loglevel.lower()
     if (log_level == 'debug'):
-        logging.basicConfig(level=logging.DEBUG) 
+        logging.basicConfig(level=logging.DEBUG)
     if (log_level == 'info'):
-        logging.basicConfig(level=logging.INFO) 
+        logging.basicConfig(level=logging.INFO)
     elif (log_level == 'warning'):
         logging.basicConfig(level=logging.WARNING)
     elif (log_level == 'error'):
@@ -197,6 +201,5 @@ def main():
     logging.info('Repository created in directory: %s', options.output)
 
 
-if  __name__ =='__main__':main()
-
-
+if  __name__ == '__main__':
+    main()

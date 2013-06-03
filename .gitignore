@@ -1,5 +1,6 @@
 .project
 .pydevproject
+maven-repository-builder.nja
 local-maven-repository
 *.pyc
 
@@ -8,4 +9,3 @@ local-maven-repository
 /versionSorter/target/
 /versionSorter/dependency-reduced-pom.xml
 /versionSorter/nbactions.xml
-

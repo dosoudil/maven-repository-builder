@@ -107,9 +107,9 @@ class Configuration:
             return []
 
     def _loadFlatFile(self, filename):
-        if filepath:
-            with open(filepath, "r") as file:
-                return file.readlines()
+        if filename:
+            with open(filename, "r") as openedfile:
+                return openedfile.readlines()
 
     def _getRepoUrl(self, source):
         if not 'repo-url' in source:

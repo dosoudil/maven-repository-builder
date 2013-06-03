@@ -1,6 +1,6 @@
-import re
 import mrbutils
 from maven_artifact import MavenArtifact
+
 
 class Filter:
 
@@ -34,10 +34,10 @@ class Filter:
         for ga in artifactList.keys():
             groupId = ga.split(':')[0]
             artifactId = ga.split(':')[1]
-            type = ga.split(':')[2]
+            artifactType = ga.split(':')[2]
             for priority in artifactList[ga].keys():
                 for version in artifactList[ga][priority].keys():
-                    artifact = MavenArtifact(groupId, artifactId, type, version)
+                    artifact = MavenArtifact(groupId, artifactId, artifactType, version)
                     if _isArtifactInRepos(repositories, artifact):
                         del artifactList[ga][priority][version]
                 if not artifactList[ga][priority]:

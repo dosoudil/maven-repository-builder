@@ -11,6 +11,7 @@ import maven_repo_util
 
 from maven_artifact import MavenArtifact
 
+
 class Tests(unittest.TestCase):
 
     def setUp(self):
@@ -21,7 +22,7 @@ class Tests(unittest.TestCase):
         url = "http://repo1.maven.org/maven2/org/jboss/jboss-parent/10/jboss-parent-10.pom"
         tempDownloadDir = tempfile.mkdtemp()
         filepath = os.path.join(tempDownloadDir, "downloadfile.txt")
-        self.assertFalse(os.path.exists(filepath), "Download file alread exists: " + filepath )
+        self.assertFalse(os.path.exists(filepath), "Download file alread exists: " + filepath)
         maven_repo_util.download(url, filepath)
         self.assertTrue(os.path.exists(filepath), "File not downloaded")
 
@@ -43,7 +44,7 @@ class Tests(unittest.TestCase):
         maven_repo_util.download(url)
 
     def test_http_404(self):
-        url = "http://repo1.maven.org/maven2/somefilethatdoesnotexist"   
+        url = "http://repo1.maven.org/maven2/somefilethatdoesnotexist"
         code = maven_repo_util.download(url)
         self.assertEqual(code, 404)
 
