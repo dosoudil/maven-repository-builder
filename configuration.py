@@ -1,12 +1,12 @@
 import json
 import sys
 import logging
-from optparse import OptionParser
+import maven_repo_util
 
 
 class Configuration:
     """
-    Class holding Maven Repository Builder configuration. It can be loaded
+    Class holding Artifact List Generator configuration. It can be loaded
     from a json configuration file.
     """
 
@@ -17,12 +17,12 @@ class Configuration:
     excludedRepositories = []
     multiVersionGAs = []
 
-    def load(self):
-        """ Load confiugration from command line arguments """
-        parser = OptionParser(usage='%prog [options]')
-        parser.add_option('-c', '--config', dest='config',
-                          help='Configuration file to use to drive the repository builder')
-        (opts, args) = parser.parse_args()
+    def load(self, opts):
+        """
+        Load confiugration from command line arguments
+
+        :param opts: options parsed by an OptionParser
+        """
 
         if opts.config is None:
             logging.error('You must specify a config file')
@@ -53,7 +53,7 @@ class Configuration:
             sys.exit(1)
 
     def _loadFromFile(self, filename, rewrite=True):
-        """ Load confiugration from json confi file. """
+        """ Load confiugration from json config file. """
         data = json.load(open(filename))
 
         if 'include-high-priority' in data and data['include-high-priority']:
@@ -63,10 +63,10 @@ class Configuration:
             self.resultRepoName = data['result-repo-name']
 
         if (rewrite or self.generateMetadata is None) and 'generate-metadata' in data:
-            self.generateMetadata = _str2bool(data['generate-metadata'])
+            self.generateMetadata = maven_repo_util.str2bool(data['generate-metadata'])
 
         if (rewrite or self.singleVersion is None) and 'single-version' in data:
-            self.singleVersion = _str2bool(data['single-version'])
+            self.singleVersion = maven_repo_util.str2bool(data['single-version'])
 
         if 'artifact-sources' in data:
             self._loadArtifactSources(data['artifact-sources'])
@@ -91,18 +91,20 @@ class Configuration:
                 logging.error("Source doesn't have type.\n %s", str(source))
                 sys.exit(1)
             if source['type'] == 'mead-tag':
-                source['included-gav-patterns'] = self._loadFlatFileBySourceParameter(source, 'included-gav-patterns-ref')
+                source['included-gav-patterns'] = self._loadFlatFileBySourceParameter(source,
+                        'included-gav-patterns-ref')
             elif source['type'] == 'dependency-list':
                 source['repo-url'] = self._getRepoUrl(source)
                 source['top-level-gavs'] = self._loadFlatFileBySourceParameter(source, 'top-level-gavs-ref')
             elif source['type'] == 'repository':
                 source['repo-url'] = self._getRepoUrl(source)
-                source['included-gav-patterns'] = self._loadFlatFileBySourceParameter(source, 'included-gav-patterns-ref')
+                source['included-gav-patterns'] = self._loadFlatFileBySourceParameter(source,
+                        'included-gav-patterns-ref')
             self.artifactSources.append(source)
 
     def _loadFlatFileBySourceParameter(self, source, parameter):
         if parameter in source:
-            return self._load_FlatFile(source[parameter])
+            return self._loadFlatFile(source[parameter])
         else:
             return []
 
@@ -119,12 +121,3 @@ class Configuration:
             return [source['repo-url']]
         else:
             return source['repo-url']
-
-
-def _str2bool(v):
-    if v.lower() in ['true', 'yes', 't', 'y', '1']:
-        return True
-    elif v.lower() in ['false', 'no', 'f', 'n', '0']:
-        return False
-    else:
-        raise ValueError("Failed to convert '" + v + "' to boolean")

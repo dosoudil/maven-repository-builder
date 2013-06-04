@@ -1,3 +1,4 @@
+import logging
 import mrbutils
 from maven_artifact import MavenArtifact
 
@@ -8,6 +9,7 @@ class Filter:
         self.config = config
 
     def filter(self, artifactList):
+        logging.debug("For filter received %d artifacts in the list.", len(artifactList))
         artifactList = self._filterExcludedGAVs(artifactList, self.config.excludedGAVs)
         artifactList = self._filterDuplicates(artifactList)
         artifactList = self._filterExcludedRepositories(artifactList,
@@ -17,49 +19,49 @@ class Filter:
     def _filterExcludedGAVs(self, artifactList, gavs):
         for gav in gavs:
             artifact = MavenArtifact.createFromGAV(gav)
-            ga = artifact.getGA()
-            if not ga in artifactList:
-                continue
-            for priority in artifactList[ga].keys():
-                if not artifact.version in artifactList[ga][priority]:
-                    continue
-                del artifactList[ga][priority][artifact.version]
-                if not artifactList[ga][priority]:
-                    del artifactList[ga][priority]
-            if not artifactList[ga]:
-                del artifactList[ga]
+            gaColon = artifact.getGA() + ":"
+            for gat in artifactList.keys():
+                if gat.startswith(gaColon):
+                    for priority in artifactList[gat].keys():
+                        if not artifact.version in artifactList[gat][priority]:
+                            continue
+                        del artifactList[gat][priority][artifact.version]
+                        if not artifactList[gat][priority]:
+                            del artifactList[gat][priority]
+                    if not artifactList[gat]:
+                        del artifactList[gat]
         return artifactList
 
     def _filterExcludedRepositories(self, artifactList, repositories):
-        for ga in artifactList.keys():
-            groupId = ga.split(':')[0]
-            artifactId = ga.split(':')[1]
-            artifactType = ga.split(':')[2]
-            for priority in artifactList[ga].keys():
-                for version in artifactList[ga][priority].keys():
+        for gat in artifactList.keys():
+            groupId = gat.split(':')[0]
+            artifactId = gat.split(':')[1]
+            artifactType = gat.split(':')[2]
+            for priority in artifactList[gat].keys():
+                for version in artifactList[gat][priority].keys():
                     artifact = MavenArtifact(groupId, artifactId, artifactType, version)
                     if _isArtifactInRepos(repositories, artifact):
-                        del artifactList[ga][priority][version]
-                if not artifactList[ga][priority]:
-                    del artifactList[ga][priority]
-            if not artifactList[ga]:
-                del artifactList[ga]
+                        del artifactList[gat][priority][version]
+                if not artifactList[gat][priority]:
+                    del artifactList[gat][priority]
+            if not artifactList[gat]:
+                del artifactList[gat]
 
         return artifactList
 
     def _filterDuplicates(self, artifactList):
-        for ga in artifactList.keys():
-            for priority in artifactList[ga].keys():
-                for version in artifactList[ga][priority].keys():
-                    for pr in artifactList[ga].keys():
+        for gat in artifactList.keys():
+            for priority in artifactList[gat].keys():
+                for version in artifactList[gat][priority].keys():
+                    for pr in artifactList[gat].keys():
                         if pr <= priority:
                             continue
-                        if version in artifactList[ga][pr]:
-                            del artifactList[ga][pr][version]
-                if not artifactList[ga][priority]:
-                    del artifactList[ga][priority]
-            if not artifactList[ga]:
-                del artifactList[ga]
+                        if version in artifactList[gat][pr]:
+                            del artifactList[gat][pr][version]
+                if not artifactList[gat][priority]:
+                    del artifactList[gat][priority]
+            if not artifactList[gat]:
+                del artifactList[gat]
         return artifactList
 
 

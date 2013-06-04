@@ -5,12 +5,13 @@ import logging
 import re
 import sys
 
+
 class MavenArtifact:
 
-    def __init__(self, groupId, artifactId, type, version, classifier=''):
+    def __init__(self, groupId, artifactId, artifactType, version, classifier=''):
         self.groupId = groupId
         self.artifactId = artifactId
-        self.artifactType = type
+        self.artifactType = artifactType
         self.version = version
         self.classifier = classifier
 
@@ -40,7 +41,7 @@ class MavenArtifact:
 
     def getClassifier(self):
         return self.classifier
- 
+
     def getDirPath(self):
         """Get the relative repository path to the artifact"""
         relativePath = self.groupId.replace('.', '/') + '/'
@@ -49,9 +50,15 @@ class MavenArtifact:
         return relativePath
 
     def getGA(self):
+        """Get the groupId and artifactId using a colon separated form."""
+        return self.groupId + ":" + self.artifactId
+
+    def getGAT(self):
+        """Get the groupId, artifactId and artifact type using a colon separated form."""
         return self.groupId + ":" + self.artifactId + ":" + self.artifactType
 
     def getGAV(self):
+        """Get the groupId, artifactId and version using a colon separated form."""
         return self.groupId + ":" + self.artifactId + ":" + self.version
 
     def getBaseFilename(self):

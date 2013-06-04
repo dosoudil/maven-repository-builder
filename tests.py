@@ -22,7 +22,7 @@ class Tests(unittest.TestCase):
         url = "http://repo1.maven.org/maven2/org/jboss/jboss-parent/10/jboss-parent-10.pom"
         tempDownloadDir = tempfile.mkdtemp()
         filepath = os.path.join(tempDownloadDir, "downloadfile.txt")
-        self.assertFalse(os.path.exists(filepath), "Download file alread exists: " + filepath)
+        self.assertFalse(os.path.exists(filepath), "Download file already exists: " + filepath)
         maven_repo_util.download(url, filepath)
         self.assertTrue(os.path.exists(filepath), "File not downloaded")
 
@@ -74,4 +74,3 @@ class Tests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
-

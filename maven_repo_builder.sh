@@ -2,8 +2,8 @@
 
 # defaults
 METADATA=false
-REPO_DIR="./maven-repository"
-DOWNLOADER_DIR="../maven-repository-builder/"
+REPO_DIR="local-maven-repository"
+LOGLEVEL="info"
 
 # =======================================
 # ====== reading command arguments ======
@@ -15,40 +15,34 @@ do
         r) REPO_FILE=${OPTARG};;
         t) REPO_DIR=${OPTARG};;
         m) METADATA=true;;
-        d) DOWNLOADER_DIR=${OPTARG};;
+        l) LOGLEVEL=${OPTARG};;
     esac
 done
 
 if [ -z ${CONFIG} ]; then
     echo "No config file specified."
-    echo 'Usage: -c CONFIG_FILENAME [-r REPO_FILENAME] [-t REPO_DIR] [-m] [-d DOWNLOADER_DIR]'
+    echo 'Usage: -c CONFIG_FILENAME [-r REPO_FILENAME] [-t REPO_DIR] [-m]'
     exit 1
 fi
 
 # ================================================
-# == 1. and 2. - create GAV list and filter it ===
-# ================================================
-FILELIST=`mktemp XXXXXX.tmp`
-python maven_repo_builder.py -c ${CONFIG} > ${FILELIST}
-if test $? != 0; then
-    echo "Creation of artifact lists failed."
-    exit 1
-fi
-
-# ================================================
+# ============== 1. create GAV list ==============
+# ============== 2. filter the list ==============
 # ============== 3. fetch artifacts ==============
 # ================================================
-cat ${FILELIST} | while read $LINE; do
-    URL=`split '   ' {print $1}`
-    ARTIFACT_LIST_FILE=`split ' ' {print $2}`
-    python ${DOWNLOADER_DIR}maven_repo_builder.py -o ${REPO_DIR} -u ${URL} ${ARTIFACT_LIST_FILE}
+if [ -z ${REPO_DIR} ]; then
+    python maven_repos_builder.py -c ${CONFIG} -l ${LOGLEVEL}
     if test $? != 0; then
-        echo "Download of artifacts listed in '${ARTIFACT_LIST_FILE}' from '${URL}' failed."
+        echo "Creation of repository failed."
         exit 1
     fi
-    rm ${ARTIFACT_LIST_FILE}
-done
-rm ${FILELIST}
+else
+    python maven_repo_builder.py -c ${CONFIG} -l ${LOGLEVEL} -o ${REPO_DIR}
+    if test $? != 0; then
+        echo "Creation of repository failed."
+        exit 1
+    fi
+fi
 
 # ================================================
 # == 4. generate metadata (opt), zip repo (opt) ==

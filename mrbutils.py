@@ -34,4 +34,4 @@ def slashAtTheEnd(url):
 
 
 def transformAsterixStringToRegexp(string):
-    return re.escape(string).replace("\\*",".*")
+    return re.escape(string).replace("\\*", ".*")

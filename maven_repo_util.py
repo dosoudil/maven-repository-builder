@@ -31,7 +31,8 @@ def download(url, filePath=None):
                 openUrl.info()['Content-Disposition'].split(';')))
             if 'filename' in cd:
                 filename = cd['filename'].strip("\"'")
-                if filename: return filename
+                if filename:
+                    return filename
         # if no filename was found above, parse it out of the final URL.
         return os.path.basename(urlparse.urlsplit(openUrl.url)[2])
 
@@ -56,19 +57,29 @@ def download(url, filePath=None):
     except ValueError as e:
         logging.error('ValueError: %s', e.message)
 
+
 def getSha1Checksum(filepath):
     return getChecksum(filepath, hashlib.sha1())
+
 
 def getChecksum(filepath, sum_constr):
     """Generate a checksums for the file using the given algorithm"""
     logging.debug('Generate %s checksum for: %s', sum_constr.name, filepath)
-    sum = sum_constr
+    checksum = sum_constr
     with open(filepath, 'rb') as fobj:
         while True:
             content = fobj.read(8192)
             if not content:
                 fobj.close()
                 break
-            sum.update(content)
-    return sum.hexdigest()
+            checksum.update(content)
+    return checksum.hexdigest()
 
+
+def str2bool(v):
+    if v.lower() in ['true', 'yes', 't', 'y', '1']:
+        return True
+    elif v.lower() in ['false', 'no', 'f', 'n', '0']:
+        return False
+    else:
+        raise ValueError("Failed to convert '" + v + "' to boolean")

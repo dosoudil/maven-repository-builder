@@ -57,15 +57,11 @@ class ArtifactListBuilder:
                 logging.warning("Unsupported source type: %s", source['type'])
                 continue
 
+            logging.debug("Placing %d artifacts in the result list", len(artifacts))
             for artifact in artifacts:
-                ga = artifact.getGA()
-
-                if not ga in artifactList:
-                    artifactList[ga] = {}
-                if not priority in artifactList[ga]:
-                    artifactList[ga][priority] = {}
-
-                artifactList[ga][priority][artifact.version] = artifacts[artifact]
+                gat = artifact.getGAT()
+                artifactList.setdefault(gat, {}).setdefault(priority, {})[artifact.version] = artifacts[artifact]
+            logging.debug("The result contains %d artifacts so far", len(artifactList))
 
         return artifactList
 
@@ -164,7 +160,10 @@ class ArtifactListBuilder:
             else:
                 raise "Invalid protocol!", protocol
 
-        return self._filterArtifactsByPatterns(artifacts, gavPatterns)
+        artifacts = self._filterArtifactsByPatterns(artifacts, gavPatterns)
+        logging.debug("Found %d artifacts", len(artifacts))
+
+        return artifacts
 
     def _listRemoteRepository(self, repoUrl, prefix=""):
         artifacts = {}

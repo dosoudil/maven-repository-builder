@@ -1,6 +1,6 @@
 .project
 .pydevproject
-maven-repository-builder.nja
+maven_repo_builder.nja
 local-maven-repository
 *.pyc
 
