@@ -26,14 +26,14 @@ def compareArtifacts(localRepoPath, remoteUrl):
             relRepoPath = os.path.relpath(filepath, localRepoPath)
             logging.debug('Checking artifact: %s', relRepoPath)
 
-            # get checksum of the local file
-            localFileChecksum = maven_repo_util.getSha1Checksum(filepath)
-
-            # get checksum of remote file
+            # Attempt to download remote artifact
             tempDownloadFile = os.path.join(tempDownloadDir, relRepoPath)
             remoteFileUrl = remoteUrl + "/" + relRepoPath
             maven_repo_util.download(remoteFileUrl, tempDownloadFile)
+
+            # Compare the local and remote artifact checksums
             if os.path.exists(tempDownloadFile):
+                localFileChecksum = maven_repo_util.getSha1Checksum(filepath)
                 remoteFileChecksum = maven_repo_util.getSha1Checksum(tempDownloadFile)
                 if (localFileChecksum != remoteFileChecksum):
                     logging.error('Checksums do not match for artifact %s', relRepoPath)
