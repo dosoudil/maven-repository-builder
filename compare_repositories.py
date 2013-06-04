@@ -86,7 +86,8 @@ def main():
                 localRepoPath)
         sys.exit()
 
-    logging.info('Crawling repository located at: %s', localRepoPath)
+    logging.info('Remote repository URL: %s', options.url)
+    logging.info('Crawling local repository: %s', localRepoPath)
     compareArtifacts(localRepoPath, options.url)
 
 
