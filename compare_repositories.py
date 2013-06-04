@@ -16,7 +16,7 @@ def compareArtifacts(localRepoPath, remoteUrl):
     tempDownloadDir = tempfile.mkdtemp()
     regexChecksum = re.compile('(\.sha1$)|(\.md5$)')
     regexMetadata = re.compile('(maven-metadata.xml)|(\.lastUpdated$)|(_maven.repositories)')
-    for root, dirs, files in os.walk(localRepoPath):
+    for root, dirs, files in os.walk(localRepoPath, followlinks=True):
         for filename in files:
             if regexChecksum.search(filename):
                 continue
