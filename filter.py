@@ -9,6 +9,14 @@ class Filter:
         self.config = config
 
     def filter(self, artifactList):
+        """
+        Filter artifactList removing excluded GAVs, duplicates and GAVs that exists in
+        excluded repositories.
+
+        :param artifactList: artifactList from ArtifactListBuilder.
+        :returns: filtered artifactList.
+        """
+
         logging.debug("Filter received %d GATs in the list.", len(artifactList))
         artifactList = self._filterExcludedGAVs(artifactList, self.config.excludedGAVs)
         artifactList = self._filterDuplicates(artifactList)
@@ -17,6 +25,14 @@ class Filter:
         return artifactList
 
     def _filterExcludedGAVs(self, artifactList, gavs):
+        """
+        Filter artifactList removing specified GAVs.
+
+        :param artifactList: artifactList to be filtered.
+        :param gavs: list of GAVs to be filtered out from the artifactList.
+        :returns: artifactList without arifacts that matched specified GAVs.
+        """
+
         for gav in gavs:
             artifact = MavenArtifact.createFromGAV(gav)
             gaColon = artifact.getGA() + ":"
@@ -33,6 +49,14 @@ class Filter:
         return artifactList
 
     def _filterExcludedRepositories(self, artifactList, repositories):
+        """
+        Filter artifactList removing artifacts existing in specified repositories.
+
+        :param artifactList: artifactList to be filtered.
+        :param repositories: list of repositories to be filtered out from the artifactList.
+        :returns: artifactList without arifacts that exists in specified repositories.
+        """
+
         for gat in artifactList.keys():
             groupId = gat.split(':')[0]
             artifactId = gat.split(':')[1]
@@ -50,6 +74,13 @@ class Filter:
         return artifactList
 
     def _filterDuplicates(self, artifactList):
+        """
+        Filter artifactList removing duplicate artifacts.
+
+        :param artifactList: artifactList to be filtered.
+        :returns: artifactList without duplicate arifacts from lower priorities.
+        """
+
         for gat in artifactList.keys():
             for priority in artifactList[gat].keys():
                 for version in artifactList[gat][priority].keys():
@@ -66,6 +97,14 @@ class Filter:
 
 
 def _somethingMatch(regexs, filename):
+    """
+    Returns True if at least one of regular expresions from specified list matches filenam.
+
+    :param regexs: list of regular expresions
+    :param filename: filename to match
+    :returns: True if at least one of the regular expresions matched the filename.
+    """
+
     for regex in regexs:
         if regex.match(filename):
             return True
@@ -73,6 +112,14 @@ def _somethingMatch(regexs, filename):
 
 
 def _isArtifactInRepos(repositories, artifact):
+    """
+    Returns True if specified artifact exists in at least one repositori from specified list.
+
+    :param repositories: list of repository urls
+    :param artifact: searched MavenArtifact
+    :returns: True if specified artifact exists in at least one of the repositories.
+    """
+
     for repository in repositories:
         url = mrbutils.slashAtTheEnd(repository) + artifact.getDirPath()
         if mrbutils.urlExists(url):
