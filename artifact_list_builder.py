@@ -61,7 +61,7 @@ class ArtifactListBuilder:
             for artifact in artifacts:
                 gat = artifact.getGAT()
                 artifactList.setdefault(gat, {}).setdefault(priority, {})[artifact.version] = artifacts[artifact]
-            logging.debug("The result contains %d artifacts so far", len(artifactList))
+            logging.debug("The result contains %d GATs so far", len(artifactList))
 
         return artifactList
 

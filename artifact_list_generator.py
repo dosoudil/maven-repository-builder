@@ -24,7 +24,7 @@ def generateArtifactList(options):
     logging.info("Building artifact list...")
     listBuilder = ArtifactListBuilder(config)
     artifactList = listBuilder.buildList()
-    logging.debug("Generated %d artifacts in the lsit.", len(artifactList))
+    logging.debug("Generated %d GATs in the list.", len(artifactList))
 
     #filter list
     logging.info("Filtering artifact list...")

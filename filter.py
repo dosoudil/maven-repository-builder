@@ -9,7 +9,7 @@ class Filter:
         self.config = config
 
     def filter(self, artifactList):
-        logging.debug("For filter received %d artifacts in the list.", len(artifactList))
+        logging.debug("Filter received %d GATs in the list.", len(artifactList))
         artifactList = self._filterExcludedGAVs(artifactList, self.config.excludedGAVs)
         artifactList = self._filterDuplicates(artifactList)
         artifactList = self._filterExcludedRepositories(artifactList,
