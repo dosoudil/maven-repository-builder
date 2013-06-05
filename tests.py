@@ -66,10 +66,19 @@ class Tests(unittest.TestCase):
         artifact3 = MavenArtifact.createFromGAV("org.jboss:jboss-test:jar:client:2.0.0.Beta1")
         self.assertEqual(artifact3.getClassifier(), "client")
         self.assertEqual(artifact3.getArtifactFilename(), "jboss-test-2.0.0.Beta1-client.jar")
-        self.assertEqual(artifact3.getArtifactFilepath(), "org/jboss/jboss-test/2.0.0.Beta1/jboss-test-2.0.0.Beta1-client.jar")
+        self.assertEqual(artifact3.getArtifactFilepath(),
+                "org/jboss/jboss-test/2.0.0.Beta1/jboss-test-2.0.0.Beta1-client.jar")
 
-        artifact3 = MavenArtifact.createFromGAV("org.acme:jboss-bar:jar:1.0-alpha-1:compile")
-        self.assertEqual(artifact3.getArtifactFilepath(), "org/acme/jboss-bar/1.0-alpha-1/jboss-bar-1.0-alpha-1.jar")
+        artifact4 = MavenArtifact.createFromGAV("org.acme:jboss-bar:jar:1.0-alpha-1:compile")
+        self.assertEqual(artifact4.getArtifactFilepath(), "org/acme/jboss-bar/1.0-alpha-1/jboss-bar-1.0-alpha-1.jar")
+
+        artifact5 = MavenArtifact.createFromGAV("com.google.guava:guava:pom:r05")
+        self.assertEqual(artifact5.groupId, "com.google.guava")
+        self.assertEqual(artifact5.artifactId, "guava")
+        self.assertEqual(artifact5.version, "r05")
+        self.assertEqual(artifact5.getArtifactType(), "pom")
+        self.assertEqual(artifact5.getClassifier(), "")
+        self.assertEqual(artifact5.getArtifactFilename(), "guava-r05.pom")
 
 
 if __name__ == '__main__':

@@ -2,7 +2,6 @@
 """maven_artifact.py Python code representing a Maven artifact"""
 
 import logging
-import re
 import sys
 
 
@@ -23,18 +22,32 @@ class MavenArtifact:
 
         :returns: MavenArtifact instance
         """
-        regexGAV =\
-            re.compile('([\w._-]+):([\w._-]+):(?:([\w._-]+)?:)?(?:([\w._-]+)?:)?([\d][\w._-]*)(:[\w._-]+)?')
-        gavParts = regexGAV.search(gav)
-        if gavParts is None:
+        gavParts = gav.split(':')
+        if len(gavParts) not in [3, 4, 5, 6]:
             logging.error("Invalid GAV string: %s", gav)
             sys.exit(1)
-        if (gavParts.group(4)):
-            classifier = gavParts.group(4)
-        else:
-            classifier = ''
+        groupId = gavParts[0]
+        artifactId = gavParts[1]
 
-        return MavenArtifact(gavParts.group(1), gavParts.group(2), gavParts.group(3), gavParts.group(5), classifier)
+        scopes = ["compile", "test", "provided", "runtime", "system"]
+        if gavParts[-1] in scopes:
+            effectiveParts = len(gavParts) - 1
+        else:
+            effectiveParts = len(gavParts)
+
+        artifactType = ''
+        classifier = ''
+        if effectiveParts == 3:
+            version = gavParts[2]
+        else:
+            artifactType = gavParts[2]
+            if effectiveParts == 4:
+                version = gavParts[3]
+            else:
+                classifier = gavParts[3]
+                version = gavParts[4]
+
+        return MavenArtifact(groupId, artifactId, artifactType, version, classifier)
 
     def getArtifactType(self):
         return self.artifactType
