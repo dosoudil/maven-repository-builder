@@ -147,7 +147,7 @@ def fetchArtifacts(artifacts, sourceUrl, destDir):
 
 
 def main():
-    usage = "Usage: %prog [-h] [-c CONFIG] [-u URL] [-o OUTPUT_DIRECTORY] [FILE...]"
+    usage = "Usage: %prog [-c CONFIG] [-u URL] [-o OUTPUT_DIRECTORY] [FILE...]"
     description = ("Generate a Maven repository based on a file (or files) containing "
                    "a list of artifacts.  Each list file must contain a single artifact "
                    "per line in the format groupId:artifactId:fileType:<classifier>:version "
@@ -157,14 +157,14 @@ def main():
 
     cliOptParser = optparse.OptionParser(usage=usage, description=description)
     cliOptParser.add_option('-c', '--config', dest='config',
-            help='Configuration file to use for generation of an artifact lsit for the repository builder')
+            help='Configuration file to use for generation of an artifact list for the repository builder')
     cliOptParser.add_option('-l', '--loglevel',
             default='info',
             help='Set the level of log output.  Can be set to debug, info, warning, error, or critical')
     cliOptParser.add_option('-u', '--url',
             default='http://repo1.maven.org/maven2/',
             help='URL of the remote repository from which artifacts are downloaded. It is used along with '
-                    'artifact lsit files when no config file is specified.')
+                    'artifact list files when no config file is specified.')
     cliOptParser.add_option('-o', '--output',
             default='local-maven-repository',
             help='Local output directory for the new repository')
