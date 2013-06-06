@@ -78,17 +78,23 @@ class ArtifactListBuilder:
         kojiSession = koji.ClientSession(kojiUrl)
         kojiArtifacts = kojiSession.getLatestMavenArchives(tagName)
 
-        artifacts = {}
+        gavsWithExts = {}
         for artifact in kojiArtifacts:
             # FIXME: This isn't reliable as file extension is not equal to
             # maven type, e.g. jar != ejb
             artifactType = re.search('.*\.(.+)$', artifact['filename']).group(1)
-            mavenArtifact = MavenArtifact(artifact['group_id'], artifact['artifact_id'],
-                                          artifactType, artifact['version'])
-
             gavUrl = mrbutils.slashAtTheEnd(downloadRootUrl) + artifact['build_name'] + '/'\
                      + artifact['build_version'] + '/' + artifact['build_release'] + '/maven/'
-            artifacts[mavenArtifact] = gavUrl
+            gavu = (artifact['group_id'], artifact['artifact_id'], artifact['version'], gavUrl)
+            gavsWithExts.setdefault(gavu, []).append(artifactType)
+
+        artifacts = {}
+        for gavu in gavsWithExts:
+            if len(gavsWithExts[gavu]) > 1:
+                gavsWithExts[gavu].remove("pom")
+            for ext in gavsWithExts[gavu]:
+                mavenArtifact = MavenArtifact(gavu[0], gavu[1], ext, gavu[2])
+                artifacts[mavenArtifact] = gavu[3]
 
         return self._filterArtifactsByPatterns(artifacts, gavPatterns)
 
