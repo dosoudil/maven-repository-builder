@@ -20,6 +20,8 @@ class Filter:
         logging.debug("Filter received %d GATs in the list.", len(artifactList))
         artifactList = self._filterExcludedGAVs(artifactList, self.config.excludedGAVs)
         artifactList = self._filterDuplicates(artifactList)
+        if(self.config.singleVersion):
+            artifactList = self._filterMultipleVersions(artifactList,self.config.multiVersionGAs)
         artifactList = self._filterExcludedRepositories(artifactList,
                                                         self.config.excludedRepositories)
         return artifactList
@@ -82,7 +84,7 @@ class Filter:
         """
 
         for gat in artifactList.keys():
-            for priority in artifactList[gat].keys():
+            for priority in sorted(artifactList[gat].keys()):
                 for version in artifactList[gat][priority].keys():
                     for pr in artifactList[gat].keys():
                         if pr <= priority:
@@ -93,6 +95,18 @@ class Filter:
                     del artifactList[gat][priority]
             if not artifactList[gat]:
                 del artifactList[gat]
+        return artifactList
+
+    def _filterMultipleVersions(self, artifactList, multiVersionGAs):
+        for gat in artifactList.keys():
+            priorities = sorted(artifactList[gat].keys())
+            priority = priorities[0]
+            versions = sorted(artifactList[gat][priority].keys()) # sort by atlas
+            print "keeping",gat,"version",versions[0],"from versions",versions
+            for version in versions[1:]:
+                del artifactList[gat][priority][version]
+            for priority in priorities[1:]:
+                del artifactList[gat][priority]
         return artifactList
 
 
