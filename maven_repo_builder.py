@@ -141,9 +141,6 @@ def generateChecksumFiles(filepath):
 def fetchArtifacts(artifacts, sourceUrl, destDir):
     logging.info('Retrieving artifacts from repository: %s', sourceUrl)
     retrieveArtifacts(sourceUrl, destDir, artifacts)
-    logging.info('Generating checksums...')
-    generateChecksums(destDir)
-    logging.info('Repository created in directory: %s', destDir)
 
 
 def main():
@@ -217,6 +214,11 @@ def main():
         for repoUrl in artifactList.keys():
             artifacts = artifactList[repoUrl]
             fetchArtifacts(artifacts, repoUrl, options.output)
+
+    logging.info('Generating checksums...')
+    generateChecksums(options.output)
+    logging.info('Repository created in directory: %s', options.output)
+
 
 if  __name__ == '__main__':
     main()
