@@ -33,8 +33,6 @@ help ()
 # defaults
 HELP=false
 METADATA=false
-LOGLEVEL="info"
-CLASSIFIES="sources"
 
 # =======================================
 # ====== reading command arguments ======
@@ -60,9 +58,33 @@ done
 # ================================================
 if ${HELP}; then
     help
-elif [ -z ${CONFIG} ]; then
-    if [ ! -z $1 ]; then
-        while [ ${1:0:1} = '-' ]; do
+else
+    # creation of list of parameters passed to the python script
+    MRB_PARAMS=()
+    if [[ ! -z ${CONFIG} ]]; then
+        MRB_PARAMS+=("-c")
+        MRB_PARAMS+=(${CONFIG})
+    fi
+    if [[ ! -z ${URL} ]]; then
+        MRB_PARAMS+=("-u")
+        MRB_PARAMS+=(${URL})
+    fi
+    if [[ ! -z ${CLASSIFIERS} ]]; then
+        MRB_PARAMS+=("-a")
+        MRB_PARAMS+=(${CLASSIFIERS})
+    fi
+    if [[ ! -z ${OUTPUT_DIR} ]]; then
+        MRB_PARAMS+=("-o")
+        MRB_PARAMS+=(${OUTPUT_DIR})
+    fi
+    if [[ ! -z ${LOGLEVEL} ]]; then
+        MRB_PARAMS+=("-l")
+        MRB_PARAMS+=(${LOGLEVEL})
+    fi
+
+    # skip all named parameters and leave just unnamed ones (filenames)
+    if [ $# -gt 0 ]; then
+        while [ $# -gt 0 ] && [ ${1:0:1} = '-' ]; do
             if [ ${1:1:2} = 'c' ] || [ ${1:1:2} = 'r' ] || [ ${1:1:2} = 'a' ] || [ ${1:1:2} = 'o' ] || [ ${1:1:2} = 'u' ] || [ ${1:1:2} = 'l' ]; then
                 shift
             fi
@@ -70,29 +92,15 @@ elif [ -z ${CONFIG} ]; then
         done
     fi
 
-    if [ -z ${URL} ]; then
-        echo "No config file neither URL specified."
-        echo ''
-        help
+    while [ $# -gt 0 ]; do
+        MRB_PARAMS+=("${1}")
+        shift
+    done
+
+    python maven_repo_builder.py "${MRB_PARAMS[@]}"
+    if test $? != 0; then
+        echo "Creation of repository failed."
         exit 1
-    elif [ -z ${OUTPUT_DIR} ]; then
-        python maven_repo_builder.py -u ${URL} -a "${CLASSIFIERS}" -l ${LOGLEVEL} "$@"
-    else
-        python maven_repo_builder.py -o ${OUTPUT_DIR} -u ${URL} -a "${CLASSIFIERS}" -l ${LOGLEVEL} "$@"
-    fi
-else
-    if [ -z ${OUTPUT_DIR} ]; then
-        python maven_repo_builder.py -c ${CONFIG} -a "${CLASSIFIERS}" -l ${LOGLEVEL}
-        if test $? != 0; then
-            echo "Creation of repository failed."
-            exit 1
-        fi
-    else
-        python maven_repo_builder.py -c ${CONFIG} -o ${OUTPUT_DIR} -a "${CLASSIFIERS}" -l ${LOGLEVEL}
-        if test $? != 0; then
-            echo "Creation of repository failed."
-            exit 1
-        fi
     fi
 fi
 
