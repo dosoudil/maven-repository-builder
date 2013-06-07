@@ -1,6 +1,7 @@
 import logging
 import mrbutils
 import os
+import re
 from subprocess import Popen
 from subprocess import PIPE
 from subprocess import call
@@ -102,7 +103,13 @@ class Filter:
         return artifactList
 
     def _filterMultipleVersions(self, artifactList, multiVersionGAs):
+        regExps = []
+        for ga in multiVersionGAs:
+            regExps.append(re.compile(mrbutils.transformAsterixStringToRegexp(ga)))
         for gat in artifactList.keys():
+            if _somethingMatch(regExps, gat):
+                continue
+
             priorities = sorted(artifactList[gat].keys())
             priority = priorities[0]
             versions = artifactList[gat][priority].keys()
