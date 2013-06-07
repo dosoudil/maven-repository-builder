@@ -136,17 +136,17 @@ def _sortVersionsWithAtlas(versions):
 
 
 
-def _somethingMatch(regexs, filename):
+def _somethingMatch(regexs, string):
     """
-    Returns True if at least one of regular expresions from specified list matches filenam.
+    Returns True if at least one of regular expresions from specified list matches string.
 
     :param regexs: list of regular expresions
-    :param filename: filename to match
-    :returns: True if at least one of the regular expresions matched the filename.
+    :param filename: string to match
+    :returns: True if at least one of the regular expresions matched the string.
     """
 
     for regex in regexs:
-        if regex.match(filename):
+        if regex.match(string):
             return True
     return False
 
