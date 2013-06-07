@@ -82,6 +82,9 @@ class Configuration:
             for filename in data['multi-version-ga-patterns-ref']:
                 self.multiVersionGAs.extend(self._loadFlatFile(filename))
 
+        if 'multi-version-ga-patterns' in data:
+            self.multiVersionGAs.extend(data['multi-version-ga-patterns'])
+
         if 'include-low-priority' in data and data['include-low-priority']:
             self._loadFromFile(data['include-low-priority'], False)
 
