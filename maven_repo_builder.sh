@@ -9,14 +9,18 @@ help ()
     echo '  -c CONFIG'
     echo '                        Configuration file to use for generation of an'
     echo '                        artifact list for the repository builder'
-    echo '  -u URL                URL of the remote repository from which artifacts are'
+    echo '  -u URL'
+    echo '                        URL of the remote repository from which artifacts are'
     echo '                        downloaded. It is used along with artifact list files'
     echo '                        when no config file is specified.'
     echo '  -o OUTPUT'
     echo '                        Local output directory for the new repository. By default'
     echo '                        "local-maven-repository" will be used.'
+    echo '  -a CLASSIFIERS'
+    echo '                        Comma-separated list of additional classifiers to download.'
+    echo '                        By default "sources" will be used.'
     echo '  -r REPO_FILENAME'
-    echo '                        Zip teh created repository in a file with provided name'
+    echo '                        Zip the created repository in a file with provided name'
     echo '  -m'
     echo '                        Generate metadata in the created repository'
     echo '  -l LOGLEVEL'
@@ -30,17 +34,19 @@ help ()
 HELP=false
 METADATA=false
 LOGLEVEL="info"
+CLASSIFIES="sources"
 
 # =======================================
 # ====== reading command arguments ======
 # =======================================
-while getopts hc:u:o:l:mr:t: OPTION
+while getopts hc:u:r:a:o:l:mt: OPTION
 do
     case "${OPTION}" in
         h) HELP=true;;
         c) CONFIG=${OPTARG};;
         u) URL=${OPTARG};;
         r) REPO_FILE=${OPTARG};;
+        a) CLASSIFIERS=${OPTARG};;
         o) OUTPUT_DIR=${OPTARG};;
         m) METADATA=true;;
         l) LOGLEVEL=${OPTARG};;
@@ -57,7 +63,7 @@ if ${HELP}; then
 elif [ -z ${CONFIG} ]; then
     if [ ! -z $1 ]; then
         while [ ${1:0:1} = '-' ]; do
-            if [ ${1:1:2} = 'c' ] || [ ${1:1:2} = 'r' ] || [ ${1:1:2} = 'o' ] || [ ${1:1:2} = 'u' ] || [ ${1:1:2} = 'l' ]; then
+            if [ ${1:1:2} = 'c' ] || [ ${1:1:2} = 'r' ] || [ ${1:1:2} = 'a' ] || [ ${1:1:2} = 'o' ] || [ ${1:1:2} = 'u' ] || [ ${1:1:2} = 'l' ]; then
                 shift
             fi
             shift
@@ -70,19 +76,19 @@ elif [ -z ${CONFIG} ]; then
         help
         exit 1
     elif [ -z ${OUTPUT_DIR} ]; then
-        python maven_repo_builder.py -u ${URL} -l ${LOGLEVEL} "$@"
+        python maven_repo_builder.py -u ${URL} -a "${CLASSIFIERS}" -l ${LOGLEVEL} "$@"
     else
-        python maven_repo_builder.py -o ${OUTPUT_DIR} -u ${URL} -l ${LOGLEVEL} "$@"
+        python maven_repo_builder.py -o ${OUTPUT_DIR} -u ${URL} -a "${CLASSIFIERS}" -l ${LOGLEVEL} "$@"
     fi
 else
     if [ -z ${OUTPUT_DIR} ]; then
-        python maven_repo_builder.py -c ${CONFIG} -l ${LOGLEVEL}
+        python maven_repo_builder.py -c ${CONFIG} -a "${CLASSIFIERS}" -l ${LOGLEVEL}
         if test $? != 0; then
             echo "Creation of repository failed."
             exit 1
         fi
     else
-        python maven_repo_builder.py -c ${CONFIG} -o ${OUTPUT_DIR} -l ${LOGLEVEL}
+        python maven_repo_builder.py -c ${CONFIG} -o ${OUTPUT_DIR} -a "${CLASSIFIERS}" -l ${LOGLEVEL}
         if test $? != 0; then
             echo "Creation of repository failed."
             exit 1

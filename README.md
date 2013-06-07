@@ -27,19 +27,23 @@ Basic Usage
       -c CONFIG
                             Configuration file to use for generation of an
                             artifact list for the repository builder
-      -l LOGLEVEL
-                            Set the level of log output.  Can be set to debug,
-                            info, warning, error, or critical
-      -u URL                URL of the remote repository from which artifacts are
+      -u URL
+                            URL of the remote repository from which artifacts are
                             downloaded. It is used along with artifact list files
                             when no config file is specified.
       -o OUTPUT
                             Local output directory for the new repository. By default
                             "local-maven-repository" will be used.
+      -a CLASSIFIERS
+                            Comma-separated list of additional classifiers to download.
+                            By default "sources" will be used.
       -r REPO_FILENAME
                             Zip teh created repository in a file with provided name
       -m
                             Generate metadata in the created repository
+      -l LOGLEVEL
+                            Set the level of log output.  Can be set to debug,
+                            info, warning, error, or critical
 
 
 Example Repository List

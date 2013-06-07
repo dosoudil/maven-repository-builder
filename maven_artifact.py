@@ -106,6 +106,14 @@ class MavenArtifact:
         """Return the path to the artifact file"""
         return self.getDirPath() + self.getSourcesFilename()
 
+    def getClassifierFilename(self, classifier):
+        """Return the filename to the artifact's classifier file"""
+        return self.getBaseFilename() + '-' + classifier + '.jar'
+
+    def getClassifierFilepath(self, classifier):
+        """Return teh path to the artifact's classifier file"""
+        return self.getDirPath() + self.getClassifierFilename(classifier)
+
     def __str__(self):
         result = self.groupId + ':' + self.artifactId
         if self.artifactType:

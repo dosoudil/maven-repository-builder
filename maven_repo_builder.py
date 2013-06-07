@@ -29,7 +29,7 @@ def downloadFile(fileUrl, fileLocalPath):
             logging.warning("Remote file not found: " + fileUrl)
 
 
-def downloadArtifacts(remoteRepoUrl, localRepoDir, artifact):
+def downloadArtifacts(remoteRepoUrl, localRepoDir, artifact, classifiers):
     """Download artifact from a remote repository along with pom and source jar"""
     artifactLocalDir = localRepoDir + '/' + artifact.getDirPath()
     if not os.path.exists(artifactLocalDir):
@@ -46,14 +46,15 @@ def downloadArtifacts(remoteRepoUrl, localRepoDir, artifact):
         artifactPomLocalPath = os.path.join(localRepoDir, artifact.getPomFilepath())
         downloadFile(artifactPomUrl, artifactPomLocalPath)
 
-    # Download sources
+    # Download additional classifiers
     if artifact.getArtifactType() != 'pom' and not artifact.getClassifier():
-        artifactSourcesUrl = remoteRepoUrl + '/' + artifact.getSourcesFilepath()
-        artifactSourcesLocalPath = os.path.join(localRepoDir, artifact.getSourcesFilepath())
-        downloadFile(artifactSourcesUrl, artifactSourcesLocalPath)
+        for classifier in classifiers:
+            artifactClassifierUrl = remoteRepoUrl + '/' + artifact.getClassifierFilepath(classifier)
+            artifactClassifierLocalPath = os.path.join(localRepoDir, artifact.getClassifierFilepath(classifier))
+            downloadFile(artifactClassifierUrl, artifactClassifierLocalPath)
 
 
-def copyArtifact(remoteRepoPath, localRepoDir, artifact):
+def copyArtifact(remoteRepoPath, localRepoDir, artifact, classifiers):
     """Copy artifact from a repository on the local file system along with pom and source jar"""
     # Download main artifact
     artifactPath = os.path.join(remoteRepoPath, artifact.getArtifactFilepath())
@@ -73,13 +74,14 @@ def copyArtifact(remoteRepoPath, localRepoDir, artifact):
             logging.info('Copying file: ' + artifactPomPath)
             shutil.copyfile(artifactPomPath, artifactPomLocalPath)
 
-    # Download sources
+    # Download additional classifiers
     if artifact.getArtifactType() != 'pom' and not artifact.getClassifier():
-        artifactSourcesPath = os.path.join(remoteRepoPath, artifact.getSourcesFilepath())
-        artifactSourcesLocalPath = os.path.join(localRepoDir, artifact.getSourcesFilepath())
-        if os.path.exists(artifactSourcesPath) and not os.path.exists(artifactSourcesLocalPath):
-            logging.info('Copying file: ' + artifactSourcesPath)
-            shutil.copyfile(artifactSourcesPath, artifactSourcesLocalPath)
+        for classifier in classifiers:
+            artifactClassifierPath = os.path.join(remoteRepoPath, artifact.getClassifierFilepath(classifier))
+            artifactClassifierLocalPath = os.path.join(localRepoDir, artifact.getClassifierFilepath(classifier))
+            if os.path.exists(artifactClassifierPath) and not os.path.exists(artifactClassifierLocalPath):
+                logging.info('Copying file: ' + artifactClassifierPath)
+                shutil.copyfile(artifactClassifierPath, artifactClassifierLocalPath)
 
 
 def depListToArtifactList(depList):
@@ -98,7 +100,7 @@ def depListToArtifactList(depList):
     return artifactList
 
 
-def retrieveArtifacts(remoteRepoUrl, localRepoDir, artifactList):
+def retrieveArtifacts(remoteRepoUrl, localRepoDir, artifactList, classifiers):
     """Create a Maven repository based on a remote repository url and a list of artifacts"""
     if not os.path.exists(localRepoDir):
         os.makedirs(localRepoDir)
@@ -107,11 +109,11 @@ def retrieveArtifacts(remoteRepoUrl, localRepoDir, artifactList):
     repoPath = parsedUrl[2]
     if protocol == 'http' or protocol == 'https':
         for artifact in artifactList:
-            downloadArtifacts(remoteRepoUrl, localRepoDir, artifact)
+            downloadArtifacts(remoteRepoUrl, localRepoDir, artifact, classifiers)
     elif protocol == 'file':
         repoPath = remoteRepoUrl.replace('file://', '')
         for artifact in artifactList:
-            copyArtifact(repoPath, localRepoDir, artifact)
+            copyArtifact(repoPath, localRepoDir, artifact, classifiers)
     else:
         logging.error('Unknown protocol: %s', protocol)
 
@@ -138,13 +140,13 @@ def generateChecksumFiles(filepath):
             sumobj.write(checksum + '\n')
 
 
-def fetchArtifacts(artifacts, sourceUrl, destDir):
+def fetchArtifacts(artifacts, sourceUrl, classifiers, destDir):
     logging.info('Retrieving artifacts from repository: %s', sourceUrl)
-    retrieveArtifacts(sourceUrl, destDir, artifacts)
+    retrieveArtifacts(sourceUrl, destDir, artifacts, classifiers)
 
 
 def main():
-    usage = "Usage: %prog [-c CONFIG] [-u URL] [-o OUTPUT_DIRECTORY] [FILE...]"
+    usage = "Usage: %prog [-c CONFIG] [-a CLASSIFIERS] [-u URL] [-o OUTPUT_DIRECTORY] [FILE...]"
     description = ("Generate a Maven repository based on a file (or files) containing "
                    "a list of artifacts.  Each list file must contain a single artifact "
                    "per line in the format groupId:artifactId:fileType:<classifier>:version "
@@ -155,9 +157,6 @@ def main():
     cliOptParser = optparse.OptionParser(usage=usage, description=description)
     cliOptParser.add_option('-c', '--config', dest='config',
             help='Configuration file to use for generation of an artifact list for the repository builder')
-    cliOptParser.add_option('-l', '--loglevel',
-            default='info',
-            help='Set the level of log output.  Can be set to debug, info, warning, error, or critical')
     cliOptParser.add_option('-u', '--url',
             default='http://repo1.maven.org/maven2/',
             help='URL of the remote repository from which artifacts are downloaded. It is used along with '
@@ -165,6 +164,12 @@ def main():
     cliOptParser.add_option('-o', '--output',
             default='local-maven-repository',
             help='Local output directory for the new repository')
+    cliOptParser.add_option('-a', '--classifiers',
+            default='sources',
+            help='Comma-separated list of additional classifiers to download')
+    cliOptParser.add_option('-l', '--loglevel',
+            default='info',
+            help='Set the level of log output.  Can be set to debug, info, warning, error, or critical')
 
     (options, args) = cliOptParser.parse_args()
 
@@ -183,6 +188,11 @@ def main():
     else:
         logging.basicConfig(level=logging.INFO)
         logging.warning('Unrecognized log level: %s  Log level set to info', options.loglevel)
+
+    if not options.classifiers:
+        classifiers = []
+    else:
+        classifiers = options.classifiers.split(",")
 
     if options.config is None:
         if len(args) < 1:
@@ -207,13 +217,13 @@ def main():
             finally:
                 depListFile.close()
 
-        fetchArtifacts(artifacts, options.url, options.output)
+        fetchArtifacts(artifacts, options.url, classifiers, options.output)
     else:
         # generate lists of artifacts from confiuration and the fetch them each list from it's repo
         artifactList = artifact_list_generator.generateArtifactList(options)
         for repoUrl in artifactList.keys():
             artifacts = artifactList[repoUrl]
-            fetchArtifacts(artifacts, repoUrl, options.output)
+            fetchArtifacts(artifacts, repoUrl, classifiers, options.output)
 
     logging.info('Generating checksums...')
     generateChecksums(options.output)
