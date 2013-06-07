@@ -39,7 +39,7 @@ CLASSIFIES="sources"
 # =======================================
 # ====== reading command arguments ======
 # =======================================
-while getopts hc:u:r:a:o:l:mt: OPTION
+while getopts hc:u:r:a:o:l:m OPTION
 do
     case "${OPTION}" in
         h) HELP=true;;
