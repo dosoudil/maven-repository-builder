@@ -2,7 +2,7 @@
 
 help ()
 {
-    echo 'Usage: [-h] [-r REPO_FILENAME] [-o OUTPUT_DIR] [-m] [-l LOGLEVEL] [-c CONFIG_FILENAME] [-u URL] [FILE...]'
+    echo 'Usage: [-h] [-r REPO_FILENAME] [-o OUTPUT_DIR] [-m] [-l LOGLEVEL] [-c CONFIG_FILENAME] [-u URL] [-d ADDITION] [FILE...]'
     echo ''
     echo 'Options:'
     echo '  -h                    show this help message and exit'
@@ -91,7 +91,7 @@ else
     # skip all named parameters and leave just unnamed ones (filenames)
     if [ $# -gt 0 ]; then
         while [ $# -gt 0 ] && [ ${1:0:1} = '-' ]; do
-            if [ ${1:1:2} = 'c' ] || [ ${1:1:2} = 'r' ] || [ ${1:1:2} = 'a' ] || [ ${1:1:2} = 'o' ] || [ ${1:1:2} = 'u' ] || [ ${1:1:2} = 'l' ]; then
+            if [ ${1:1:2} = 'c' ] || [ ${1:1:2} = 'r' ] || [ ${1:1:2} = 'a' ] || [ ${1:1:2} = 'o' ] || [ ${1:1:2} = 'u' ] || [ ${1:1:2} = 'l' ] || [ ${1:1:2} = 'd' ] ; then
                 shift
             fi
             shift

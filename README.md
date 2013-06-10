@@ -44,6 +44,9 @@ Basic Usage
       -l LOGLEVEL
                             Set the level of log output.  Can be set to debug,
                             info, warning, error, or critical
+      -d ADDITION
+                            Directory containing additional files for the repository.
+                            Content of directory ADDITION will be copied to the repository.
 
 
 Example Repository List
