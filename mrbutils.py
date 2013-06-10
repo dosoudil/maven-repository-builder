@@ -37,9 +37,8 @@ def transformAsterixStringToRegexp(string):
     return re.escape(string).replace("\\*", ".*")
 
 def printArtifactList(artifactList):
-    typePat=re.compile("([^.]*)$")
-    for ga in artifactList:
-        for priority in artifactList[ga]:
-            for version in artifactList[ga][priority]:
-               print artifactList[ga][priority][version] + "\t" + ga + ":" + version
+    for gat in artifactList:
+        for priority in artifactList[gat]:
+            for version in artifactList[gat][priority]:
+               print artifactList[gat][priority][version] + "\t" + gat + ":" + version
 
