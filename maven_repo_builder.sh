@@ -30,6 +30,8 @@ help ()
 }
 
 
+WORKDIR=$(cd $(dirname $0) && pwd)
+
 # defaults
 HELP=false
 METADATA=false
@@ -107,9 +109,9 @@ fi
 # ================================================
 # == 4. generate metadata (opt), zip repo (opt) ==
 # ================================================
-#if ${METADATA}; then
-#    refreshMetadata(${OUTPUT_DIR})
-#fi
+if ${METADATA}; then
+    $WORKDIR/generate_maven_metadata.sh ${OUTPUT_DIR}
+fi
 if [ ! -z ${REPO_FILE} ]; then
     zip -qr ${REPO_FILE} ${OUTPUT_DIR}
 fi
