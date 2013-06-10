@@ -2,7 +2,9 @@
 
 help ()
 {
-    echo 'Usage: [-h] [-r REPO_FILENAME] [-o OUTPUT_DIR] [-m] [-l LOGLEVEL] [-c CONFIG_FILENAME] [-u URL] [-d ADDITION] [FILE...]'
+    echo 'Usage: '"$1"' -u URL [-r REPO_FILENAME] [-o OUTPUT_DIR] [-m] [-l LOGLEVEL] [-d ADDITION] FILE...'
+    echo 'Usage: '"$1"' -c CONFIG [-r REPO_FILENAME] [-o OUTPUT_DIR] [-m] [-l LOGLEVEL] [-d ADDITION]'
+    echo 'Usage: '"$1"' -h'
     echo ''
     echo 'Options:'
     echo '  -h                    show this help message and exit'
@@ -32,6 +34,10 @@ help ()
     echo ''
 }
 
+if [ $# -lt 1 ]; then
+    help $0
+    exit 1
+fi
 
 WORKDIR=$(cd $(dirname $0) && pwd)
 
@@ -57,57 +63,59 @@ do
     esac
 done
 
+if ${HELP}; then
+    help $0
+    exit
+fi
+
 # ================================================
 # ============== 1. create GAV list ==============
 # ============== 2. filter the list ==============
 # ============== 3. fetch artifacts ==============
 # ================================================
-if ${HELP}; then
-    help
-else
-    # creation of list of parameters passed to the python script
-    MRB_PARAMS=()
-    if [[ ! -z ${CONFIG} ]]; then
-        MRB_PARAMS+=("-c")
-        MRB_PARAMS+=(${CONFIG})
-    fi
-    if [[ ! -z ${URL} ]]; then
-        MRB_PARAMS+=("-u")
-        MRB_PARAMS+=(${URL})
-    fi
-    if [[ ! -z ${CLASSIFIERS} ]]; then
-        MRB_PARAMS+=("-a")
-        MRB_PARAMS+=(${CLASSIFIERS})
-    fi
-    if [[ ! -z ${OUTPUT_DIR} ]]; then
-        MRB_PARAMS+=("-o")
-        MRB_PARAMS+=(${OUTPUT_DIR})
-    fi
-    if [[ ! -z ${LOGLEVEL} ]]; then
-        MRB_PARAMS+=("-l")
-        MRB_PARAMS+=(${LOGLEVEL})
-    fi
 
-    # skip all named parameters and leave just unnamed ones (filenames)
-    if [ $# -gt 0 ]; then
-        while [ $# -gt 0 ] && [ ${1:0:1} = '-' ]; do
-            if [ ${1:1:2} = 'c' ] || [ ${1:1:2} = 'r' ] || [ ${1:1:2} = 'a' ] || [ ${1:1:2} = 'o' ] || [ ${1:1:2} = 'u' ] || [ ${1:1:2} = 'l' ] || [ ${1:1:2} = 'd' ] ; then
-                shift
-            fi
+# creation of list of parameters passed to the python script
+MRB_PARAMS=()
+if [[ ! -z ${CONFIG} ]]; then
+    MRB_PARAMS+=("-c")
+    MRB_PARAMS+=(${CONFIG})
+fi
+if [[ ! -z ${URL} ]]; then
+    MRB_PARAMS+=("-u")
+    MRB_PARAMS+=(${URL})
+fi
+if [[ ! -z ${CLASSIFIERS} ]]; then
+    MRB_PARAMS+=("-a")
+    MRB_PARAMS+=(${CLASSIFIERS})
+fi
+if [[ ! -z ${OUTPUT_DIR} ]]; then
+    MRB_PARAMS+=("-o")
+    MRB_PARAMS+=(${OUTPUT_DIR})
+fi
+if [[ ! -z ${LOGLEVEL} ]]; then
+    MRB_PARAMS+=("-l")
+    MRB_PARAMS+=(${LOGLEVEL})
+fi
+
+# skip all named parameters and leave just unnamed ones (filenames)
+if [ $# -gt 0 ]; then
+    while [ $# -gt 0 ] && [ ${1:0:1} = '-' ]; do
+        if [ ${1:1:2} = 'c' ] || [ ${1:1:2} = 'r' ] || [ ${1:1:2} = 'a' ] || [ ${1:1:2} = 'o' ] || [ ${1:1:2} = 'u' ] || [ ${1:1:2} = 'l' ] || [ ${1:1:2} = 'd' ] ; then
             shift
-        done
-    fi
-
-    while [ $# -gt 0 ]; do
-        MRB_PARAMS+=("${1}")
+        fi
         shift
     done
+fi
 
-    python maven_repo_builder.py "${MRB_PARAMS[@]}"
-    if test $? != 0; then
-        echo "Creation of repository failed."
-        exit 1
-    fi
+while [ $# -gt 0 ]; do
+    MRB_PARAMS+=("${1}")
+    shift
+done
+
+python maven_repo_builder.py "${MRB_PARAMS[@]}"
+if test $? != 0; then
+    echo "Creation of repository failed."
+    exit 1
 fi
 
 # ================================================
