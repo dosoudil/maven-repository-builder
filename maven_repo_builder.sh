@@ -26,6 +26,9 @@ help ()
     echo '  -l LOGLEVEL'
     echo '                        Set the level of log output.  Can be set to debug,'
     echo '                        info, warning, error, or critical'
+    echo '  -d ADDITION'
+    echo '                        Directory containing additional files for the repository.'
+    echo '                        Content of directory ADDITION will be copied to the repository.'
     echo ''
 }
 
@@ -39,7 +42,7 @@ METADATA=false
 # =======================================
 # ====== reading command arguments ======
 # =======================================
-while getopts hc:u:r:a:o:l:m OPTION
+while getopts hc:u:r:a:o:l:d:m OPTION
 do
     case "${OPTION}" in
         h) HELP=true;;
@@ -50,6 +53,7 @@ do
         o) OUTPUT_DIR=${OPTARG};;
         m) METADATA=true;;
         l) LOGLEVEL=${OPTARG};;
+        d) ADDITION=${OPTARG};;
     esac
 done
 
@@ -109,6 +113,9 @@ fi
 # ================================================
 # == 4. generate metadata (opt), zip repo (opt) ==
 # ================================================
+if [ -d "$ADDITION" ]; then
+    cp -rf $ADDITION/* $ADDITION/.* ${OUTPUT_DIR}
+fi
 if ${METADATA}; then
     $WORKDIR/generate_maven_metadata.sh ${OUTPUT_DIR}
 fi
