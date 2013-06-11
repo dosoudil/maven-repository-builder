@@ -6,7 +6,7 @@ from configuration import Configuration
 from artifact_list_builder import ArtifactListBuilder
 from filter import Filter
 from maven_artifact import MavenArtifact
-import mrbutils
+import maven_repo_util as mrbutils
 
 
 def _generateArtifactList(options):

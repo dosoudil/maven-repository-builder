@@ -1,7 +1,7 @@
 import os
 import koji
 import re
-import mrbutils
+import maven_repo_util as mrbutils
 import logging
 from subprocess import Popen
 from subprocess import PIPE

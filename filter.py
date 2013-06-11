@@ -1,5 +1,5 @@
 import logging
-import mrbutils
+import maven_repo_util as mrbutils
 import os
 import re
 from subprocess import Popen
