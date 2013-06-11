@@ -6,12 +6,14 @@ a list of artifacts and a remote repository URL.
 """
 
 import hashlib
+import httplib
 import logging
 import optparse
 import os
 import re
 import shutil
 import sys
+import urllib2
 import urlparse
 
 import artifact_list_generator
@@ -19,17 +21,105 @@ import maven_repo_util
 from maven_artifact import MavenArtifact
 
 
-def downloadFile(fileUrl, fileLocalPath):
+class _ChecksumMode:
+    generate = 'generate'
+    download = 'download'
+    check = 'check'
+
+
+def download(url, checksumMode, filePath=None):
+    """Download the given url to a local file"""
+
+    logging.debug('Attempting download: %s', url)
+
+    if filePath:
+        if os.path.exists(filePath):
+            logging.debug('Local file already exists, skipping: %s', filePath)
+            return
+        localdir = os.path.dirname(filePath)
+        if not os.path.exists(localdir):
+            os.makedirs(localdir)
+
+    def getFileName(url, openUrl):
+        if 'Content-Disposition' in openUrl.info():
+            # If the response has Content-Disposition, try to get filename from it
+            cd = dict(map(
+                lambda x: x.strip().split('=') if '=' in x else (x.strip(), ''),
+                openUrl.info()['Content-Disposition'].split(';')))
+            if 'filename' in cd:
+                filename = cd['filename'].strip("\"'")
+                if filename:
+                    return filename
+        # if no filename was found above, parse it out of the final URL.
+        return os.path.basename(urlparse.urlsplit(openUrl.url)[2])
+
+    try:
+        retries = 2
+        checksumsOk = False
+        while retries > 0 and not checksumsOk:
+            httpResponse = urllib2.urlopen(urllib2.Request(url))
+            if (httpResponse.code == 200):
+                filePath = filePath or getFileName(url, httpResponse)
+                with open(filePath, 'wb') as localfile:
+                    shutil.copyfileobj(httpResponse, localfile)
+
+                if checksumMode in (_ChecksumMode.download, _ChecksumMode.check):
+                    logging.debug('Downloading MD5 checksum from %s', url + ".md5")
+                    csHttpResponse = urllib2.urlopen(urllib2.Request(url + ".md5"))
+                    checksumFilePath = filePath + ".md5"
+                    with open(checksumFilePath, 'wb') as localfile:
+                        shutil.copyfileobj(csHttpResponse, localfile)
+                    if (csHttpResponse.code != 200):
+                        logging.warning('Unable to download MD5 checksum, http code: %s', csHttpResponse.code)
+
+                    logging.debug('Downloading SHA1 checksum from %s', url + ".sha1")
+                    csHttpResponse = urllib2.urlopen(urllib2.Request(url + ".sha1"))
+                    checksumFilePath = filePath + ".sha1"
+                    with open(checksumFilePath, 'wb') as localfile:
+                        shutil.copyfileobj(csHttpResponse, localfile)
+                    if (csHttpResponse.code != 200):
+                        logging.warning('Unable to download SHA1 checksum, http code: %s', csHttpResponse.code)
+
+                if checksumMode == _ChecksumMode.check:
+                    if maven_repo_util.checkChecksum(filePath):
+                        checksumsOk = True
+                else:
+                    checksumsOk = True
+
+                if checksumsOk:
+                    logging.debug('Download complete')
+                elif retries > 0:
+                    logging.warning('Checksum problem with %s, retrying download...', url)
+                    retries -= 1
+                else:
+                    logging.error('Checksum problem with %s. No chance to download the file correctly. Exiting', url)
+                    sys.exit(1)
+            else:
+                logging.warning('Unable to download, http code: %s', httpResponse.code)
+        httpResponse.close()
+        return httpResponse.code
+    except urllib2.HTTPError as e:
+        logging.debug('Unable to download, HTTP Response code = %s', e.code)
+        return e.code
+    except urllib2.URLError as e:
+        logging.error('Unable to download, URLError: %s', e.reason)
+    except httplib.HTTPException as e:
+        logging.exception('Unable to download, HTTPException: %s', e.message)
+    except ValueError as e:
+        logging.error('ValueError: %s', e.message)
+
+
+def downloadFile(fileUrl, fileLocalPath, checksumMode):
     """Downloads file from the given URL to local path if the path does not exist yet."""
     if os.path.exists(fileLocalPath):
         logging.debug("Artifact already downloaded: " + fileUrl)
     else:
-        returnCode = maven_repo_util.download(fileUrl, fileLocalPath)
+        returnCode = download(fileUrl, checksumMode, fileLocalPath)
         if (returnCode == 404):
             logging.warning("Remote file not found: " + fileUrl)
 
 
-def downloadArtifacts(remoteRepoUrl, localRepoDir, artifact, classifiers):
+def downloadArtifacts(remoteRepoUrl, localRepoDir, artifact, classifiers, checksumMode):
     """Download artifact from a remote repository along with pom and source jar"""
     artifactLocalDir = localRepoDir + '/' + artifact.getDirPath()
     if not os.path.exists(artifactLocalDir):
@@ -38,23 +128,44 @@ def downloadArtifacts(remoteRepoUrl, localRepoDir, artifact, classifiers):
     # Download main artifact
     artifactUrl = remoteRepoUrl + '/' + artifact.getArtifactFilepath()
     artifactLocalPath = os.path.join(localRepoDir, artifact.getArtifactFilepath())
-    downloadFile(artifactUrl, artifactLocalPath)
+    downloadFile(artifactUrl, artifactLocalPath, checksumMode)
 
     # Download pom
     if artifact.getArtifactFilename() != artifact.getPomFilename():
         artifactPomUrl = remoteRepoUrl + '/' + artifact.getPomFilepath()
         artifactPomLocalPath = os.path.join(localRepoDir, artifact.getPomFilepath())
-        downloadFile(artifactPomUrl, artifactPomLocalPath)
+        downloadFile(artifactPomUrl, artifactPomLocalPath, checksumMode)
 
     # Download additional classifiers
     if artifact.getArtifactType() != 'pom' and not artifact.getClassifier():
         for classifier in classifiers:
             artifactClassifierUrl = remoteRepoUrl + '/' + artifact.getClassifierFilepath(classifier)
             artifactClassifierLocalPath = os.path.join(localRepoDir, artifact.getClassifierFilepath(classifier))
-            downloadFile(artifactClassifierUrl, artifactClassifierLocalPath)
+            downloadFile(artifactClassifierUrl, artifactClassifierLocalPath, checksumMode)
 
 
-def copyArtifact(remoteRepoPath, localRepoDir, artifact, classifiers):
+def copyFile(filePath, fileLocalPath, checksumMode):
+    """Copies file from the given path to local path if the path does not exist yet."""
+    if os.path.exists(fileLocalPath):
+        logging.debug("Artifact already copy: " + filePath)
+    else:
+        if os.path.exists(filePath):
+            shutil.copyfile(filePath, fileLocalPath)
+            if checksumMode in (_ChecksumMode.download, _ChecksumMode.check):
+                if os.path.exists(filePath + ".md5"):
+                    shutil.copyfile(filePath + ".md5", fileLocalPath + ".md5")
+                if os.path.exists(filePath + ".sha1"):
+                    shutil.copyfile(filePath + ".sha1", fileLocalPath + ".sha1")
+
+            if checksumMode == _ChecksumMode.check:
+                if not maven_repo_util.checkChecksum(filePath):
+                    logging.error('Checksum problem with copy of %s. Exiting', )
+                    sys.exit(1)
+        else:
+            logging.warning("Source file not found: %s", filePath)
+
+
+def copyArtifact(remoteRepoPath, localRepoDir, artifact, classifiers, checksumMode):
     """Copy artifact from a repository on the local file system along with pom and source jar"""
     # Download main artifact
     artifactPath = os.path.join(remoteRepoPath, artifact.getArtifactFilepath())
@@ -64,7 +175,7 @@ def copyArtifact(remoteRepoPath, localRepoDir, artifact, classifiers):
         if not os.path.exists(artifactLocalDir):
             os.makedirs(artifactLocalDir)
         logging.info('Copying file: ' + artifactPath)
-        shutil.copyfile(artifactPath, artifactLocalPath)
+        copyFile(artifactPath, artifactLocalPath, checksumMode)
 
     # Download pom
     if artifact.getArtifactFilename() != artifact.getPomFilename():
@@ -72,7 +183,7 @@ def copyArtifact(remoteRepoPath, localRepoDir, artifact, classifiers):
         artifactPomLocalPath = os.path.join(localRepoDir, artifact.getPomFilepath())
         if os.path.exists(artifactPomPath) and not os.path.exists(artifactPomLocalPath):
             logging.info('Copying file: ' + artifactPomPath)
-            shutil.copyfile(artifactPomPath, artifactPomLocalPath)
+            copyFile(artifactPomPath, artifactPomLocalPath, checksumMode)
 
     # Download additional classifiers
     if artifact.getArtifactType() != 'pom' and not artifact.getClassifier():
@@ -81,7 +192,7 @@ def copyArtifact(remoteRepoPath, localRepoDir, artifact, classifiers):
             artifactClassifierLocalPath = os.path.join(localRepoDir, artifact.getClassifierFilepath(classifier))
             if os.path.exists(artifactClassifierPath) and not os.path.exists(artifactClassifierLocalPath):
                 logging.info('Copying file: ' + artifactClassifierPath)
-                shutil.copyfile(artifactClassifierPath, artifactClassifierLocalPath)
+                copyFile(artifactClassifierPath, artifactClassifierLocalPath, checksumMode)
 
 
 def depListToArtifactList(depList):
@@ -100,7 +211,7 @@ def depListToArtifactList(depList):
     return artifactList
 
 
-def retrieveArtifacts(remoteRepoUrl, localRepoDir, artifactList, classifiers):
+def retrieveArtifacts(remoteRepoUrl, localRepoDir, artifactList, classifiers, checksumMode):
     """Create a Maven repository based on a remote repository url and a list of artifacts"""
     if not os.path.exists(localRepoDir):
         os.makedirs(localRepoDir)
@@ -109,11 +220,11 @@ def retrieveArtifacts(remoteRepoUrl, localRepoDir, artifactList, classifiers):
     repoPath = parsedUrl[2]
     if protocol == 'http' or protocol == 'https':
         for artifact in artifactList:
-            downloadArtifacts(remoteRepoUrl, localRepoDir, artifact, classifiers)
+            downloadArtifacts(remoteRepoUrl, localRepoDir, artifact, classifiers, checksumMode)
     elif protocol == 'file':
         repoPath = remoteRepoUrl.replace('file://', '')
         for artifact in artifactList:
-            copyArtifact(repoPath, localRepoDir, artifact, classifiers)
+            copyArtifact(repoPath, localRepoDir, artifact, classifiers, checksumMode)
     else:
         logging.error('Unknown protocol: %s', protocol)
 
@@ -140,9 +251,9 @@ def generateChecksumFiles(filepath):
             sumobj.write(checksum + '\n')
 
 
-def fetchArtifacts(artifacts, sourceUrl, classifiers, destDir):
+def fetchArtifacts(artifacts, sourceUrl, classifiers, checksumMode, destDir):
     logging.info('Retrieving artifacts from repository: %s', sourceUrl)
-    retrieveArtifacts(sourceUrl, destDir, artifacts, classifiers)
+    retrieveArtifacts(sourceUrl, destDir, artifacts, classifiers, checksumMode)
 
 
 def main():
@@ -154,6 +265,7 @@ def main():
                    "to provide Artifact List Generator configuration file. There is also "
                    "sample configuration file in examples.")
 
+    # TODO: pkocandr - use argparse instead of optparse, which is deprecated since python 2.7
     cliOptParser = optparse.OptionParser(usage=usage, description=description)
     cliOptParser.add_option('-c', '--config', dest='config',
             help='Configuration file to use for generation of an artifact list for the repository builder')
@@ -167,6 +279,13 @@ def main():
     cliOptParser.add_option('-a', '--classifiers',
             default='sources',
             help='Comma-separated list of additional classifiers to download')
+    cliOptParser.add_option('-s', '--checksummode',
+            default=_ChecksumMode.generate,
+            choices=(_ChecksumMode.generate, _ChecksumMode.download, _ChecksumMode.check),
+            help='Mode of dealing with MD5 and SHA1 checksums. Possible choices are:                                   '
+                'generate - generate the checksums (default)                   '
+                'download - download the checksums if available, if not, generate them                              '
+                'check - check if downloaded and generated checksums are equal')
     cliOptParser.add_option('-l', '--loglevel',
             default='info',
             help='Set the level of log output.  Can be set to debug, info, warning, error, or critical')
@@ -213,19 +332,19 @@ def main():
                 artifacts.extend(depListToArtifactList(dependencyListLines))
             except IOError as e:
                 logging.exception('Unable to read file %s: %s', filename, str(e))
-                sys.exit()
+                sys.exit(1)
             finally:
                 depListFile.close()
 
-        fetchArtifacts(artifacts, options.url, classifiers, options.output)
+        fetchArtifacts(artifacts, options.url, classifiers, options.checksummode, options.output)
     else:
         # generate lists of artifacts from confiuration and the fetch them each list from it's repo
         artifactList = artifact_list_generator.generateArtifactList(options)
         for repoUrl in artifactList.keys():
             artifacts = artifactList[repoUrl]
-            fetchArtifacts(artifacts, repoUrl, classifiers, options.output)
+            fetchArtifacts(artifacts, repoUrl, classifiers, options.checksummode, options.output)
 
-    logging.info('Generating checksums...')
+    logging.info('Generating missing checksums...')
     generateChecksums(options.output)
     logging.info('Repository created in directory: %s', options.output)
 

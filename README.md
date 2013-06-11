@@ -39,6 +39,11 @@ Basic Usage
                             By default "sources" will be used.
       -r REPO_FILENAME
                             Zip teh created repository in a file with provided name
+      -s CHECKSUM_MODE'
+                            Mode of dealing with MD5 and SHA1 checksums. Possible options are:
+                            generate - generate the checksums (default)
+                            download - download the checksums if available, if not, generate them
+                            check - check if downloaded and generated checksums are equal
       -m
                             Generate metadata in the created repository
       -l LOGLEVEL

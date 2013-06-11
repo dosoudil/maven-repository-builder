@@ -23,6 +23,11 @@ help ()
     echo '                        By default "sources" will be used.'
     echo '  -r REPO_FILENAME'
     echo '                        Zip the created repository in a file with provided name'
+    echo '  -s CHECKSUM_MODE'
+    echo '                        Mode of dealing with MD5 and SHA1 checksums. Possible options are:'
+    echo '                        generate - generates the checksums (default)'
+    echo '                        download - download the checksums if available, if not, generates them'
+    echo '                        check - checks if downloaded and generated checksums are equal'
     echo '  -m'
     echo '                        Generate metadata in the created repository'
     echo '  -l LOGLEVEL'
@@ -48,7 +53,7 @@ METADATA=false
 # =======================================
 # ====== reading command arguments ======
 # =======================================
-while getopts hc:u:r:a:o:l:d:m OPTION
+while getopts hc:u:r:a:o:l:s:md: OPTION
 do
     case "${OPTION}" in
         h) HELP=true;;
@@ -56,6 +61,7 @@ do
         u) URL=${OPTARG};;
         r) REPO_FILE=${OPTARG};;
         a) CLASSIFIERS=${OPTARG};;
+        s) CHECKSUM_MODE=${OPTARG};;
         o) OUTPUT_DIR=${OPTARG};;
         m) METADATA=true;;
         l) LOGLEVEL=${OPTARG};;
@@ -92,6 +98,10 @@ if [[ ! -z ${OUTPUT_DIR} ]]; then
     MRB_PARAMS+=("-o")
     MRB_PARAMS+=(${OUTPUT_DIR})
 fi
+if [[ ! -z ${CHECKSUM_MODE} ]]; then
+    MRB_PARAMS+=("-s")
+    MRB_PARAMS+=(${CHECKSUM_MODE})
+fi
 if [[ ! -z ${LOGLEVEL} ]]; then
     MRB_PARAMS+=("-l")
     MRB_PARAMS+=(${LOGLEVEL})
@@ -100,7 +110,8 @@ fi
 # skip all named parameters and leave just unnamed ones (filenames)
 if [ $# -gt 0 ]; then
     while [ $# -gt 0 ] && [ ${1:0:1} = '-' ]; do
-        if [ ${1:1:2} = 'c' ] || [ ${1:1:2} = 'r' ] || [ ${1:1:2} = 'a' ] || [ ${1:1:2} = 'o' ] || [ ${1:1:2} = 'u' ] || [ ${1:1:2} = 'l' ] || [ ${1:1:2} = 'd' ] ; then
+        L=${1:1:2}
+        if [ $L = 'c' ] || [ $L = 'r' ] || [ $L = 'a' ] || [ $L = 'o' ] || [ $L = 'u' ] || [ $L = 's' ] || [ $L = 'l' ] || [ $L = 'd' ] ; then
             shift
         fi
         shift
