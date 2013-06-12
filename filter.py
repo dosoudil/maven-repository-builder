@@ -36,19 +36,18 @@ class Filter:
         :returns: artifactList without arifacts that matched specified GAVs.
         """
 
-        for gav in self.config.excludedGAVs:
-            artifact = MavenArtifact.createFromGAV(gav)
-            gaColon = artifact.getGA() + ":"
-            for gat in artifactList.keys():
-                if gat.startswith(gaColon):
-                    for priority in artifactList[gat].keys():
-                        if not artifact.version in artifactList[gat][priority]:
-                            continue
-                        del artifactList[gat][priority][artifact.version]
-                        if not artifactList[gat][priority]:
-                            del artifactList[gat][priority]
-                    if not artifactList[gat]:
-                        del artifactList[gat]
+        regExps = _getRegExpsFromStrings(self.config.excludedGAVs)
+        for gat in artifactList.keys():
+            ga = gat.rpartition(':')[0]
+            for priority in artifactList[gat].keys():
+                for version in artifactList[gat][priority].keys():
+                    gav = ga + ":" + version
+                    if _somethingMatch(regExps, gav):
+                        del artifactList[gat][priority][version]
+                if not artifactList[gat][priority]:
+                    del artifactList[gat][priority]
+            if not artifactList[gat]:
+                del artifactList[gat]
         return artifactList
 
     def _filterExcludedRepositories(self, artifactList):
@@ -98,9 +97,7 @@ class Filter:
         return artifactList
 
     def _filterMultipleVersions(self, artifactList):
-        regExps = []
-        for ga in self.config.multiVersionGAs:
-            regExps.append(re.compile(mrbutils.transformAsterixStringToRegexp(ga)))
+        regExps = _getRegExpsFromStrings(self.config.multiVersionGAs)
         for gat in artifactList.keys():
             if _somethingMatch(regExps, gat):
                 continue
@@ -115,6 +112,13 @@ class Filter:
             for priority in priorities[1:]:
                 del artifactList[gat][priority]
         return artifactList
+
+
+def _getRegExpsFromStrings(strings):
+    regExps = []
+    for s in strings:
+        regExps.append(re.compile(mrbutils.transformAsterixStringToRegexp(s)))
+    return regExps
 
 
 def _sortVersionsWithAtlas(versions):
