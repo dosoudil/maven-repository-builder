@@ -23,24 +23,22 @@ class Filter:
         """
 
         logging.debug("Filter received %d GATs in the list.", len(artifactList))
-        artifactList = self._filterExcludedGAVs(artifactList, self.config.excludedGAVs)
+        artifactList = self._filterExcludedGAVs(artifactList)
         artifactList = self._filterDuplicates(artifactList)
         if(self.config.singleVersion):
-            artifactList = self._filterMultipleVersions(artifactList,self.config.multiVersionGAs)
-        artifactList = self._filterExcludedRepositories(artifactList,
-                                                        self.config.excludedRepositories)
+            artifactList = self._filterMultipleVersions(artifactList)
+        artifactList = self._filterExcludedRepositories(artifactList)
         return artifactList
 
-    def _filterExcludedGAVs(self, artifactList, gavs):
+    def _filterExcludedGAVs(self, artifactList):
         """
         Filter artifactList removing specified GAVs.
 
         :param artifactList: artifactList to be filtered.
-        :param gavs: list of GAVs to be filtered out from the artifactList.
         :returns: artifactList without arifacts that matched specified GAVs.
         """
 
-        for gav in gavs:
+        for gav in self.config.excludedGAVs:
             artifact = MavenArtifact.createFromGAV(gav)
             gaColon = artifact.getGA() + ":"
             for gat in artifactList.keys():
@@ -55,12 +53,11 @@ class Filter:
                         del artifactList[gat]
         return artifactList
 
-    def _filterExcludedRepositories(self, artifactList, repositories):
+    def _filterExcludedRepositories(self, artifactList):
         """
         Filter artifactList removing artifacts existing in specified repositories.
 
         :param artifactList: artifactList to be filtered.
-        :param repositories: list of repositories to be filtered out from the artifactList.
         :returns: artifactList without arifacts that exists in specified repositories.
         """
 
@@ -71,7 +68,7 @@ class Filter:
             for priority in artifactList[gat].keys():
                 for version in artifactList[gat][priority].keys():
                     artifact = MavenArtifact(groupId, artifactId, artifactType, version)
-                    if _isArtifactInRepos(repositories, artifact):
+                    if _isArtifactInRepos(self.config.excludedRepositories, artifact):
                         del artifactList[gat][priority][version]
                 if not artifactList[gat][priority]:
                     del artifactList[gat][priority]
@@ -102,9 +99,9 @@ class Filter:
                 del artifactList[gat]
         return artifactList
 
-    def _filterMultipleVersions(self, artifactList, multiVersionGAs):
+    def _filterMultipleVersions(self, artifactList):
         regExps = []
-        for ga in multiVersionGAs:
+        for ga in self.config.multiVersionGAs:
             regExps.append(re.compile(mrbutils.transformAsterixStringToRegexp(ga)))
         for gat in artifactList.keys():
             if _somethingMatch(regExps, gat):
