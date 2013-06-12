@@ -227,7 +227,7 @@ class ArtifactListBuilder:
                 for ext in exts:
                     mavenArtifact = MavenArtifact(gav.group(1).replace('/', '.'),
                                                   gav.group(2), ext, gav.group(3))
-                    artifacts[mavenArtifact] = directoryPath
+                    artifacts[mavenArtifact] = "file://" + directoryPath
         return artifacts
 
     def _listArtifacts(self, urls, gavs):

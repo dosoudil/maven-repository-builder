@@ -159,7 +159,7 @@ def copyFile(filePath, fileLocalPath, checksumMode):
 
             if checksumMode == _ChecksumMode.check:
                 if not maven_repo_util.checkChecksum(filePath):
-                    logging.error('Checksum problem with copy of %s. Exiting', )
+                    logging.error('Checksum problem with copy of %s. Exiting', filePath)
                     sys.exit(1)
         else:
             logging.warning("Source file not found: %s", filePath)

@@ -15,7 +15,7 @@ def getSha1Checksum(filepath):
 
 def getChecksum(filepath, sum_constr):
     """Generate a checksums for the file using the given algorithm"""
-    logging.debug('Generate %s checksum for: %s', sum_constr.name, filepath)
+    logging.debug('Generate %s checksum for: %s', sum_constr.name.upper(), filepath)
     checksum = sum_constr
     with open(filepath, 'rb') as fobj:
         while True:
@@ -38,16 +38,17 @@ def _checkChecksum(filepath, sum_constr):
     """Checks if desired checksum equals to the one saved in corresponding file if it is available."""
     checksumFilepath = filepath + '.' + sum_constr.name.lower()
     if os.path.exists(checksumFilepath):
-        logging.debug("Checking %s checksum of %s", sum_constr.name, filepath)
+        logging.debug("Checking %s checksum of %s", sum_constr.name.upper(), filepath)
         generatedChecksum = getChecksum(filepath, sum_constr)
         with open(checksumFilepath, "r") as checksumFile:
             downloadedChecksum = checksumFile.read()
         if generatedChecksum != downloadedChecksum:
             return False
-    else:
-        logging.debug("Checksum file %s doesn't exist, skipping.", filepath)
 
-    logging.debug("Checksum of %s OK.", filepath)
+        logging.debug("%s checksum of %s OK.", sum_constr.name.upper(), filepath)
+    else:
+        logging.debug("Checksum file %s doesn't exist, skipping the check.", checksumFilepath)
+
     return True
 
 
