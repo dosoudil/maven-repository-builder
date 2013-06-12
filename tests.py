@@ -6,11 +6,14 @@ import logging
 import os
 import tempfile
 import unittest
+import copy
 
 import maven_repo_util
 import maven_repo_builder
 
 from maven_artifact import MavenArtifact
+from configuration import Configuration
+from filter import Filter
 
 
 class Tests(unittest.TestCase):
@@ -81,6 +84,140 @@ class Tests(unittest.TestCase):
         self.assertEqual(artifact5.getClassifier(), "")
         self.assertEqual(artifact5.getArtifactFilename(), "guava-r05.pom")
 
+
+    artifactList = {
+      "com.google.guava:guava:pom": {
+        "1":{
+          "1.0.0": "http://repo1.maven.org/maven2/com/google/guava/guava/1.0.0/",
+          "1.0.1": "http://repo1.maven.org/maven2/com/google/guava/guava/1.0.1/",
+          "1.1.0": "http://repo1.maven.org/maven2/com/google/guava/guava/1.1.0/"},
+        "2":{
+          "1.0.2": "http://repo2.maven.org/maven2/com/google/guava/guava/1.0.2/"},
+        "3":{
+          "1.2.0": "http://repo3.maven.org/maven2/com/google/guava/guava/1.2.0/a",
+          "1.0.0": "http://repo3.maven.org/maven2/com/google/guava/guava/1.0.0/a"}},
+      "org.jboss:jboss-foo:jar": {
+        "1":{
+          "1.0.0": "http://repo1.maven.org/maven2/org/jboss/jboss-foo/1.0.0/",
+          "1.0.1": "http://repo1.maven.org/maven2/org/jboss/jboss-foo/1.0.1/",
+          "1.1.0": "http://repo1.maven.org/maven2/org/jboss/jboss-foo/1.1.0/"},
+        "2":{
+          "1.0.1": "http://repo2.maven.org/maven2/org/jboss/jboss-foo/1.0.2/",
+          "1.0.2": "http://repo2.maven.org/maven2/org/jboss/jboss-foo/1.0.2/"}}}
+
+    def test_filter_excluded_GAVs(self):
+        config = Configuration()
+        alf = Filter(config)
+
+        config.excludedGAVs = [ "com.google.guava:guava:1.1.0" ]
+        al = copy.deepcopy(self.artifactList)
+        self.assertTrue('1.1.0' in al['com.google.guava:guava:pom']['1'])
+        alf._filterExcludedGAVs(al)
+        self.assertFalse('1.1.0' in al['com.google.guava:guava:pom']['1'])
+
+        config.excludedGAVs = [ "com.google.guava:guava:1.0*" ]
+        al = copy.deepcopy(self.artifactList)
+        self.assertTrue('1.0.0' in al['com.google.guava:guava:pom']['1'])
+        self.assertTrue('1.0.1' in al['com.google.guava:guava:pom']['1'])
+        self.assertTrue('1.0.2' in al['com.google.guava:guava:pom']['2'])
+        self.assertTrue('1.0.0' in al['com.google.guava:guava:pom']['3'])
+        alf._filterExcludedGAVs(al)
+        self.assertFalse('1.0.0' in al['com.google.guava:guava:pom']['1'])
+        self.assertFalse('1.0.1' in al['com.google.guava:guava:pom']['1'])
+        self.assertFalse('2' in al['com.google.guava:guava:pom'])
+        self.assertFalse('1.0.0' in al['com.google.guava:guava:pom']['3'])
+
+
+        config.excludedGAVs = [ "com.google.guava:*" ]
+        al = copy.deepcopy(self.artifactList)
+        self.assertTrue('com.google.guava:guava:pom' in al)
+        alf._filterExcludedGAVs(al)
+        self.assertFalse('com.google.guava:guava:pom' in al)
+
+    def test_filter_duplicates(self):
+        config = Configuration()
+        alf = Filter(config)
+
+        al = copy.deepcopy(self.artifactList)
+        self.assertTrue('1.0.0' in al['com.google.guava:guava:pom']['1'])
+        self.assertTrue('1.0.0' in al['com.google.guava:guava:pom']['3'])
+        self.assertTrue('1.0.1' in al['org.jboss:jboss-foo:jar']['1'])
+        self.assertTrue('1.0.1' in al['org.jboss:jboss-foo:jar']['2'])
+        alf._filterDuplicates(al)
+        self.assertTrue('1.0.0' in al['com.google.guava:guava:pom']['1'])
+        self.assertFalse('1.0.0' in al['com.google.guava:guava:pom']['3'])
+        self.assertTrue('1.0.1' in al['org.jboss:jboss-foo:jar']['1'])
+        self.assertFalse('1.0.1' in al['org.jboss:jboss-foo:jar']['2'])
+
+    def test_filter_multiple_versions(self):
+        config = Configuration()
+        config.singleVersion = True
+        alf = Filter(config)
+
+        al = copy.deepcopy(self.artifactList)
+        self.assertTrue('1.0.0' in al['com.google.guava:guava:pom']['1'])
+        self.assertTrue('1.0.1' in al['com.google.guava:guava:pom']['1'])
+        self.assertTrue('1.1.0' in al['com.google.guava:guava:pom']['1'])
+        self.assertTrue('2' in al['com.google.guava:guava:pom'])
+        self.assertTrue('3' in al['com.google.guava:guava:pom'])
+        self.assertTrue('1.0.0' in al['org.jboss:jboss-foo:jar']['1'])
+        self.assertTrue('1.0.1' in al['org.jboss:jboss-foo:jar']['1'])
+        self.assertTrue('1.1.0' in al['org.jboss:jboss-foo:jar']['1'])
+        self.assertTrue('2' in al['org.jboss:jboss-foo:jar'])
+        alf._filterMultipleVersions(al)
+        self.assertFalse('1.0.0' in al['com.google.guava:guava:pom']['1'])
+        self.assertFalse('1.0.1' in al['com.google.guava:guava:pom']['1'])
+        self.assertTrue('1.1.0' in al['com.google.guava:guava:pom']['1'])
+        self.assertFalse('2' in al['com.google.guava:guava:pom'])
+        self.assertFalse('3' in al['com.google.guava:guava:pom'])
+        self.assertFalse('1.0.0' in al['org.jboss:jboss-foo:jar']['1'])
+        self.assertFalse('1.0.1' in al['org.jboss:jboss-foo:jar']['1'])
+        self.assertTrue('1.1.0' in al['org.jboss:jboss-foo:jar']['1'])
+        self.assertFalse('2' in al['org.jboss:jboss-foo:jar'])
+
+        config.multiVersionGAs = [ "com.google.guava:guava" ]
+        al = copy.deepcopy(self.artifactList)
+        self.assertTrue('1.0.0' in al['com.google.guava:guava:pom']['1'])
+        self.assertTrue('1.0.1' in al['com.google.guava:guava:pom']['1'])
+        self.assertTrue('1.1.0' in al['com.google.guava:guava:pom']['1'])
+        self.assertTrue('2' in al['com.google.guava:guava:pom'])
+        self.assertTrue('3' in al['com.google.guava:guava:pom'])
+        self.assertTrue('1.0.0' in al['org.jboss:jboss-foo:jar']['1'])
+        self.assertTrue('1.0.1' in al['org.jboss:jboss-foo:jar']['1'])
+        self.assertTrue('1.1.0' in al['org.jboss:jboss-foo:jar']['1'])
+        self.assertTrue('2' in al['org.jboss:jboss-foo:jar'])
+        alf._filterMultipleVersions(al)
+        self.assertTrue('1.0.0' in al['com.google.guava:guava:pom']['1'])
+        self.assertTrue('1.0.1' in al['com.google.guava:guava:pom']['1'])
+        self.assertTrue('1.1.0' in al['com.google.guava:guava:pom']['1'])
+        self.assertTrue('2' in al['com.google.guava:guava:pom'])
+        self.assertTrue('3' in al['com.google.guava:guava:pom'])
+        self.assertFalse('1.0.0' in al['org.jboss:jboss-foo:jar']['1'])
+        self.assertFalse('1.0.1' in al['org.jboss:jboss-foo:jar']['1'])
+        self.assertTrue('1.1.0' in al['org.jboss:jboss-foo:jar']['1'])
+        self.assertFalse('2' in al['org.jboss:jboss-foo:jar'])
+
+        config.multiVersionGAs = [ "*:jboss-foo" ]
+        al = copy.deepcopy(self.artifactList)
+        self.assertTrue('1.0.0' in al['com.google.guava:guava:pom']['1'])
+        self.assertTrue('1.0.1' in al['com.google.guava:guava:pom']['1'])
+        self.assertTrue('1.1.0' in al['com.google.guava:guava:pom']['1'])
+        self.assertTrue('2' in al['com.google.guava:guava:pom'])
+        self.assertTrue('3' in al['com.google.guava:guava:pom'])
+        self.assertTrue('1.0.0' in al['org.jboss:jboss-foo:jar']['1'])
+        self.assertTrue('1.0.1' in al['org.jboss:jboss-foo:jar']['1'])
+        self.assertTrue('1.1.0' in al['org.jboss:jboss-foo:jar']['1'])
+        self.assertTrue('2' in al['org.jboss:jboss-foo:jar'])
+        alf._filterMultipleVersions(al)
+        self.assertFalse('1.0.0' in al['com.google.guava:guava:pom']['1'])
+        self.assertFalse('1.0.1' in al['com.google.guava:guava:pom']['1'])
+        self.assertTrue('1.1.0' in al['com.google.guava:guava:pom']['1'])
+        self.assertFalse('2' in al['com.google.guava:guava:pom'])
+        self.assertFalse('3' in al['com.google.guava:guava:pom'])
+        self.assertTrue('1.0.0' in al['org.jboss:jboss-foo:jar']['1'])
+        self.assertTrue('1.0.1' in al['org.jboss:jboss-foo:jar']['1'])
+        self.assertTrue('1.1.0' in al['org.jboss:jboss-foo:jar']['1'])
+        self.assertTrue('2' in al['org.jboss:jboss-foo:jar'])
 
 if __name__ == '__main__':
     unittest.main()
