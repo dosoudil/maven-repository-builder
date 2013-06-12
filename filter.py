@@ -4,7 +4,6 @@ import os
 import re
 from subprocess import Popen
 from subprocess import PIPE
-from subprocess import call
 from maven_artifact import MavenArtifact
 
 
@@ -22,10 +21,9 @@ class Filter:
         :returns: filtered artifactList.
         """
 
-        logging.debug("Filter received %d GATs in the list.", len(artifactList))
         artifactList = self._filterExcludedGAVs(artifactList)
         artifactList = self._filterDuplicates(artifactList)
-        if(self.config.singleVersion):
+        if self.config.singleVersion:
             artifactList = self._filterMultipleVersions(artifactList)
         artifactList = self._filterExcludedRepositories(artifactList)
         return artifactList
@@ -110,7 +108,7 @@ class Filter:
             priorities = sorted(artifactList[gat].keys())
             priority = priorities[0]
             versions = artifactList[gat][priority].keys()
-            if len(versions) > 1: # list of 1 is sorted by definition
+            if len(versions) > 1:  # list of 1 is sorted by definition
                 versions = _sortVersionsWithAtlas(versions)
             for version in versions[1:]:
                 del artifactList[gat][priority][version]
@@ -133,11 +131,10 @@ def _sortVersionsWithAtlas(versions):
                       jarLocation,
                       versionSortedDir)
         Popen(["mvn", "clean", "package"], cwd=versionSortedDir).wait()
-    args = ["java", "-jar", jarLocation ] + versions
+    args = ["java", "-jar", jarLocation] + versions
     ret = Popen(args, stdout=PIPE).communicate()[0].split('\n')[::-1]
     ret.remove("")
     return ret
-
 
 
 def _somethingMatch(regexs, string):

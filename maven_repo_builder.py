@@ -218,12 +218,23 @@ def retrieveArtifacts(remoteRepoUrl, localRepoDir, artifactList, classifiers, ch
     parsedUrl = urlparse.urlparse(remoteRepoUrl)
     protocol = parsedUrl[0]
     repoPath = parsedUrl[2]
+
+    excludedTypes = ("zip", "ear", "war", "tar", "gz", "tar.gz", "bz2", "tar.bz2", "7z", "tar.7z")
+
     if protocol == 'http' or protocol == 'https':
         for artifact in artifactList:
+            if artifact.artifactType in excludedTypes:
+                logging.info("Skipping download of %s:%s:%s:%s because of excluded type", artifact.groupId,
+                              artifact.artifactId, artifact.artifactType, artifact.version)
+                continue
             downloadArtifacts(remoteRepoUrl, localRepoDir, artifact, classifiers, checksumMode)
     elif protocol == 'file':
         repoPath = remoteRepoUrl.replace('file://', '')
         for artifact in artifactList:
+            if artifact.artifactType in excludedTypes:
+                logging.info("Skipping copy of %s:%s:%s:%s because of excluded type", artifact.groupId,
+                              artifact.artifactId, artifact.artifactType, artifact.version)
+                continue
             copyArtifact(repoPath, localRepoDir, artifact, classifiers, checksumMode)
     else:
         logging.error('Unknown protocol: %s', protocol)

@@ -21,6 +21,8 @@ class ArtifactListBuilder:
             L <repo url> (string)
     """
 
+    _fileExtRegExp = "((?:tar\.)?[^.]+)$"
+
     def __init__(self, configuration):
         self.configuration = configuration
 
@@ -185,7 +187,7 @@ class ArtifactListBuilder:
                 gavf = regexGAVF.match(line)
                 if gavf is not None:
                     av = re.escape(gavf.group(2) + "-" + gavf.group(3) + ".")
-                    regexExt = re.compile(av + "([^.]+)$")
+                    regexExt = re.compile(av + self._fileExtRegExp)
                     ext = regexExt.match(gavf.group(4))
                     if ext is not None:
                         gav = (gavf.group(1).replace('/', '.'), gavf.group(2), gavf.group(3))
@@ -215,7 +217,7 @@ class ArtifactListBuilder:
                 gavPath = dirname.replace(directoryPath, '')
                 gav = regexGAV.search(gavPath)
                 av = re.escape(gav.group(2) + "-" + gav.group(3) + ".")
-                regexExt = re.compile(av + "([^.]+)$")
+                regexExt = re.compile(av + self._fileExtRegExp)
                 exts = []
                 for filename in filenames:
                     ext = regexExt.match(filename)

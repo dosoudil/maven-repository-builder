@@ -19,15 +19,31 @@ def _generateArtifactList(options):
     logging.info("Building artifact list...")
     listBuilder = ArtifactListBuilder(config)
     artifactList = listBuilder.buildList()
-    logging.debug("Generated %d GATs in the list.", len(artifactList))
+
+    logging.debug("Generated list contents:")
+    for gat in artifactList:
+        priorityList = artifactList[gat]
+        for priority in priorityList:
+            versionList = priorityList[priority]
+            for version in versionList:
+                logging.debug("  %s:%s", gat, version)
 
     #filter list
     logging.info("Filtering artifact list...")
     listFilter = Filter(config)
     artifactList = listFilter.filter(artifactList)
 
+    logging.debug("Filtered list contents:")
+    for gat in artifactList:
+        priorityList = artifactList[gat]
+        for priority in priorityList:
+            versionList = priorityList[priority]
+            for version in versionList:
+                logging.debug("  %s:%s", gat, version)
+
     logging.info("Artifact list generation done")
     return artifactList
+
 
 def generateArtifactList(options):
     """
