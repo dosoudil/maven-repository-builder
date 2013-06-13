@@ -2,9 +2,9 @@
 """maven_repo_util.py: Common functions for dealing with a maven repository"""
 
 import hashlib
+import httplib
 import logging
 import os
-import urllib2
 import urlparse
 import re
 
@@ -25,7 +25,6 @@ def setLogLevel(level):
     else:
         logging.basicConfig(level=logging.INFO)
         logging.warning('Unrecognized log level: %s  Log level set to info', level)
-    logging.info("Loglevel set to %s", level)
 
 
 def getSha1Checksum(filepath):
@@ -81,9 +80,16 @@ def str2bool(v):
 
 
 def urlExists(url):
-    protocol = urlProtocol(url)
+    parsedUrl = urlparse.urlparse(url)
+    protocol = parsedUrl[0]
     if protocol == 'http' or protocol == 'https':
-        return urllib2.urlopen(url).getcode() == 200
+        if protocol == 'http':
+            connection = httplib.HTTPConnection(parsedUrl[1])
+        else:
+            connection = httplib.HTTPSConnection(parsedUrl[1])
+        connection.request('HEAD', parsedUrl[2])
+        response = connection.getresponse()
+        return response.status == 200
     else:
         if protocol == 'file':
             url = url[7:]

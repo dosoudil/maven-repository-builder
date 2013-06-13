@@ -1,5 +1,5 @@
 import logging
-import maven_repo_util as mrbutils
+import maven_repo_util
 import os
 import re
 from subprocess import Popen
@@ -117,7 +117,7 @@ class Filter:
 def _getRegExpsFromStrings(strings):
     regExps = []
     for s in strings:
-        regExps.append(re.compile(mrbutils.transformAsterixStringToRegexp(s)))
+        regExps.append(re.compile(maven_repo_util.transformAsterixStringToRegexp(s)))
     return regExps
 
 
@@ -166,7 +166,7 @@ def _isArtifactInRepos(repositories, artifact):
     """
 
     for repository in repositories:
-        url = mrbutils.slashAtTheEnd(repository) + artifact.getDirPath()
-        if mrbutils.urlExists(url):
+        url = maven_repo_util.slashAtTheEnd(repository) + artifact.getDirPath()
+        if maven_repo_util.urlExists(url):
             return True
     return False
