@@ -36,6 +36,7 @@ class Filter:
         :returns: artifactList without arifacts that matched specified GAVs.
         """
 
+        logging.debug("Filtering artifacts with excluded GAVs.")
         regExps = _getRegExpsFromStrings(self.config.excludedGAVs)
         for gat in artifactList.keys():
             ga = gat.rpartition(':')[0]
@@ -58,6 +59,7 @@ class Filter:
         :returns: artifactList without arifacts that exists in specified repositories.
         """
 
+        logging.debug("Filtering artifacts contained in excluded repositories.")
         for gat in artifactList.keys():
             groupId = gat.split(':')[0]
             artifactId = gat.split(':')[1]
@@ -82,6 +84,7 @@ class Filter:
         :returns: artifactList without duplicate arifacts from lower priorities.
         """
 
+        logging.debug("Filtering duplicate artifacts.")
         for gat in artifactList.keys():
             for priority in sorted(artifactList[gat].keys()):
                 for version in artifactList[gat][priority].keys():
@@ -97,6 +100,7 @@ class Filter:
         return artifactList
 
     def _filterMultipleVersions(self, artifactList):
+        logging.debug("Filtering multi-version artifacts to have just a single version.")
         regExps = _getRegExpsFromStrings(self.config.multiVersionGAs)
         for gat in artifactList.keys():
             if _somethingMatch(regExps, gat):
