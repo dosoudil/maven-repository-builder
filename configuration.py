@@ -54,6 +54,7 @@ class Configuration:
 
     def _loadFromFile(self, filename, rewrite=True):
         """ Load confiugration from json config file. """
+        logging.debug("Loading configuration file %s", filename)
         data = json.load(open(filename))
 
         if 'include-high-priority' in data and data['include-high-priority']:
