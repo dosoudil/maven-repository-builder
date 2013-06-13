@@ -57,6 +57,28 @@ For a description and examples of the format of the artifact list file, see
 [Example Repository List](https://github.com/jboss-eap/maven-repository-builder/blob/master/example-config/artifact-list.txt)
 
 
+Artifact List Generator
+-----------------------
+The Artifact List Generator is a tool which handles generation of artifact list from specified sources. It is used by
+maven_repo_builder.py or it can be used as a separate tool. Configuration structure is described below.
+
+    Usage:
+        artifact_list_generator.py -c CONFIG
+
+    Generates an artifact list according to provided configuration. The output of the script is a list of repository
+    URLs and artifacts separated by tab character per line. Every artifact is in format
+    groupId:artifactId:fileType:version. The output is printed on stdout.
+
+    Options:
+      -h                    show this help message and exit
+      -c CONFIG
+                            Configuration file to use to generate an artifact list
+                            for the repository builder
+      -l LOGLEVEL
+                            Set the level of log output.  Can be set to debug,
+                            info, warning, error, or critical
+
+
 Artifact List Generator Config
 ------------------------------
 For an example config with full config structure see [Sample Config](https://github.com/jboss-eap/maven-repository-builder/blob/master/example-config/alg-config-sample.json)

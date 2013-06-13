@@ -304,20 +304,7 @@ def main():
     (options, args) = cliOptParser.parse_args()
 
     # Set the log level
-    log_level = options.loglevel.lower()
-    if (log_level == 'debug'):
-        logging.basicConfig(level=logging.DEBUG)
-    elif (log_level == 'info'):
-        logging.basicConfig(level=logging.INFO)
-    elif (log_level == 'warning'):
-        logging.basicConfig(level=logging.WARNING)
-    elif (log_level == 'error'):
-        logging.basicConfig(level=logging.ERROR)
-    elif (log_level == 'critical'):
-        logging.basicConfig(level=logging.CRITICAL)
-    else:
-        logging.basicConfig(level=logging.INFO)
-        logging.warning('Unrecognized log level: %s  Log level set to info', options.loglevel)
+    maven_repo_util.setLogLevel(options.loglevel)
 
     if not options.classifiers:
         classifiers = []

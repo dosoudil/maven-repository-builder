@@ -6,7 +6,7 @@ from configuration import Configuration
 from artifact_list_builder import ArtifactListBuilder
 from filter import Filter
 from maven_artifact import MavenArtifact
-import maven_repo_util as mrbutils
+import maven_repo_util
 
 
 def _generateArtifactList(options):
@@ -69,18 +69,21 @@ def generateArtifactList(options):
 
 
 def main():
-    # Set up logging
-    logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.INFO)
-
     description = "Generate artifact list from sources defined in the given congiguration file"
     cliOptParser = optparse.OptionParser(usage="Usage: %prog -c CONFIG", description=description)
     cliOptParser.add_option('-c', '--config', dest='config',
             help='Configuration file to use for generation of an artifact list for the repository builder')
+    cliOptParser.add_option('-l', '--loglevel',
+            default='info',
+            help='Set the level of log output.  Can be set to debug, info, warning, error, or critical')
     (options, args) = cliOptParser.parse_args()
+
+    # Set the log level
+    maven_repo_util.setLogLevel(options.loglevel)
 
     artifactList = _generateArtifactList(options)
 
-    mrbutils.printArtifactList(artifactList)
+    maven_repo_util.printArtifactList(artifactList)
 
 
 if __name__ == '__main__':
