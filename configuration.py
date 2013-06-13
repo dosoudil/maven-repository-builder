@@ -10,7 +10,6 @@ class Configuration:
     from a json configuration file.
     """
 
-    generateMetadata = None
     singleVersion = None
     artifactSources = []
     excludedGAVs = []
@@ -33,16 +32,11 @@ class Configuration:
         self._validate()
 
     def _setDefaults(self):
-        if self.generateMetadata is None:
-            self.generateMetadata = False
         if self.singleVersion is None:
             self.singleVersion = True
 
     def _validate(self):
         valid = True
-        if self.generateMetadata is None:
-            logging.error("Option generate-metadata not set in configuration file.")
-            valid = False
         if self.singleVersion is None:
             logging.error("Option single-version not set in configuration file.")
             valid = False
@@ -62,9 +56,6 @@ class Configuration:
 
         if (rewrite or self.resultRepoName is None) and 'result-repo-name' in data:
             self.resultRepoName = data['result-repo-name']
-
-        if (rewrite or self.generateMetadata is None) and 'generate-metadata' in data:
-            self.generateMetadata = maven_repo_util.str2bool(data['generate-metadata'])
 
         if (rewrite or self.singleVersion is None) and 'single-version' in data:
             self.singleVersion = maven_repo_util.str2bool(data['single-version'])
