@@ -49,6 +49,7 @@ WORKDIR=$(cd $(dirname $0) && pwd)
 # defaults
 HELP=false
 METADATA=false
+OUTPUT_DIR="local-maven-repository"
 
 # =======================================
 # ====== reading command arguments ======
