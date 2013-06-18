@@ -1,6 +1,7 @@
 import json
-import sys
 import logging
+import os
+import sys
 import maven_repo_util
 
 
@@ -27,7 +28,10 @@ class Configuration:
             logging.error('You must specify a config file')
             sys.exit(1)
 
-        self._loadFromFile(opts.config)
+        self.loadFromFile(opts.config)
+
+    def loadFromFile(self, filename):
+        self._loadFromFile(filename)
         self._setDefaults()
         self._validate()
 
@@ -51,8 +55,15 @@ class Configuration:
         logging.debug("Loading configuration file %s", filename)
         data = json.load(open(filename))
 
+        filePath = os.path.dirname(filename)
+        if filePath:
+            filePath += '/'
+
         if 'include-high-priority' in data and data['include-high-priority']:
-            self._loadFromFile(data['include-high-priority'], True)
+            inclFile = data['include-high-priority']
+            if not os.path.isabs(inclFile):
+                inclFile = filePath + inclFile
+            self._loadFromFile(inclFile, True)
 
         if (rewrite or self.resultRepoName is None) and 'result-repo-name' in data:
             self.resultRepoName = data['result-repo-name']
@@ -78,7 +89,10 @@ class Configuration:
             self.multiVersionGAs.extend(data['multi-version-ga-patterns'])
 
         if 'include-low-priority' in data and data['include-low-priority']:
-            self._loadFromFile(data['include-low-priority'], False)
+            inclFile = data['include-low-priority']
+            if not os.path.isabs(inclFile):
+                inclFile = filePath + inclFile
+            self._loadFromFile(inclFile, False)
 
     def _loadArtifactSources(self, artifactSources):
         for source in artifactSources:
