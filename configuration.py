@@ -60,67 +60,77 @@ class Configuration:
             filePath += '/'
 
         if 'include-high-priority' in data and data['include-high-priority']:
-            inclFile = data['include-high-priority']
-            if not os.path.isabs(inclFile):
-                inclFile = filePath + inclFile
+            inclFile = self._getRelativeFilename(data['include-high-priority'], filePath)
             self._loadFromFile(inclFile, True)
-
-        if (rewrite or self.resultRepoName is None) and 'result-repo-name' in data:
-            self.resultRepoName = data['result-repo-name']
 
         if (rewrite or self.singleVersion is None) and 'single-version' in data:
             self.singleVersion = maven_repo_util.str2bool(data['single-version'])
 
         if 'artifact-sources' in data:
-            self._loadArtifactSources(data['artifact-sources'])
+            self._loadArtifactSources(data['artifact-sources'], filePath)
 
         if 'excluded-gav-patterns-ref' in data:
             for filename in data['excluded-gav-patterns-ref']:
-                self.excludedGAVs.extend(self._loadFlatFile(filename))
+                relFilename = self._getRelativeFilename(filename, filePath)
+                self.excludedGAVs.extend(self._loadFlatFile(relFilename))
 
         if 'excluded-repositories' in data:
             self.excludedRepositories.extend(data['excluded-repositories'])
 
         if 'multi-version-ga-patterns-ref' in data:
             for filename in data['multi-version-ga-patterns-ref']:
-                self.multiVersionGAs.extend(self._loadFlatFile(filename))
+                relFilename = self._getRelativeFilename(filename, filePath)
+                self.multiVersionGAs.extend(self._loadFlatFile(relFilename))
 
         if 'multi-version-ga-patterns' in data:
             self.multiVersionGAs.extend(data['multi-version-ga-patterns'])
 
         if 'include-low-priority' in data and data['include-low-priority']:
-            inclFile = data['include-low-priority']
-            if not os.path.isabs(inclFile):
-                inclFile = filePath + inclFile
+            inclFile = self._getRelativeFilename(data['include-low-priority'], filePath)
             self._loadFromFile(inclFile, False)
 
-    def _loadArtifactSources(self, artifactSources):
+    def _loadArtifactSources(self, artifactSources, filePath):
         for source in artifactSources:
             if not 'type' in source:
                 logging.error("Source doesn't have type.\n %s", str(source))
                 sys.exit(1)
             if source['type'] == 'mead-tag':
                 source['included-gav-patterns'] = self._loadFlatFileBySourceParameter(source,
-                        'included-gav-patterns-ref')
+                        'included-gav-patterns-ref', filePath)
             elif source['type'] == 'dependency-list':
                 source['repo-url'] = self._getRepoUrl(source)
-                source['top-level-gavs'] = self._loadFlatFileBySourceParameter(source, 'top-level-gavs-ref')
+                source['top-level-gavs'] = self._loadFlatFileBySourceParameter(source, 'top-level-gavs-ref',
+                        filePath)
             elif source['type'] == 'repository':
                 source['repo-url'] = self._getRepoUrl(source)
                 source['included-gav-patterns'] = self._loadFlatFileBySourceParameter(source,
-                        'included-gav-patterns-ref')
+                        'included-gav-patterns-ref', filePath)
             self.artifactSources.append(source)
 
-    def _loadFlatFileBySourceParameter(self, source, parameter):
+    def _loadFlatFileBySourceParameter(self, source, parameter, filePath):
         if parameter in source:
-            return self._loadFlatFile(source[parameter])
+            relFilename = self._getRelativeFilename(source[parameter], filePath)
+            return self._loadFlatFile(relFilename)
         else:
             return []
 
     def _loadFlatFile(self, filename):
         if filename:
             with open(filename, "r") as openedfile:
-                return openedfile.readlines()
+                lines = openedfile.readlines()
+            result = []
+            for line in lines:
+                resultLine = line.strip()
+                if resultLine:
+                    result.append(resultLine)
+            return result
+
+    def _getRelativeFilename(self, filename, path):
+        """Checks, if the given filename has absolute path, and if not, it preppends to it given path."""
+        if os.path.isabs(filename):
+            return filename
+        else:
+            return path + filename
 
     def _getRepoUrl(self, source):
         if not 'repo-url' in source:
