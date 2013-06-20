@@ -1,5 +1,4 @@
 import os
-import koji
 import re
 import maven_repo_util as mrbutils
 import logging
@@ -76,6 +75,7 @@ class ArtifactListBuilder:
         :param tagName: Koji/Brew/Mead tag name
         :returns: Dictionary where index is MavenArtifact object and value is it's repo root URL.
         """
+        import koji
 
         kojiSession = koji.ClientSession(kojiUrl)
         kojiArtifacts = kojiSession.getLatestMavenArchives(tagName)
