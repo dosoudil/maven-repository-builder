@@ -7,6 +7,12 @@ import sys
 
 class MavenArtifact:
 
+    """
+    Suffix of a snapshot version which should be used to construct filenames instead of version
+    with "-SNAPSHOT" suffix.
+    """
+    snapshotVersionSuffix = None
+
     def __init__(self, groupId, artifactId, artifactType, version, classifier=''):
         self.groupId = groupId
         self.artifactId = artifactId
@@ -76,7 +82,11 @@ class MavenArtifact:
 
     def getBaseFilename(self):
         """Returns the filename without the file extension"""
-        baseFilename = self.artifactId + '-' + self.version
+        if self.snapshotVersionSuffix:
+            baseFilename = self.artifactId + '-' \
+                         + self.version.replace("-SNAPSHOT", self.snapshotVersionSuffix)
+        else:
+            baseFilename = self.artifactId + '-' + self.version
         return baseFilename
 
     def getArtifactFilename(self):
@@ -113,6 +123,10 @@ class MavenArtifact:
     def getClassifierFilepath(self, classifier):
         """Return teh path to the artifact's classifier file"""
         return self.getDirPath() + self.getClassifierFilename(classifier)
+
+    def isSnapshot(self):
+        """Determines if the version of this artifact is a snapshot version."""
+        return self.version.endswith("-SNAPSHOT")
 
     def __str__(self):
         result = self.groupId + ':' + self.artifactId
