@@ -1,6 +1,6 @@
 import os
 import re
-import maven_repo_util as mrbutils
+import maven_repo_util
 import logging
 from subprocess import Popen
 from subprocess import PIPE
@@ -85,7 +85,7 @@ class ArtifactListBuilder:
             # FIXME: This isn't reliable as file extension is not equal to
             # maven type, e.g. jar != ejb
             artifactType = re.search('.*\.(.+)$', artifact['filename']).group(1)
-            gavUrl = mrbutils.slashAtTheEnd(downloadRootUrl) + artifact['build_name'] + '/'\
+            gavUrl = maven_repo_util.slashAtTheEnd(downloadRootUrl) + artifact['build_name'] + '/'\
                      + artifact['build_version'] + '/' + artifact['build_release'] + '/maven/'
             gavu = (artifact['group_id'], artifact['artifact_id'], artifact['version'], gavUrl)
             gavsWithExts.setdefault(gavu, []).append(artifactType)
@@ -123,8 +123,7 @@ class ArtifactListBuilder:
                     break
 
             if not fetched:
-                logging.warning("Failed to retrieve pom file for artifact %s",
-                                gav)
+                logging.warning("Failed to retrieve pom file for artifact %s", gav)
                 continue
 
             # Build dependency:list
@@ -158,7 +157,7 @@ class ArtifactListBuilder:
         """
         artifacts = {}
         for repoUrl in reversed(repoUrls):
-            protocol = mrbutils.urlProtocol(repoUrl)
+            protocol = maven_repo_util.urlProtocol(repoUrl)
             if protocol == 'file':
                 artifacts.update(self._listLocalRepository(repoUrl[7:]))
             elif protocol == '':
@@ -181,23 +180,33 @@ class ArtifactListBuilder:
         # ^./(groupId)/(artifactId)/(version)/(filename)$
         regexGAVF = re.compile(r'\./(.+)/([^/]+)/([^/]+)/([^/]+\.[^/.]+)$')
         gavsWithExts = {}
+        suffixes = {}
         for line in out.split('\n'):
             if (line):
                 line = "./" + prefix + line[2:]
                 gavf = regexGAVF.match(line)
                 if gavf is not None:
-                    av = re.escape(gavf.group(2) + "-" + gavf.group(3) + ".")
+                    av = self.getSnapshotAwareVersionRegEx(re.escape(gavf.group(2) + "-" + gavf.group(3) + "."))
                     regexExt = re.compile(av + self._fileExtRegExp)
                     ext = regexExt.match(gavf.group(4))
                     if ext is not None:
                         gav = (gavf.group(1).replace('/', '.'), gavf.group(2), gavf.group(3))
-                        gavsWithExts.setdefault(gav, []).append(ext.group(1))
+                        if len(ext.groups()) == 1:
+                            gavsWithExts.setdefault(gav, set()).update([ext.group(1)])
+                        else:
+                            gavsWithExts.setdefault(gav, set()).update([ext.group(2)])
+                            suffix = ext.group(1)
+                            if gav not in suffixes or suffixes[gav] < suffix:
+                                suffixes[gav] = suffix
 
         for gav in gavsWithExts:
-            if len(gavsWithExts[gav]) > 1:
-                gavsWithExts[gav].remove("pom")
-            for ext in gavsWithExts[gav]:
+            exts = gavsWithExts[gav]
+            if len(exts) > 1:
+                exts.remove("pom")
+            for ext in exts:
                 mavenArtifact = MavenArtifact(gav[0], gav[1], ext, gav[2])
+                if gav in suffixes:
+                    mavenArtifact.snapshotVersionSuffix = suffixes[gav]
                 artifacts[mavenArtifact] = repoUrl
         return artifacts
 
@@ -213,24 +222,41 @@ class ArtifactListBuilder:
         # ^(groupId)/(artifactId)/(version)$
         regexGAV = re.compile(r'^(.*)/([^/]*)/([^/]*)$')
         for dirname, dirnames, filenames in os.walk(directoryPath + prefix):
-            if not dirnames:
+            if filenames:
+                logging.debug("Looking for artifacts in %s", dirname)
                 gavPath = dirname.replace(directoryPath, '')
                 gav = regexGAV.search(gavPath)
-                av = re.escape(gav.group(2) + "-" + gav.group(3) + ".")
+                av = self.getSnapshotAwareVersionRegEx(re.escape(gav.group(2) + "-" + gav.group(3) + "."))
                 regexExt = re.compile(av + self._fileExtRegExp)
-                exts = []
+                exts = set()
+                suffix = None
                 for filename in filenames:
                     ext = regexExt.match(filename)
-                    if ext is not None:
-                        exts.append(ext.group(1))
 
-                if len(exts) > 1:
+                    if ext is not None:
+                        if len(ext.groups()) == 1:
+                            exts.update([ext.group(1)])
+                        else:
+                            exts.update([ext.group(2)])
+                            if suffix is None or suffix < ext.group(1):
+                                suffix = ext.group(1)
+
+                if len(exts) > 1 and "pom" in exts:
                     exts.remove("pom")
                 for ext in exts:
                     mavenArtifact = MavenArtifact(gav.group(1).replace('/', '.'),
                                                   gav.group(2), ext, gav.group(3))
+                    if suffix is not None:
+                        mavenArtifact.snapshotVersionSuffix = suffix
+                    logging.debug("Adding artifact %s", str(mavenArtifact))
                     artifacts[mavenArtifact] = "file://" + directoryPath
         return artifacts
+
+    def getSnapshotAwareVersionRegEx(self, version):
+        """Prepares the version string to be part of regular expression for filename and when the
+        version is a snapshot version, it corrects the suffix to match even when the files are
+        named with the timestamp and build number as usual in case of snapshot versions."""
+        return version.replace("-SNAPSHOT", "-(SNAPSHOT|\d+\.\d+-\d+)")
 
     def _listArtifacts(self, urls, gavs):
         """
@@ -246,7 +272,7 @@ class ArtifactListBuilder:
             artifact = MavenArtifact.createFromGAV(gav)
             for url in urls:
                 gavUrl = url + '/' + artifact.getDirPath()
-                if mrbutils.urlExists(gavUrl):
+                if maven_repo_util.urlExists(gavUrl):
                     artifacts[artifact] = url
                     break
             if not artifact in artifacts:
