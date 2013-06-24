@@ -211,8 +211,9 @@ def depListToArtifactList(depList):
     return artifactList
 
 
-def retrieveArtifacts(remoteRepoUrl, localRepoDir, artifactList, classifiers, checksumMode):
+def fetchArtifacts(remoteRepoUrl, localRepoDir, artifactList, classifiers, checksumMode):
     """Create a Maven repository based on a remote repository url and a list of artifacts"""
+    logging.info('Retrieving artifacts from repository: %s', remoteRepoUrl)
     if not os.path.exists(localRepoDir):
         os.makedirs(localRepoDir)
     parsedUrl = urlparse.urlparse(remoteRepoUrl)
@@ -227,6 +228,8 @@ def retrieveArtifacts(remoteRepoUrl, localRepoDir, artifactList, classifiers, ch
                 logging.info("Skipping download of %s:%s:%s:%s because of excluded type", artifact.groupId,
                               artifact.artifactId, artifact.artifactType, artifact.version)
                 continue
+            if artifact.isSnapshot():
+                maven_repo_util.updateSnapshotVersionSuffix(artifact, remoteRepoUrl)
             downloadArtifacts(remoteRepoUrl, localRepoDir, artifact, classifiers, checksumMode)
     elif protocol == 'file':
         repoPath = remoteRepoUrl.replace('file://', '')
@@ -235,6 +238,8 @@ def retrieveArtifacts(remoteRepoUrl, localRepoDir, artifactList, classifiers, ch
                 logging.info("Skipping copy of %s:%s:%s:%s because of excluded type", artifact.groupId,
                               artifact.artifactId, artifact.artifactType, artifact.version)
                 continue
+            if artifact.isSnapshot():
+                maven_repo_util.updateSnapshotVersionSuffix(artifact, remoteRepoUrl)
             copyArtifact(repoPath, localRepoDir, artifact, classifiers, checksumMode)
     else:
         logging.error('Unknown protocol: %s', protocol)
@@ -260,11 +265,6 @@ def generateChecksumFiles(filepath):
         checksum = maven_repo_util.getChecksum(filepath, sum_constr)
         with open(sumfile, 'w') as sumobj:
             sumobj.write(checksum + '\n')
-
-
-def fetchArtifacts(artifacts, sourceUrl, classifiers, checksumMode, destDir):
-    logging.info('Retrieving artifacts from repository: %s', sourceUrl)
-    retrieveArtifacts(sourceUrl, destDir, artifacts, classifiers, checksumMode)
 
 
 def main():
@@ -334,13 +334,13 @@ def main():
             finally:
                 depListFile.close()
 
-        fetchArtifacts(artifacts, options.url, classifiers, options.checksummode, options.output)
+        fetchArtifacts(options.url, options.output, artifacts, classifiers, options.checksummode)
     else:
         # generate lists of artifacts from confiuration and the fetch them each list from it's repo
         artifactList = artifact_list_generator.generateArtifactList(options)
         for repoUrl in artifactList.keys():
             artifacts = artifactList[repoUrl]
-            fetchArtifacts(artifacts, repoUrl, classifiers, options.checksummode, options.output)
+            fetchArtifacts(repoUrl, options.output, artifacts, classifiers, options.checksummode)
 
     logging.info('Generating missing checksums...')
     generateChecksums(options.output)

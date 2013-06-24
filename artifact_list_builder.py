@@ -6,7 +6,6 @@ from subprocess import Popen
 from subprocess import PIPE
 from subprocess import call
 from maven_artifact import MavenArtifact
-from download import fetchArtifact
 
 
 class ArtifactListBuilder:
@@ -117,8 +116,8 @@ class ArtifactListBuilder:
             pomDir = 'poms'
             fetched = False
             for repoUrl in repoUrls:
-                pomUrl = repoUrl + '/' + artifact.getPomFilepath()
-                if fetchArtifact(pomUrl, pomDir):
+                pomUrl = maven_repo_util.slashAtTheEnd(repoUrl) + artifact.getPomFilepath()
+                if maven_repo_util.fetchFile(pomUrl, pomDir):
                     fetched = True
                     break
 
@@ -192,9 +191,9 @@ class ArtifactListBuilder:
                     if ext is not None:
                         gav = (gavf.group(1).replace('/', '.'), gavf.group(2), gavf.group(3))
                         if len(ext.groups()) == 1:
-                            gavsWithExts.setdefault(gav, set()).update([ext.group(1)])
+                            gavsWithExts.setdefault(gav, set()).add(ext.group(1))
                         else:
-                            gavsWithExts.setdefault(gav, set()).update([ext.group(2)])
+                            gavsWithExts.setdefault(gav, set()).add(ext.group(2))
                             suffix = ext.group(1)
                             if gav not in suffixes or suffixes[gav] < suffix:
                                 suffixes[gav] = suffix
@@ -235,9 +234,9 @@ class ArtifactListBuilder:
 
                     if ext is not None:
                         if len(ext.groups()) == 1:
-                            exts.update([ext.group(1)])
+                            exts.add(ext.group(1))
                         else:
-                            exts.update([ext.group(2)])
+                            exts.add(ext.group(2))
                             if suffix is None or suffix < ext.group(1):
                                 suffix = ext.group(1)
 

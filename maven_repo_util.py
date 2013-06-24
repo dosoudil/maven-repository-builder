@@ -5,26 +5,30 @@ import hashlib
 import httplib
 import logging
 import os
+import shutil
+import urllib
 import urlparse
 import re
+from xml.etree.ElementTree import ElementTree
 
 
 def setLogLevel(level):
     """Sets the desired log level."""
-    logLevel = level.lower()
-    if (logLevel == 'debug'):
-        logging.basicConfig(level=logging.DEBUG)
-    elif (logLevel == 'info'):
-        logging.basicConfig(level=logging.INFO)
-    elif (logLevel == 'warning'):
-        logging.basicConfig(level=logging.WARNING)
-    elif (logLevel == 'error'):
-        logging.basicConfig(level=logging.ERROR)
-    elif (logLevel == 'critical'):
-        logging.basicConfig(level=logging.CRITICAL)
+    lLevel = level.lower()
+    if (lLevel == 'debug'):
+        logLevel = logging.DEBUG
+    elif (lLevel == 'info'):
+        logLevel = logging.INFO
+    elif (lLevel == 'warning'):
+        logLevel = logging.WARNING
+    elif (lLevel == 'error'):
+        logLevel = logging.ERROR
+    elif (lLevel == 'critical'):
+        logLevel = logging.CRITICAL
     else:
-        logging.basicConfig(level=logging.INFO)
+        logLevel = logging.INFO
         logging.warning('Unrecognized log level: %s  Log level set to info', level)
+    logging.basicConfig(format='%(levelname)s: %(message)s', level=logLevel)
 
 
 def getSha1Checksum(filepath):
@@ -124,3 +128,69 @@ def printArtifactList(artifactList):
         for priority in artifactList[gat]:
             for version in artifactList[gat][priority]:
                 print artifactList[gat][priority][version] + "\t" + gat + ":" + version
+
+
+def fetchFile(fileUrl, destDir):
+    parsedUrl = urlparse.urlparse(fileUrl)
+    protocol = parsedUrl[0]
+    filename = fileUrl.split("/")[-1]
+    filepath = destDir + '/' + filename
+
+    if not os.path.isdir(destDir):
+        os.makedirs(destDir)
+
+    # Download only files that do not exist yet
+    if filename and not os.path.isfile(filepath):
+        logging.debug("Downloading file %s", fileUrl)
+        if protocol == 'http' or protocol == 'https':
+            urllib.urlretrieve(fileUrl, filepath)
+            return True
+        elif protocol == 'file':
+            shutil.copy2(fileUrl.replace('file://', ''), destDir)
+            return True
+        else:
+            logging.warning("File %s could not be downloaded, protocol %s is not supported",
+                            fileUrl, protocol)
+
+
+def updateSnapshotVersionSuffix(artifact, repoUrl):
+    """
+    Updates snapshotVersionSuffix in given artifact if the artifact is snapshot and pom
+    file with '-SNAPSHOT' in filename does not exist. It reads maven-metadata.xml in
+    artifact's directory and reads from there timastamp and builn number of the last
+    snapshot build.
+    """
+    if not artifact.isSnapshot():
+        return
+
+    logging.debug("Adding snapshot version suffix for %s:%s:%s:%s", artifact.groupId,
+                  artifact.artifactId, artifact.artifactType, artifact.version)
+    pomUrl = slashAtTheEnd(repoUrl) + artifact.getPomFilepath()
+    if urlExists(pomUrl):
+        logging.debug("Not adding, because pom file %s exists", pomUrl)
+        return
+
+    metadataUrl = slashAtTheEnd(repoUrl) + artifact.getDirPath() + 'maven-metadata.xml'
+    if not urlExists(metadataUrl):
+        logging.debug("Unable to read metadata from %s", metadataUrl)
+        return
+
+    tmpPath = '/tmp/maven-repo-builder/' + artifact.getDirPath()
+    if os.path.exists(tmpPath):
+        shutil.rmtree(tmpPath)
+    fetched = fetchFile(metadataUrl, tmpPath)
+    if fetched:
+        tmpFilePath = tmpPath + 'maven-metadata.xml'
+        metadataDoc = ElementTree(file=tmpFilePath)
+        root = metadataDoc.getroot()
+        timestamp = root.findtext("versioning/snapshot/timestamp")
+        buildNumber = root.findtext("versioning/snapshot/buildNumber")
+
+        if timestamp and buildNumber:
+            artifact.snapshotVersionSuffix = '-' + timestamp + '-' + buildNumber
+            logging.debug("Version suffix for %s:%s:%s:%s set to %s", artifact.groupId,
+                          artifact.artifactId, artifact.artifactType, artifact.version,
+                          artifact.snapshotVersionSuffix)
+        shutil.rmtree(tmpPath)
+    else:
+        logging.warning("Unable to fetch file %s to %s", metadataUrl, tmpPath)
