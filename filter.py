@@ -37,13 +37,13 @@ class Filter:
         """
 
         logging.debug("Filtering artifacts with excluded GAVs.")
-        regExps = _getRegExpsFromStrings(self.config.excludedGAVs)
+        regExps = maven_repo_util.getRegExpsFromStrings(self.config.excludedGAVs)
         for gat in artifactList.keys():
             ga = gat.rpartition(':')[0]
             for priority in artifactList[gat].keys():
                 for version in artifactList[gat][priority].keys():
                     gav = ga + ":" + version
-                    if _somethingMatch(regExps, gav):
+                    if maven_repo_util.somethingMatch(regExps, gav):
                         del artifactList[gat][priority][version]
                 if not artifactList[gat][priority]:
                     del artifactList[gat][priority]
@@ -101,9 +101,9 @@ class Filter:
 
     def _filterMultipleVersions(self, artifactList):
         logging.debug("Filtering multi-version artifacts to have just a single version.")
-        regExps = _getRegExpsFromStrings(self.config.multiVersionGAs)
+        regExps = maven_repo_util.getRegExpsFromStrings(self.config.multiVersionGAs)
         for gat in artifactList.keys():
-            if _somethingMatch(regExps, gat):
+            if maven_repo_util.somethingMatch(regExps, gat):
                 continue
 
             priorities = sorted(artifactList[gat].keys())
@@ -116,13 +116,6 @@ class Filter:
             for priority in priorities[1:]:
                 del artifactList[gat][priority]
         return artifactList
-
-
-def _getRegExpsFromStrings(strings):
-    regExps = []
-    for s in strings:
-        regExps.append(re.compile(maven_repo_util.transformAsterixStringToRegexp(s)))
-    return regExps
 
 
 def _sortVersionsWithAtlas(versions):
@@ -143,21 +136,6 @@ def _sortVersionsWithAtlas(versions):
     ret = Popen(args, stdout=PIPE).communicate()[0].split('\n')[::-1]
     ret.remove("")
     return ret
-
-
-def _somethingMatch(regexs, string):
-    """
-    Returns True if at least one of regular expresions from specified list matches string.
-
-    :param regexs: list of regular expresions
-    :param filename: string to match
-    :returns: True if at least one of the regular expresions matched the string.
-    """
-
-    for regex in regexs:
-        if regex.match(string):
-            return True
-    return False
 
 
 def _isArtifactInRepos(repositories, artifact):

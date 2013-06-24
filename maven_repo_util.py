@@ -122,6 +122,11 @@ def slashAtTheEnd(url):
 def transformAsterixStringToRegexp(string):
     return re.escape(string).replace("\\*", ".*")
 
+def getRegExpsFromStrings(strings):
+    regExps = []
+    for s in strings:
+        regExps.append(re.compile(transformAsterixStringToRegexp(s)))
+    return regExps
 
 def printArtifactList(artifactList):
     for gat in artifactList:
@@ -194,3 +199,18 @@ def updateSnapshotVersionSuffix(artifact, repoUrl):
         shutil.rmtree(tmpPath)
     else:
         logging.warning("Unable to fetch file %s to %s", metadataUrl, tmpPath)
+
+def somethingMatch(regexs, string):
+    """
+    Returns True if at least one of regular expresions from specified list matches string.
+
+    :param regexs: list of regular expresions
+    :param filename: string to match
+    :returns: True if at least one of the regular expresions matched the string.
+    """
+
+    for regex in regexs:
+        if regex.match(string):
+            return True
+    return False
+

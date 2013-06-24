@@ -298,9 +298,9 @@ class ArtifactListBuilder:
         if not gavPatterns:
             return artifacts
 
+        regExps = maven_repo_util.getRegExpsFromStrings(gavPatterns)
         includedArtifacts = {}
         for artifact in artifacts:
-            matches = map(lambda x: re.match(x, artifact.getGAV()), gavPatterns)
-            if any(matches):
+            if maven_repo_util.somethingMatch(regExps, artifact.getGAV()):
                 includedArtifacts[artifact] = artifacts[artifact]
         return includedArtifacts
