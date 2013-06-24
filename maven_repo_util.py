@@ -123,9 +123,13 @@ def transformAsterixStringToRegexp(string):
     return re.escape(string).replace("\\*", ".*")
 
 def getRegExpsFromStrings(strings):
+    rep = re.compile("^r\/.*\/$")
     regExps = []
     for s in strings:
-        regExps.append(re.compile(transformAsterixStringToRegexp(s)))
+        if rep.match(s):
+            regExps.append(re.compile(s[2:-1]))
+        else:
+            regExps.append(re.compile(transformAsterixStringToRegexp(s)))
     return regExps
 
 def printArtifactList(artifactList):
