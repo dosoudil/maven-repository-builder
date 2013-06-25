@@ -1,9 +1,5 @@
 import logging
 import maven_repo_util
-import os
-import re
-from subprocess import Popen
-from subprocess import PIPE
 from maven_artifact import MavenArtifact
 
 
@@ -110,32 +106,12 @@ class Filter:
             priority = priorities[0]
             versions = artifactList[gat][priority].keys()
             if len(versions) > 1:  # list of 1 is sorted by definition
-                versions = _sortVersionsWithAtlas(versions)
+                versions = maven_repo_util._sortVersionsWithAtlas(versions)
             for version in versions[1:]:
                 del artifactList[gat][priority][version]
             for priority in priorities[1:]:
                 del artifactList[gat][priority]
         return artifactList
-
-
-def _sortVersionsWithAtlas(versions):
-    """
-    Returns sorted list of given verisons using Atlas versionSorter
-
-    :param versions: versions to sort.
-    :returns: sorted versions.
-    """
-    versionSortedDir = "versionSorter/"
-    jarLocation = versionSortedDir + "target/versionSorter-1.0-SNAPSHOT.jar"
-    if not os.path.isfile(jarLocation):
-        logging.debug("Version sorter jar '%s' not found, running 'mvn clean package' in '%s'",
-                      jarLocation,
-                      versionSortedDir)
-        Popen(["mvn", "clean", "package"], cwd=versionSortedDir).wait()
-    args = ["java", "-jar", jarLocation] + versions
-    ret = Popen(args, stdout=PIPE).communicate()[0].split('\n')[::-1]
-    ret.remove("")
-    return ret
 
 
 def _isArtifactInRepos(repositories, artifact):

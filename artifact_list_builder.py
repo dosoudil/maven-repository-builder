@@ -187,7 +187,7 @@ class ArtifactListBuilder:
                 line = "./" + prefix + line[2:]
                 gavf = regexGAVF.match(line)
                 if gavf is not None:
-                    av = self.getSnapshotAwareVersionRegEx(re.escape(gavf.group(2) + "-" + gavf.group(3) + "."))
+                    av = self._getSnapshotAwareVersionRegEx(re.escape(gavf.group(2) + "-" + gavf.group(3) + "."))
                     regexExt = re.compile(av + self._fileExtRegExp)
                     ext = regexExt.match(gavf.group(4))
                     if ext is not None:
@@ -227,7 +227,7 @@ class ArtifactListBuilder:
                 logging.debug("Looking for artifacts in %s", dirname)
                 gavPath = dirname.replace(directoryPath, '')
                 gav = regexGAV.search(gavPath)
-                av = self.getSnapshotAwareVersionRegEx(re.escape(gav.group(2) + "-" + gav.group(3) + "."))
+                av = self._getSnapshotAwareVersionRegEx(re.escape(gav.group(2) + "-" + gav.group(3) + "."))
                 regexExt = re.compile(av + self._fileExtRegExp)
                 exts = set()
                 suffix = None
@@ -253,7 +253,7 @@ class ArtifactListBuilder:
                     artifacts[mavenArtifact] = "file://" + directoryPath
         return artifacts
 
-    def getSnapshotAwareVersionRegEx(self, version):
+    def _getSnapshotAwareVersionRegEx(self, version):
         """Prepares the version string to be part of regular expression for filename and when the
         version is a snapshot version, it corrects the suffix to match even when the files are
         named with the timestamp and build number as usual in case of snapshot versions."""

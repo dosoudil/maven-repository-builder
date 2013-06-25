@@ -9,6 +9,8 @@ import shutil
 import urllib
 import urlparse
 import re
+from subprocess import Popen
+from subprocess import PIPE
 from xml.etree.ElementTree import ElementTree
 
 
@@ -264,3 +266,22 @@ def somethingMatch(regexs, string):
             return True
     return False
 
+
+def _sortVersionsWithAtlas(versions, versionSortedDir="versionSorter/"):
+    """
+    Returns sorted list of given verisons using Atlas versionSorter
+
+    :param versions: versions to sort.
+    :param versionSorterDir: directory with version sorter maven project
+    :returns: sorted versions.
+    """
+    jarLocation = versionSortedDir + "target/versionSorter-1.0-SNAPSHOT.jar"
+    if not os.path.isfile(jarLocation):
+        logging.debug("Version sorter jar '%s' not found, running 'mvn clean package' in '%s'",
+                      jarLocation,
+                      versionSortedDir)
+        Popen(["mvn", "clean", "package"], cwd=versionSortedDir).wait()
+    args = ["java", "-jar", jarLocation] + versions
+    ret = Popen(args, stdout=PIPE).communicate()[0].split('\n')[::-1]
+    ret.remove("")
+    return ret

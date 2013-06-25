@@ -8,7 +8,8 @@ else
 fi
 
 echo "Generating maven metadata files ..."
-for d in $(find $SEARCHDIR -name \*.pom -print | sed -e "s:/[^/]*/[^/]*$::" | sort | uniq)
+cd $SEARCHDIR
+for d in $(find . -name \*.pom -print | sed -e "s:/[^/]*/[^/]*$::" | sort | uniq)
 do
     python $WORKDIR/maven_metadata.py $d
 done
