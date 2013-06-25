@@ -50,9 +50,13 @@ class Configuration:
         if not valid:
             sys.exit(1)
 
+    configFiles = set()
     def _loadFromFile(self, filename, rewrite=True):
         """ Load confiugration from json config file. """
         logging.debug("Loading configuration file %s", filename)
+        if filename in self.configFiles:
+            raise Exception("Config file '%s' is already included. Check your config files for circular inclusions." % filename)
+        self.configFiles.add(filename)
         data = json.load(open(filename))
 
         filePath = os.path.dirname(filename)
