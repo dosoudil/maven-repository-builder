@@ -219,5 +219,28 @@ class Tests(unittest.TestCase):
         self.assertTrue('1.1.0' in al['org.jboss:jboss-foo:jar']['1'])
         self.assertTrue('2' in al['org.jboss:jboss-foo:jar'])
 
+        config.multiVersionGAs = [ "r/.*:jboss-foo/" ]
+        al = copy.deepcopy(self.artifactList)
+        self.assertTrue('1.0.0' in al['com.google.guava:guava:pom']['1'])
+        self.assertTrue('1.0.1' in al['com.google.guava:guava:pom']['1'])
+        self.assertTrue('1.1.0' in al['com.google.guava:guava:pom']['1'])
+        self.assertTrue('2' in al['com.google.guava:guava:pom'])
+        self.assertTrue('3' in al['com.google.guava:guava:pom'])
+        self.assertTrue('1.0.0' in al['org.jboss:jboss-foo:jar']['1'])
+        self.assertTrue('1.0.1' in al['org.jboss:jboss-foo:jar']['1'])
+        self.assertTrue('1.1.0' in al['org.jboss:jboss-foo:jar']['1'])
+        self.assertTrue('2' in al['org.jboss:jboss-foo:jar'])
+        alf._filterMultipleVersions(al)
+        self.assertFalse('1.0.0' in al['com.google.guava:guava:pom']['1'])
+        self.assertFalse('1.0.1' in al['com.google.guava:guava:pom']['1'])
+        self.assertTrue('1.1.0' in al['com.google.guava:guava:pom']['1'])
+        self.assertFalse('2' in al['com.google.guava:guava:pom'])
+        self.assertFalse('3' in al['com.google.guava:guava:pom'])
+        self.assertTrue('1.0.0' in al['org.jboss:jboss-foo:jar']['1'])
+        self.assertTrue('1.0.1' in al['org.jboss:jboss-foo:jar']['1'])
+        self.assertTrue('1.1.0' in al['org.jboss:jboss-foo:jar']['1'])
+        self.assertTrue('2' in al['org.jboss:jboss-foo:jar'])
+
+
 if __name__ == '__main__':
     unittest.main()
