@@ -140,7 +140,9 @@ class ArtifactListBuilder:
                     continue
 
             # Parse GAVs from maven output
-            gavList = self._parseDepList(mvnOutFilename)
+            with open(mvnOutFilename, "r") as mvnOutFile:
+                mvnLines = mvnOutFile.readlines()
+            gavList = self._parseDepList(mvnLines)
 
             artifacts.update(self._listArtifacts(repoUrls, gavList))
 
