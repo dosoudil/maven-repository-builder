@@ -62,10 +62,15 @@ class MavenArtifact:
         return self.classifier
 
     def getDirPath(self):
-        """Get the relative repository path to the artifact"""
+        """Get the relative repository path to the GAV."""
+        relativePath = self.getArtifactDirPath()
+        relativePath += self.version + '/'
+        return relativePath
+
+    def getArtifactDirPath(self):
+        """Get the relative repository path to the artifact (groupId + artifactId)."""
         relativePath = self.groupId.replace('.', '/') + '/'
         relativePath += self.artifactId + '/'
-        relativePath += self.version + '/'
         return relativePath
 
     def getGA(self):

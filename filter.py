@@ -147,8 +147,7 @@ def _isArtifactInRepos(repositories, artifact):
     :returns: True if specified artifact exists in at least one of the repositories.
     """
 
-    for repository in repositories:
-        url = maven_repo_util.slashAtTheEnd(repository) + artifact.getDirPath()
-        if maven_repo_util.urlExists(url):
+    for repoUrl in repositories:
+        if maven_repo_util.gavExists(repoUrl, artifact):
             return True
     return False

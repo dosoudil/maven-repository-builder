@@ -346,6 +346,9 @@ def main():
     generateChecksums(options.output)
     logging.info('Repository created in directory: %s', options.output)
 
+    #cleanup
+    maven_repo_util.cleanTempDir()
+
 
 if  __name__ == '__main__':
     main()

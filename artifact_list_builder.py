@@ -117,8 +117,8 @@ class ArtifactListBuilder:
             fetched = False
             for repoUrl in repoUrls:
                 pomUrl = maven_repo_util.slashAtTheEnd(repoUrl) + artifact.getPomFilepath()
-                if maven_repo_util.fetchFile(pomUrl, pomDir):
-                    fetched = True
+                fetched = maven_repo_util.fetchFile(pomUrl, pomDir)
+                if fetched:
                     break
 
             if not fetched:
@@ -272,8 +272,7 @@ class ArtifactListBuilder:
         for gav in gavs:
             artifact = MavenArtifact.createFromGAV(gav)
             for url in urls:
-                gavUrl = url + '/' + artifact.getDirPath()
-                if maven_repo_util.urlExists(gavUrl):
+                if maven_repo_util.gavExists(url, artifact):
                     artifacts[artifact] = url
                     break
             if not artifact in artifacts:

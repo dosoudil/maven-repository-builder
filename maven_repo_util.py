@@ -83,6 +83,42 @@ def str2bool(v):
         raise ValueError("Failed to convert '" + v + "' to boolean")
 
 
+def gavExists(repoUrl, artifact):
+    """Checks if GAV of the given artifact exists in repository with the given root URL."""
+    logging.debug("Checking if %s exists in repository %s", str(artifact), repoUrl)
+
+    repoUrl = slashAtTheEnd(repoUrl)
+
+    gavUrl = repoUrl + artifact.getDirPath()
+    result = urlExists(gavUrl)
+
+    if not result:
+        logging.debug("URL %s does not exist, trying to find the version in artifact metadata", gavUrl)
+        metadataUrl = repoUrl + artifact.getArtifactDirPath() + "maven-metadata.xml"
+        gaPath = getTempDir(artifact.getArtifactDirPath())
+        metadataFilePath = gaPath + 'maven-metadata.xml'
+        if os.path.exists(metadataFilePath):
+            fetched = True
+        else:
+            fetched = fetchFile(metadataUrl, gaPath)
+        if fetched:
+            metadataDoc = ElementTree(file=metadataFilePath)
+            root = metadataDoc.getroot()
+            for versionTag in root.findall("versioning/versions/version"):
+                if versionTag.text == artifact.version:
+                    result = True
+                    break
+        else:
+            # we want to try pom file only when there are no metadata present
+            pomUrl = repoUrl + artifact.getPomFilepath()
+            logging.debug("URL %s does not exist. Trying pom file at %s", metadataUrl, pomUrl)
+            result = urlExists(pomUrl)
+
+    logging.debug("Artifact %s %sfound at %s", str(artifact), ("" if result else "not "), repoUrl)
+
+    return result
+
+
 def urlExists(url):
     parsedUrl = urlparse.urlparse(url)
     protocol = parsedUrl[0]
@@ -122,6 +158,7 @@ def slashAtTheEnd(url):
 def transformAsterixStringToRegexp(string):
     return re.escape(string).replace("\\*", ".*")
 
+
 def getRegExpsFromStrings(strings):
     rep = re.compile("^r\/.*\/$")
     regExps = []
@@ -131,6 +168,7 @@ def getRegExpsFromStrings(strings):
         else:
             regExps.append(re.compile(transformAsterixStringToRegexp(s)))
     return regExps
+
 
 def printArtifactList(artifactList):
     for gat in artifactList:
@@ -152,14 +190,28 @@ def fetchFile(fileUrl, destDir):
     if filename and not os.path.isfile(filepath):
         logging.debug("Downloading file %s", fileUrl)
         if protocol == 'http' or protocol == 'https':
-            urllib.urlretrieve(fileUrl, filepath)
-            return True
+            try:
+                (filename, headers) = urllib.URLopener().retrieve(fileUrl, filepath)
+                return True
+            except Exception as ex:
+                logging.debug("Unable to retrieve %s: %s", fileUrl, str(ex))
+                return False
         elif protocol == 'file':
             shutil.copy2(fileUrl.replace('file://', ''), destDir)
             return True
         else:
             logging.warning("File %s could not be downloaded, protocol %s is not supported",
                             fileUrl, protocol)
+
+
+def getTempDir(relativePath=""):
+    """Gets temporary directory for this running instance of Maven Repository Builder."""
+    return '/tmp/maven-repo-builder/' + str(os.getpid()) + "/" + relativePath
+
+
+def cleanTempDir():
+    """Cleans temporary directory for this running instance of Maven Repository Builder."""
+    shutil.rmtree(getTempDir())
 
 
 def updateSnapshotVersionSuffix(artifact, repoUrl):
@@ -180,29 +232,23 @@ def updateSnapshotVersionSuffix(artifact, repoUrl):
         return
 
     metadataUrl = slashAtTheEnd(repoUrl) + artifact.getDirPath() + 'maven-metadata.xml'
-    if not urlExists(metadataUrl):
+    gavPath = getTempDir(artifact.getDirPath())
+    metadataFilePath = gavPath + 'maven-metadata.xml'
+    if not os.path.exists(metadataFilePath) and not fetchFile(metadataUrl, gavPath):
         logging.debug("Unable to read metadata from %s", metadataUrl)
         return
 
-    tmpPath = '/tmp/maven-repo-builder/' + artifact.getDirPath()
-    if os.path.exists(tmpPath):
-        shutil.rmtree(tmpPath)
-    fetched = fetchFile(metadataUrl, tmpPath)
-    if fetched:
-        tmpFilePath = tmpPath + 'maven-metadata.xml'
-        metadataDoc = ElementTree(file=tmpFilePath)
-        root = metadataDoc.getroot()
-        timestamp = root.findtext("versioning/snapshot/timestamp")
-        buildNumber = root.findtext("versioning/snapshot/buildNumber")
+    metadataDoc = ElementTree(file=metadataFilePath)
+    root = metadataDoc.getroot()
+    timestamp = root.findtext("versioning/snapshot/timestamp")
+    buildNumber = root.findtext("versioning/snapshot/buildNumber")
 
-        if timestamp and buildNumber:
-            artifact.snapshotVersionSuffix = '-' + timestamp + '-' + buildNumber
-            logging.debug("Version suffix for %s:%s:%s:%s set to %s", artifact.groupId,
-                          artifact.artifactId, artifact.artifactType, artifact.version,
-                          artifact.snapshotVersionSuffix)
-        shutil.rmtree(tmpPath)
-    else:
-        logging.warning("Unable to fetch file %s to %s", metadataUrl, tmpPath)
+    if timestamp and buildNumber:
+        artifact.snapshotVersionSuffix = '-' + timestamp + '-' + buildNumber
+        logging.debug("Version suffix for %s:%s:%s:%s set to %s", artifact.groupId,
+                      artifact.artifactId, artifact.artifactType, artifact.version,
+                      artifact.snapshotVersionSuffix)
+
 
 def somethingMatch(regexs, string):
     """
