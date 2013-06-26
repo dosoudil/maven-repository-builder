@@ -347,9 +347,7 @@ def main():
     logging.info('Repository created in directory: %s', options.output)
 
     #cleanup
-    #Commented due to OSError:
-    # https://jenkins.mw.lab.eng.bos.redhat.com/hudson/view/EAP6/view/EAP6-Productization/job/JBoss-EAP-6.1.x-Maven-Repository/266/console
-    #maven_repo_util.cleanTempDir()
+    maven_repo_util.cleanTempDir()
 
 
 if  __name__ == '__main__':

@@ -17,6 +17,7 @@ from xml.etree.ElementTree import ElementTree
 # Constants
 MAX_THREADS = 10
 
+
 # Functions
 def setLogLevel(level):
     """Sets the desired log level."""
@@ -217,7 +218,11 @@ def getTempDir(relativePath=""):
 
 def cleanTempDir():
     """Cleans temporary directory for this running instance of Maven Repository Builder."""
-    shutil.rmtree(getTempDir())
+    if os.path.exists(getTempDir()):
+        try:
+            shutil.rmtree(getTempDir())
+        except BaseException as ex:
+            logging.error("An error occured while cleaning up temporary directory: %s", str(ex))
 
 
 def updateSnapshotVersionSuffix(artifact, repoUrl):
