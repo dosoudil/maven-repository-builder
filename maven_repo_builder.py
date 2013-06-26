@@ -19,6 +19,7 @@ import urlparse
 import artifact_list_generator
 import maven_repo_util
 from maven_artifact import MavenArtifact
+from multiprocessing.pool import ThreadPool
 
 
 class _ChecksumMode:
@@ -223,6 +224,9 @@ def fetchArtifacts(remoteRepoUrl, localRepoDir, artifactList, classifiers, check
     excludedTypes = ("zip", "ear", "war", "tar", "gz", "tar.gz", "bz2", "tar.bz2", "7z", "tar.7z")
 
     if protocol == 'http' or protocol == 'https':
+        # Create thread pool
+        pool = ThreadPool(maven_repo_util.MAX_THREADS)
+
         for artifact in artifactList:
             if artifact.artifactType in excludedTypes:
                 logging.info("Skipping download of %s:%s:%s:%s because of excluded type", artifact.groupId,
@@ -230,7 +234,14 @@ def fetchArtifacts(remoteRepoUrl, localRepoDir, artifactList, classifiers, check
                 continue
             if artifact.isSnapshot():
                 maven_repo_util.updateSnapshotVersionSuffix(artifact, remoteRepoUrl)
-            downloadArtifacts(remoteRepoUrl, localRepoDir, artifact, classifiers, checksumMode)
+            pool.apply_async(
+                downloadArtifacts,
+                [remoteRepoUrl, localRepoDir, artifact, classifiers, checksumMode]
+            )
+
+        # Close pool and wait till all workers are finnished
+        pool.close()
+        pool.join()
     elif protocol == 'file':
         repoPath = remoteRepoUrl.replace('file://', '')
         for artifact in artifactList:
