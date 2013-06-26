@@ -2,6 +2,7 @@ import os
 import re
 import maven_repo_util
 import logging
+from multiprocessing.pool import ThreadPool
 from subprocess import Popen
 from subprocess import PIPE
 from subprocess import call
@@ -268,15 +269,24 @@ class ArtifactListBuilder:
         :param gavs: List of GAVs
         :returns: Dictionary where index is MavenArtifact object and value is it's repo root URL.
         """
-        artifacts = {}
-        for gav in gavs:
+        def findArtifact(gav, urls, artifacts):
             artifact = MavenArtifact.createFromGAV(gav)
             for url in urls:
                 if maven_repo_util.gavExists(url, artifact):
+                    #Critical section?
                     artifacts[artifact] = url
-                    break
-            if not artifact in artifacts:
-                logging.warning('artifact %s not found in any url!', artifact)
+                    return
+
+            logging.warning('artifact %s not found in any url!', artifact)
+
+        artifacts = {}
+        pool = ThreadPool(maven_repo_util.MAX_THREADS)
+        for gav in gavs:
+            pool.apply_async(findArtifact, [gav, urls, artifacts])
+
+        # Close the pool and wait for the workers to finnish
+        pool.close()
+        pool.join()
 
         return artifacts
 

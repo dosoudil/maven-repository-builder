@@ -1,5 +1,6 @@
 import logging
 import maven_repo_util
+from multiprocessing.pool import ThreadPool
 from maven_artifact import MavenArtifact
 
 
@@ -56,6 +57,10 @@ class Filter:
         """
 
         logging.debug("Filtering artifacts contained in excluded repositories.")
+
+        pool = ThreadPool(maven_repo_util.MAX_THREADS)
+        # Contains artifact to be removed
+        delArtifacts = []
         for gat in artifactList.keys():
             groupId = gat.split(':')[0]
             artifactId = gat.split(':')[1]
@@ -63,12 +68,20 @@ class Filter:
             for priority in artifactList[gat].keys():
                 for version in artifactList[gat][priority].keys():
                     artifact = MavenArtifact(groupId, artifactId, artifactType, version)
-                    if _isArtifactInRepos(self.config.excludedRepositories, artifact):
-                        del artifactList[gat][priority][version]
+                    pool.apply_async(
+                        _artifactInRepos,
+                        [self.config.excludedRepositories, artifact, priority, delArtifacts]
+                    )
                 if not artifactList[gat][priority]:
                     del artifactList[gat][priority]
             if not artifactList[gat]:
                 del artifactList[gat]
+
+        # Close the pool and wait for the workers to finnish
+        pool.close()
+        pool.join()
+        for artifact, priority in delArtifacts:
+            del artifactList[artifact.getGAT()][priority][artifact.version]
 
         return artifactList
 
@@ -114,16 +127,18 @@ class Filter:
         return artifactList
 
 
-def _isArtifactInRepos(repositories, artifact):
+def _artifactInRepos(repositories, artifact, priority, artifacts):
     """
-    Returns True if specified artifact exists in at least one repositori from specified list.
+    Checks if artifact is available in one of the repositories, if so, appends
+    it with priority in list of pairs - artifacts. Used for multithreading.
 
     :param repositories: list of repository urls
     :param artifact: searched MavenArtifact
-    :returns: True if specified artifact exists in at least one of the repositories.
+    :param priority: value of dictionary artifacts
+    :param artifacts: list with (artifact, priority) tuples
     """
-
     for repoUrl in repositories:
         if maven_repo_util.gavExists(repoUrl, artifact):
-            return True
-    return False
+            #Critical section?
+            artifacts.append((artifact, priority))
+            break

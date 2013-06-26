@@ -14,6 +14,10 @@ from subprocess import PIPE
 from xml.etree.ElementTree import ElementTree
 
 
+# Constants
+MAX_THREADS = 10
+
+# Functions
 def setLogLevel(level):
     """Sets the desired log level."""
     lLevel = level.lower()
