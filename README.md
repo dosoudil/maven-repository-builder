@@ -7,11 +7,23 @@ set of top level artifacts, which dependencies are included. This way there can 
 several sources. Another way is to provide the artifact list in a file and call the builder
 with single source URL. This tool requires python 2.6 or higher.
 
-Basic Usage
------------
+There is a set of tools in the repository. The complete list of them is:
+* **Maven Repository Builder (maven_repo_builder.sh)**
+    * builds a Maven repository
+    * uses Artifact List Generator and Maven Repository Metadata Generator
+* **Maven Repository Comparator (compare_repositories.py)**
+    * compares two repositories to see if they contain matching GAVs
+* **Artifact List Generator (artifact_list_generator.py)**
+    * generates list of artifact and filters it according to config file
+* **Maven Repository Metadata Generator (generate_maven_metadata.sh)**
+    * generates Maven metadata xml files for usage as a local repository
+
+
+Maven Repository Builder Usage
+------------------------------
 
     Usage:
-        maven_repo_builder.sh -u URL  [-r REPO_FILENAME] [-m] [-o OUTPUT] [-a CLASSIFIERS] [-s CHECKSUM_MODE] [-d ADDITION] FILE...
+        maven_repo_builder.sh -u URL [-r REPO_FILENAME] [-m] [-o OUTPUT] [-a CLASSIFIERS] [-s CHECKSUM_MODE] [-d ADDITION] FILE...
         or
         maven_repo_builder.sh -c CONFIG [-r REPO_FILENAME] [-m] [-o OUTPUT] [-a CLASSIFIERS] [-s CHECKSUM_MODE] [-d ADDITION]
 
@@ -51,10 +63,26 @@ Basic Usage
                             Content of directory ADDITION will be copied to the repository.
 
 
-Example Repository List
------------------------
+### Example Repository List
 For a description and examples of the format of the artifact list file, see
 [Example Repository List](https://github.com/jboss-eap/maven-repository-builder/blob/master/example-config/artifact-list.txt)
+
+
+Maven Repository Comparator
+---------------------------
+A script is also included which can be used to compare two repositories to see if they
+contain matching GAVs (artifacts with the same groupId, artifactId, and version).
+
+    Usage: compare_repositories.py [options] REPOSITORY_PATH
+
+    Compare a local Maven repository to a remote repository.
+
+    Options:
+      -h, --help            show this help message and exit
+      -l LOGLEVEL, --loglevel=LOGLEVEL
+                            Set the level of log output.  Can be set to debug,
+                            info, warning, error, or critical
+      -u URL, --url=URL     URL of the remote repository to use for comparison
 
 
 Artifact List Generator
@@ -79,11 +107,10 @@ maven_repo_builder.py or it can be used as a separate tool. Configuration struct
                             info, warning, error, or critical
 
 
-Artifact List Generator Config
-------------------------------
+### Artifact List Generator Config
 For an example config with full config structure see [Sample Config](https://github.com/jboss-eap/maven-repository-builder/blob/master/example-config/alg-config-sample.json)
 
-### Basic configuration
+#### Basic configuration
 *   **artifact-sources** - list of sources of artifacts which should be included in the produced repository
     *   **type** - one of the artifact source types:
         *   "mead-tag" - a MEAD tag which should be included; additional artifact source config fields for this type are:
@@ -106,7 +133,7 @@ For an example config with full config structure see [Sample Config](https://git
             *   **included-gav-patterns-ref** - the same as the corresponding MEAD tag's field
 
 
-### Advanced config
+#### Advanced config
 *   **include-high-priority** and **include-low-priority** - includes another config file, which values will be
     overwritten by curernt config or in case of lists they will be merged. If order in a list matters (like in
     **artifact-sources**) then the items from the included file will be added before and after for high and low
@@ -121,30 +148,15 @@ For an example config with full config structure see [Sample Config](https://git
     permitted multiple versions. Not required, used only when **single-version** = "true".
 
 
-Compare Repositories
---------------------
-A script is also included which can be used to compare two repositories to see if they
-contain matching GAVs (artifacts with the same groupId, artifactId, and version).
-
-    Usage: compare_repositories.py [options] REPOSITORY_PATH
-
-    Compare a local Maven repository to a remote repository.
-
-    Options:
-      -h, --help            show this help message and exit
-      -l LOGLEVEL, --loglevel=LOGLEVEL
-                            Set the level of log output.  Can be set to debug,
-                            info, warning, error, or critical
-      -u URL, --url=URL     URL of the remote repository to use for comparison
-
-
-Metadata Generator
-------------------
-There is a script used by Maven repository Builder for metadata generator. It can be used
+Maven Repository Metadata Generator
+-----------------------------------
+There is a script used by Maven Repository Builder for metadata generator. It can be used
 separately from the builder.
 
     Usage: generate_maven_metadata.sh [REPOSITORY_PATH]
 
-    Generates metadata in specified directory. If none is specified then current workdir is used.
-
-
+    Generates metadata in specified directory. If none is specified then current workdir
+    is used. It is needed to pass the repository root as parameter, because it converts
+    the relative path to artifacts into group ID, artifact ID and version. If it wasn't
+    the repository root, the group ID would be probably wrong or the whole tool would end
+    up with an error.
