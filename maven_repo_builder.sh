@@ -141,7 +141,7 @@ fi
 # == 4. generate metadata (opt), zip repo (opt) ==
 # ================================================
 if [ -d "$ADDITION" ]; then
-    cp -rf $ADDITION/* $ADDITION/.* ${OUTPUT_DIR}
+    cp -rf $ADDITION/. ${OUTPUT_DIR}
 fi
 if ${METADATA}; then
     $WORKDIR/generate_maven_metadata.sh ${OUTPUT_DIR}
