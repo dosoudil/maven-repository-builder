@@ -246,8 +246,9 @@ class ArtifactListBuilder:
                 if len(exts) > 1 and "pom" in exts:
                     exts.remove("pom")
                 for ext in exts:
-                    mavenArtifact = MavenArtifact(gav.group(1).replace('/', '.'),
-                                                  gav.group(2), ext, gav.group(3))
+                    # Remove first slash if present then convert to GroupId
+                    groupId = re.sub("^/", "", gav.group(1)).replace('/', '.')
+                    mavenArtifact = MavenArtifact(groupId, gav.group(2), ext, gav.group(3))
                     if suffix is not None:
                         mavenArtifact.snapshotVersionSuffix = suffix
                     logging.debug("Adding artifact %s", str(mavenArtifact))
