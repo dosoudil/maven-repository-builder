@@ -10,6 +10,7 @@ import sys
 import tempfile
 
 import maven_repo_util
+import maven_repo_builder
 
 
 def compareArtifacts(localRepoPath, remoteUrl):
@@ -29,7 +30,7 @@ def compareArtifacts(localRepoPath, remoteUrl):
             # Attempt to download remote artifact
             tempDownloadFile = os.path.join(tempDownloadDir, relRepoPath)
             remoteFileUrl = remoteUrl + "/" + relRepoPath
-            maven_repo_util.download(remoteFileUrl, tempDownloadFile)
+            maven_repo_builder.download(remoteFileUrl, maven_repo_builder._ChecksumMode.generate, tempDownloadFile)
 
             # Compare the local and remote artifact checksums
             if os.path.exists(tempDownloadFile):
