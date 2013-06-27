@@ -157,15 +157,20 @@ class ArtifactListBuilder:
                         https:// urls)
         :returns: Dictionary where index is MavenArtifact object and value is it's repo root URL.
         """
+
+        prefixes = self._getPrefixes(gavPatterns)
         artifacts = {}
         for repoUrl in reversed(repoUrls):
             protocol = maven_repo_util.urlProtocol(repoUrl)
             if protocol == 'file':
-                artifacts.update(self._listLocalRepository(repoUrl[7:]))
+                for prefix in prefixes:
+                    artifacts.update(self._listLocalRepository(repoUrl[7:], prefix))
             elif protocol == '':
-                artifacts.update(self._listLocalRepository(repoUrl))
+                for prefix in prefixes:
+                    artifacts.update(self._listLocalRepository(repoUrl, prefix))
             elif protocol == 'http' or protocol == 'https':
-                artifacts.update(self._listRemoteRepository(repoUrl))
+                for prefix in prefixes:
+                    artifacts.update(self._listRemoteRepository(repoUrl, prefix))
             else:
                 raise "Invalid protocol!", protocol
 
@@ -174,7 +179,35 @@ class ArtifactListBuilder:
 
         return artifacts
 
+    def _getPrefixes(self, gavPatterns):
+        repat = re.compile("^r/.*/$")
+        patterns = set()
+        for pattern in gavPatterns:
+            if repat.match(pattern):
+                return set([''])
+            p = pattern.split(":")
+            px = p[0].replace(".","/") + "/"  # GroupId
+            if len(p) >= 2:
+                px += p[1] + "/"              # ArtifactId
+            if len(p) >= 3:
+                px += p[2] + "/"              # Version
+            pos = px.find("*")
+            if pos == -1:
+                patterns.add(px.rpartition("/")[0] + "/")
+            else:
+                patterns.add(px[:pos].rpartition("/")[0] + "/")
+        prefixes = set()
+        while patterns:
+            pattern = patterns.pop()
+            for prefix in patterns | prefixes:
+                if pattern.startswith(prefix):
+                    break
+            else:
+                prefixes.add(pattern)
+        return prefixes
+
     def _listRemoteRepository(self, repoUrl, prefix=""):
+        logging.debug("Listing remote repository %s prefix '%s'", repoUrl, prefix)
         artifacts = {}
         (out, _) = Popen(r'lftp -c "set ssl:verify-certificate no ; open ' + repoUrl + prefix
                          + ' ; find  ."', stdout=PIPE, shell=True).communicate()
@@ -220,6 +253,7 @@ class ArtifactListBuilder:
         :returns: Dictionary where index is MavenArtifact object and value is it's repo root URL
                   starting with 'file://'.
         """
+        logging.debug("Listing local repository %s prefix '%s'", directoryPath, prefix)
         artifacts = {}
         # ^(groupId)/(artifactId)/(version)$
         regexGAV = re.compile(r'^(.*)/([^/]*)/([^/]*)$')

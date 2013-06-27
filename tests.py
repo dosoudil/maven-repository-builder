@@ -12,6 +12,7 @@ import maven_repo_util
 import maven_repo_builder
 
 from maven_artifact import MavenArtifact
+from artifact_list_builder import ArtifactListBuilder
 from configuration import Configuration
 from filter import Filter
 
@@ -148,6 +149,21 @@ class Tests(unittest.TestCase):
         self.assertFalse('1.0.0' in al['com.google.guava:guava:pom']['3'])
         self.assertTrue('1.0.1' in al['org.jboss:jboss-foo:jar']['1'])
         self.assertFalse('1.0.1' in al['org.jboss:jboss-foo:jar']['2'])
+
+    def test_ArtifactListBuilder_getPrefixes(self):
+        i = [ "org.abc.def:qwer:1.0.1", "org.abc.def:qwer:1.2.1",
+              "org.abc.def:qwera:1.*", "org.abc.def:qwera:2.0",
+              "org.abc.ret:popo:2.0", "org.abc.ret:papa:*",
+              "org.abc.zir:fgh:1.2.3", "org.abc.zir:fgh:*",
+              "org.abc.zir:*:*", "org.abc.zar:*", "org.zui.zor*" ]
+        o = [ "org/abc/def/qwer/1.0.1", "org/abc/def/qwer/1.2.1",
+              "org/abc/def/qwera", "org/abc/ret/popo/2.0",
+              "org/abc/ret/papa", "org/abc/zir",
+              "org/abc/zar", "org/zui" ]
+        config = Configuration()
+        alb = ArtifactListBuilder(config)
+        out = alb._getPrefixes(i)
+        self.assertEqual(out,set(o))
 
     def test_filter_multiple_versions(self):
         config = Configuration()
