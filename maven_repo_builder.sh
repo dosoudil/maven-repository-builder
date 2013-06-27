@@ -33,6 +33,8 @@ help ()
     echo '  -l LOGLEVEL'
     echo '                        Set the level of log output.  Can be set to debug,'
     echo '                        info, warning, error, or critical'
+    echo '  -L LOGFILE'
+    echo '                        Set the file in which the log output should be written'
     echo '  -d ADDITION'
     echo '                        Directory containing additional files for the repository.'
     echo '                        Content of directory ADDITION will be copied to the repository.'
@@ -66,6 +68,7 @@ do
         o) OUTPUT_DIR=${OPTARG};;
         m) METADATA=true;;
         l) LOGLEVEL=${OPTARG};;
+        L) LOGFILE=${OPTARG};;
         d) ADDITION=${OPTARG};;
     esac
 done
@@ -107,12 +110,16 @@ if [[ ! -z ${LOGLEVEL} ]]; then
     MRB_PARAMS+=("-l")
     MRB_PARAMS+=(${LOGLEVEL})
 fi
+if [[ ! -z ${LOGFILE} ]]; then
+    MRB_PARAMS+=("-L")
+    MRB_PARAMS+=(${LOGFILE})
+fi
 
 # skip all named parameters and leave just unnamed ones (filenames)
 if [ $# -gt 0 ]; then
     while [ $# -gt 0 ] && [ ${1:0:1} = '-' ]; do
         L=${1:1:2}
-        if [ $L = 'c' ] || [ $L = 'r' ] || [ $L = 'a' ] || [ $L = 'o' ] || [ $L = 'u' ] || [ $L = 's' ] || [ $L = 'l' ] || [ $L = 'd' ] ; then
+        if [ $L = 'c' ] || [ $L = 'r' ] || [ $L = 'a' ] || [ $L = 'o' ] || [ $L = 'u' ] || [ $L = 's' ] || [ $L = 'l' ] || [ $L = 'L' ] || [ $L = 'd' ] ; then
             shift
         fi
         shift

@@ -311,11 +311,13 @@ def main():
     cliOptParser.add_option('-l', '--loglevel',
             default='info',
             help='Set the level of log output.  Can be set to debug, info, warning, error, or critical')
+    cliOptParser.add_option('-L', '--logfile',
+            help='Set the file in which the log output should be written.')
 
     (options, args) = cliOptParser.parse_args()
 
     # Set the log level
-    maven_repo_util.setLogLevel(options.loglevel)
+    maven_repo_util.setLogLevel(options.loglevel, options.logfile)
 
     if not options.classifiers:
         classifiers = []

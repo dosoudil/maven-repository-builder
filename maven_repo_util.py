@@ -19,7 +19,7 @@ MAX_THREADS = 10
 
 
 # Functions
-def setLogLevel(level):
+def setLogLevel(level, logfile=None):
     """Sets the desired log level."""
     lLevel = level.lower()
     if (lLevel == 'debug'):
@@ -35,7 +35,10 @@ def setLogLevel(level):
     else:
         logLevel = logging.INFO
         logging.warning('Unrecognized log level: %s  Log level set to info', level)
-    logging.basicConfig(format='%(levelname)s: %(message)s', level=logLevel)
+    if logfile:
+        logging.basicConfig(format='%(levelname)s: %(message)s', level=logLevel, filename=logfile, filemode='a')
+    else:
+        logging.basicConfig(format='%(levelname)s: %(message)s', level=logLevel)
 
 
 def getSha1Checksum(filepath):

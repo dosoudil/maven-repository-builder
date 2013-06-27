@@ -58,6 +58,8 @@ Maven Repository Builder Usage
       -l LOGLEVEL
                             Set the level of log output.  Can be set to debug,
                             info, warning, error, or critical
+      -L LOGFILE
+                            Set the file in which the log output should be written
       -d ADDITION
                             Directory containing additional files for the repository.
                             Content of directory ADDITION will be copied to the repository.
@@ -82,6 +84,9 @@ contain matching GAVs (artifacts with the same groupId, artifactId, and version)
       -l LOGLEVEL, --loglevel=LOGLEVEL
                             Set the level of log output.  Can be set to debug,
                             info, warning, error, or critical
+      -L LOGFILE, --logfile=LOGFILE
+                            Set the file in which the log output should be
+                            written.
       -u URL, --url=URL     URL of the remote repository to use for comparison
 
 

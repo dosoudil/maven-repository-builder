@@ -49,6 +49,8 @@ def main():
     cliOptParser.add_option('-l', '--loglevel',
             default='info',
             help='Set the level of log output.  Can be set to debug, info, warning, error, or critical')
+    cliOptParser.add_option('-L', '--logfile',
+            help='Set the file in which the log output should be written.')
     cliOptParser.add_option('-u', '--url',
             default='http://repo1.maven.org/maven2/',
             help='URL of the remote repository to use for comparison, defaults to Maven central')
@@ -63,7 +65,7 @@ def main():
     localRepoPath = args[0]
 
     # Set the log level
-    maven_repo_util.setLogLevel(options.loglevel)
+    maven_repo_util.setLogLevel(options.loglevel, options.logfile)
 
     # Read the list of dependencies
     if os.path.isfile(localRepoPath):
