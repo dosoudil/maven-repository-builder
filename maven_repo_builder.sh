@@ -56,7 +56,7 @@ OUTPUT_DIR="local-maven-repository"
 # =======================================
 # ====== reading command arguments ======
 # =======================================
-while getopts hc:u:r:a:o:l:s:md: OPTION
+while getopts hc:u:r:a:o:l:L:s:md: OPTION
 do
     case "${OPTION}" in
         h) HELP=true;;
