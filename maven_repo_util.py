@@ -173,10 +173,11 @@ def getRegExpsFromStrings(strings):
     rep = re.compile("^r\/.*\/$")
     regExps = []
     for s in strings:
+        # Prepend ^ and append $ to the pattern so that it is exact match
         if rep.match(s):
-            regExps.append(re.compile(s[2:-1]))
+            regExps.append(re.compile("^" + s[2:-1] + "$"))
         else:
-            regExps.append(re.compile(transformAsterixStringToRegexp(s)))
+            regExps.append(re.compile("^" + transformAsterixStringToRegexp(s).strip() + "$"))
     return regExps
 
 
