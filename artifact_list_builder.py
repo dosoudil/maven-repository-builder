@@ -180,6 +180,8 @@ class ArtifactListBuilder:
         return artifacts
 
     def _getPrefixes(self, gavPatterns):
+        if not gavPatterns:
+            return set([''])
         repat = re.compile("^r/.*/$")
         patterns = set()
         for pattern in gavPatterns:
