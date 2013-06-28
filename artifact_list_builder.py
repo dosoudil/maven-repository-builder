@@ -183,10 +183,15 @@ class ArtifactListBuilder:
         if not gavPatterns:
             return set([''])
         repat = re.compile("^r/.*/$")
+        prefixrepat = re.compile("^(([a-zA-Z0-9-]+|\\\.|:)+)")
         patterns = set()
         for pattern in gavPatterns:
-            if repat.match(pattern):
-                return set([''])
+            if repat.match(pattern): # if pattern is regular expresion pattern "r/expr/"
+                kp = knownpat.match(pattern[2:-1])
+                if kp: # if the expr starts with readable part (eg. "r/org\.jboss:core-.*:.*/")
+                    pattern = kp.group(1).replace("\\","") + "*" # convert readable part to
+                else:                                            # asterisk string: "org.jboss:*"
+                    return set([''])
             p = pattern.split(":")
             px = p[0].replace(".", "/") + "/"  # GroupId
             if len(p) >= 2:
