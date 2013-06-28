@@ -18,8 +18,28 @@ from filter import Filter
 
 class Tests(unittest.TestCase):
 
+    artifactList = {
+      "com.google.guava:guava:pom": {
+        "1": {
+          "1.0.0": "http://repo1.maven.org/maven2/",
+          "1.0.1": "http://repo1.maven.org/maven2/",
+          "1.1.0": "http://repo1.maven.org/maven2/"},
+        "2": {
+          "1.0.2": "http://repo2.maven.org/maven2/"},
+        "3": {
+          "1.2.0": "http://repo3.maven.org/maven2/",
+          "1.0.0": "http://repo3.maven.org/maven2/"}},
+      "org.jboss:jboss-foo:jar": {
+        "1": {
+          "1.0.0": "http://repo1.maven.org/maven2/",
+          "1.0.1": "http://repo1.maven.org/maven2/",
+          "1.1.0": "http://repo1.maven.org/maven2/"},
+        "2": {
+          "1.0.1": "http://repo2.maven.org/maven2/",
+          "1.0.2": "http://repo2.maven.org/maven2/"}}}
+
     def setUp(self):
-        logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.DEBUG, filename="tests.log")
+        logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.DEBUG)
 
     def test_url_download(self):
         # make sure the shuffled sequence does not lose any elements
@@ -83,26 +103,6 @@ class Tests(unittest.TestCase):
         self.assertEqual(artifact5.getArtifactType(), "pom")
         self.assertEqual(artifact5.getClassifier(), "")
         self.assertEqual(artifact5.getArtifactFilename(), "guava-r05.pom")
-
-    artifactList = {
-      "com.google.guava:guava:pom": {
-        "1": {
-          "1.0.0": "http://repo1.maven.org/maven2/",
-          "1.0.1": "http://repo1.maven.org/maven2/",
-          "1.1.0": "http://repo1.maven.org/maven2/"},
-        "2": {
-          "1.0.2": "http://repo2.maven.org/maven2/"},
-        "3": {
-          "1.2.0": "http://repo3.maven.org/maven2/",
-          "1.0.0": "http://repo3.maven.org/maven2/"}},
-      "org.jboss:jboss-foo:jar": {
-        "1": {
-          "1.0.0": "http://repo1.maven.org/maven2/",
-          "1.0.1": "http://repo1.maven.org/maven2/",
-          "1.1.0": "http://repo1.maven.org/maven2/"},
-        "2": {
-          "1.0.1": "http://repo2.maven.org/maven2/",
-          "1.0.2": "http://repo2.maven.org/maven2/"}}}
 
     def test_filter_excluded_GAVs(self):
         config = Configuration()
