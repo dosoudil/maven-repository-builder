@@ -82,8 +82,6 @@ class ArtifactListBuilder:
 
         gavsWithExts = {}
         for artifact in kojiArtifacts:
-            # FIXME: This isn't reliable as file extension is not equal to
-            # maven type, e.g. jar != ejb
             artifactType = re.search('.*\.(.+)$', artifact['filename']).group(1)
             gavUrl = maven_repo_util.slashAtTheEnd(downloadRootUrl) + artifact['build_name'] + '/'\
                      + artifact['build_version'] + '/' + artifact['build_release'] + '/maven/'
