@@ -125,8 +125,9 @@ For an example config with full config structure see [Sample Config](https://git
             *   **download-root-url** - root URL from which build packages should be downloaded, usually
                 ["http://download.devel.redhat.com/brewroot/packages/"](http://download.devel.redhat.com/brewroot/packages/).
             *   **included-gav-patterns-ref** - reference to a file, where are patterns of included GAVs, on every line
-                should be single pattern. Stars are allowed to represent any string. Not required, if ommited, all
-                found artifacts will be included.
+                should be single pattern. Stars are allowed to represent any string. To use regular expressions prefix
+                the expression with "r" and enclose it in slashes ("r/regular-expression/"). The field is not required,
+                if ommited, all found artifacts will be included.
         *   "dependency-list" - a merged lists of maven dependencies of selected GAVs; additional artifact source
             config fields for this type are
             *   **repo-url** - one repository URL or a list of them which should be searched.
@@ -135,7 +136,7 @@ For an example config with full config structure see [Sample Config](https://git
         *   "repository" - a local or remote repository to crawl and include found artifacts; additional artifact
             source config fields for this type are
             *   **repo-url** -one repository URL or a list of them, which should be crawled
-            *   **included-gav-patterns-ref** - the same as the corresponding MEAD tag's field
+            *   **included-gav-patterns-ref** - the same as the corresponding MEAD tag's field (see above)
 
 
 #### Advanced config
@@ -144,7 +145,8 @@ For an example config with full config structure see [Sample Config](https://git
     **artifact-sources**) then the items from the included file will be added before and after for high and low
     priority includes respectively. Neither of them is required.
 *   **excluded-gav-patterns-ref** - list of references to files with list of top GAV patterns to be excluded, every GAV
-    pattern should be on separate line. Stars are allowed to represent any string. Not required.
+    pattern should be on separate line. Stars are allowed to represent any string. To use regular expressions prefix
+    the expression with "r" and enclose it in slashes ("r/regular-expression/"). Not required.
 *   **excluded-repositories** - list of repository URLs which will be searched for any artifact found in specified
     artifact sources and when found, the artifact will be disposed. Not required.
 *   **single-version** - flag to forbid multiple versions of one groupId:artifactId, there can be allowed multiple
