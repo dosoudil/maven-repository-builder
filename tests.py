@@ -167,6 +167,18 @@ class Tests(unittest.TestCase):
         out = alb._getPrefixes(i)
         self.assertEqual(out, o)
 
+        i = ["org.abc.def:qwer:1.0.1", "org.abc.def:qwer:1.2.1",
+             "r/r.\..*/"]
+        o = {""}
+        out = alb._getPrefixes(i)
+        self.assertEqual(out, o)
+
+        i = ["org.abc.def:qwer:1.0.1", "org.abc.def:qwer:1.2.1",
+             "r/(org|com).*/"]
+        o = {""}
+        out = alb._getPrefixes(i)
+        self.assertEqual(out, o)
+
     def test_filter_multiple_versions(self):
         config = Configuration()
         config.singleVersion = True

@@ -184,23 +184,30 @@ class ArtifactListBuilder:
         prefixrepat = re.compile("^(([a-zA-Z0-9-]+|\\\.|:)+)")
         patterns = set()
         for pattern in gavPatterns:
-            if repat.match(pattern): # if pattern is regular expresion pattern "r/expr/"
+            if repat.match(pattern):  # if pattern is regular expresion pattern "r/expr/"
                 kp = prefixrepat.match(pattern[2:-1])
-                if kp: # if the expr starts with readable part (eg. "r/org\.jboss:core-.*:.*/")
-                    pattern = kp.group(1).replace("\\","") + "*" # convert readable part to
-                else:                                            # asterisk string: "org.jboss:*"
+                if kp:
+                    # if the expr starts with readable part (eg. "r/org\.jboss:core-.*:.*/")
+                    # convert readable part to asterisk string: "org.jboss:*"
+                    pattern = kp.group(1).replace("\\", "") + "*"
+                else:
                     return set([''])
             p = pattern.split(":")
             px = p[0].replace(".", "/") + "/"  # GroupId
             if len(p) >= 2:
-                px += p[1] + "/"              # ArtifactId
+                px += p[1] + "/"               # ArtifactId
             if len(p) >= 3:
-                px += p[2] + "/"              # Version
+                px += p[2] + "/"               # Version
             pos = px.find("*")
-            if pos == -1:
-                patterns.add(px.rpartition("/")[0] + "/")
+            if pos != -1:
+                px = px[:pos]
+            partitions = px.rpartition("/")
+            if partitions[0]:
+                patterns.add(partitions[0] + "/")
             else:
-                patterns.add(px[:pos].rpartition("/")[0] + "/")
+                # in case there is no slash before the first star
+                return set([''])
+
         prefixes = set()
         while patterns:
             pattern = patterns.pop()
