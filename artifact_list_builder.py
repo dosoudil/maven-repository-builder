@@ -187,7 +187,7 @@ class ArtifactListBuilder:
         patterns = set()
         for pattern in gavPatterns:
             if repat.match(pattern): # if pattern is regular expresion pattern "r/expr/"
-                kp = knownpat.match(pattern[2:-1])
+                kp = prefixrepat.match(pattern[2:-1])
                 if kp: # if the expr starts with readable part (eg. "r/org\.jboss:core-.*:.*/")
                     pattern = kp.group(1).replace("\\","") + "*" # convert readable part to
                 else:                                            # asterisk string: "org.jboss:*"
