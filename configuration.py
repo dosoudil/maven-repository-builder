@@ -55,7 +55,7 @@ class Configuration:
         """ Load confiugration from json config file. """
         logging.debug("Loading configuration file %s", filename)
         if filename in self._configFiles:
-            raise Exception("Config file '%s' is already included." % filename +\
+            raise Exception("Config file '%s' is already included." % filename +
                             " Check your config files for circular inclusions.")
         self._configFiles.add(filename)
         data = json.load(open(filename))

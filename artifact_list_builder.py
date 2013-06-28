@@ -186,7 +186,7 @@ class ArtifactListBuilder:
             if repat.match(pattern):
                 return set([''])
             p = pattern.split(":")
-            px = p[0].replace(".","/") + "/"  # GroupId
+            px = p[0].replace(".", "/") + "/"  # GroupId
             if len(p) >= 2:
                 px += p[1] + "/"              # ArtifactId
             if len(p) >= 3:
