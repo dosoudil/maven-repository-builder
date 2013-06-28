@@ -110,7 +110,7 @@ class Filter:
 
     def _filterMultipleVersions(self, artifactList):
         logging.debug("Filtering multi-version artifacts to have just a single version.")
-        regExps = maven_repo_util.getRegExpsFromStrings(self.config.multiVersionGAs)
+        regExps = maven_repo_util.getRegExpsFromStrings(self.config.multiVersionGAs, False)
         for gat in artifactList.keys():
             if maven_repo_util.somethingMatch(regExps, gat):
                 continue

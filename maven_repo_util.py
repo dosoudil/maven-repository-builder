@@ -169,15 +169,26 @@ def transformAsterixStringToRegexp(string):
     return re.escape(string).replace("\\*", ".*")
 
 
-def getRegExpsFromStrings(strings):
+def getRegExpsFromStrings(strings, exact=True):
+    """
+    Compiles all given strings into regular expressions. If exact=True, the expressions have
+    prepended ^ and appended $.
+    """
     rep = re.compile("^r\/.*\/$")
     regExps = []
     for s in strings:
         # Prepend ^ and append $ to the pattern so that it is exact match
         if rep.match(s):
-            regExps.append(re.compile("^" + s[2:-1] + "$"))
+            if exact:
+                regExps.append(re.compile("^" + s[2:-1] + "$"))
+            else:
+                regExps.append(re.compile(s[2:-1]))
         else:
-            regExps.append(re.compile("^" + transformAsterixStringToRegexp(s).strip() + "$"))
+            regexpString = transformAsterixStringToRegexp(s).strip()
+            if exact:
+                regExps.append(re.compile("^" + regexpString + "$"))
+            else:
+                regExps.append(re.compile(regexpString))
     return regExps
 
 
