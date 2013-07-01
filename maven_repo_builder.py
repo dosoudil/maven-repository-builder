@@ -121,13 +121,15 @@ def downloadFile(fileUrl, fileLocalPath, checksumMode):
 
 
 def downloadArtifacts(remoteRepoUrl, localRepoDir, artifact, classifiers, checksumMode):
-    """Download artifact from a remote repository along with pom and source jar"""
+    """Download artifact from a remote repository along with pom and additional classifiers' jar"""
     artifactLocalDir = localRepoDir + '/' + artifact.getDirPath()
     if not os.path.exists(artifactLocalDir):
         os.makedirs(artifactLocalDir)
 
+    remoteRepoUrl = maven_repo_util.slashAtTheEnd(remoteRepoUrl)
+
     # Download main artifact
-    artifactUrl = remoteRepoUrl + '/' + artifact.getArtifactFilepath()
+    artifactUrl = remoteRepoUrl + artifact.getArtifactFilepath()
     artifactLocalPath = os.path.join(localRepoDir, artifact.getArtifactFilepath())
     downloadFile(artifactUrl, artifactLocalPath, checksumMode)
 
@@ -212,7 +214,7 @@ def depListToArtifactList(depList):
     return artifactList
 
 
-def fetchArtifacts(remoteRepoUrl, localRepoDir, artifactList, classifiers, checksumMode):
+def fetchArtifacts(remoteRepoUrl, localRepoDir, artifactList, classifiers, excludedTypes, checksumMode):
     """Create a Maven repository based on a remote repository url and a list of artifacts"""
     logging.info('Retrieving artifacts from repository: %s', remoteRepoUrl)
     if not os.path.exists(localRepoDir):
@@ -220,8 +222,6 @@ def fetchArtifacts(remoteRepoUrl, localRepoDir, artifactList, classifiers, check
     parsedUrl = urlparse.urlparse(remoteRepoUrl)
     protocol = parsedUrl[0]
     repoPath = parsedUrl[2]
-
-    excludedTypes = ("zip", "ear", "war", "tar", "gz", "tar.gz", "bz2", "tar.bz2", "7z", "tar.7z")
 
     if protocol == 'http' or protocol == 'https':
         # Create thread pool
@@ -294,20 +294,24 @@ def main():
     cliOptParser.add_option('-u', '--url',
             default='http://repo1.maven.org/maven2/',
             help='URL of the remote repository from which artifacts are downloaded. It is used along with '
-                    'artifact list files when no config file is specified.')
+                 'artifact list files when no config file is specified.')
     cliOptParser.add_option('-o', '--output',
             default='local-maven-repository',
             help='Local output directory for the new repository')
     cliOptParser.add_option('-a', '--classifiers',
             default='sources',
-            help='Comma-separated list of additional classifiers to download')
+            help='Colon-separated list of additional classifiers to download')
     cliOptParser.add_option('-s', '--checksummode',
             default=_ChecksumMode.generate,
             choices=(_ChecksumMode.generate, _ChecksumMode.download, _ChecksumMode.check),
             help='Mode of dealing with MD5 and SHA1 checksums. Possible choices are:                                   '
-                'generate - generate the checksums (default)                   '
-                'download - download the checksums if available, if not, generate them                              '
-                'check - check if downloaded and generated checksums are equal')
+                 'generate - generate the checksums (default)                   '
+                 'download - download the checksums if available, if not, generate them                              '
+                 'check - check if downloaded and generated checksums are equal')
+    cliOptParser.add_option('-x', '--excludedtypes',
+            default='zip:ear:war:tar:gz:tar.gz:bz2:tar.bz2:7z:tar.7z',
+            help='Colon-separated list of filetypes to exclude. Defaults to '
+                 'zip:ear:war:tar:gz:tar.gz:bz2:tar.bz2:7z:tar.7z.')
     cliOptParser.add_option('-l', '--loglevel',
             default='info',
             help='Set the level of log output.  Can be set to debug, info, warning, error, or critical')
@@ -322,7 +326,12 @@ def main():
     if not options.classifiers:
         classifiers = []
     else:
-        classifiers = options.classifiers.split(",")
+        classifiers = options.classifiers.split(":")
+
+    if not options.excludedtypes:
+        excludedtypes = []
+    else:
+        excludedtypes = options.excludedtypes.split(":")
 
     if options.config is None:
         if len(args) < 1:
@@ -347,13 +356,13 @@ def main():
             finally:
                 depListFile.close()
 
-        fetchArtifacts(options.url, options.output, artifacts, classifiers, options.checksummode)
+        fetchArtifacts(options.url, options.output, artifacts, classifiers, excludedtypes, options.checksummode)
     else:
         # generate lists of artifacts from confiuration and the fetch them each list from it's repo
         artifactList = artifact_list_generator.generateArtifactList(options)
         for repoUrl in artifactList.keys():
             artifacts = artifactList[repoUrl]
-            fetchArtifacts(repoUrl, options.output, artifacts, classifiers, options.checksummode)
+            fetchArtifacts(repoUrl, options.output, artifacts, classifiers, excludedtypes, options.checksummode)
 
     logging.info('Generating missing checksums...')
     generateChecksums(options.output)

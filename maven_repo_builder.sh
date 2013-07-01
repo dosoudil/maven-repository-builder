@@ -28,6 +28,9 @@ help ()
     echo '                        generate - generates the checksums (default)'
     echo '                        download - download the checksums if available, if not, generates them'
     echo '                        check - checks if downloaded and generated checksums are equal'
+    echo '  -x EXCLUDED_TYPES'
+    echo '                        Colon-separated list of filetypes to exclude. Defaults to '
+    echo '                        zip:ear:war:tar:gz:tar.gz:bz2:tar.bz2:7z:tar.7z.'
     echo '  -m'
     echo '                        Generate metadata in the created repository'
     echo '  -l LOGLEVEL'
@@ -56,7 +59,7 @@ OUTPUT_DIR="local-maven-repository"
 # =======================================
 # ====== reading command arguments ======
 # =======================================
-while getopts hc:u:r:a:o:l:L:s:md: OPTION
+while getopts hc:u:r:a:o:l:L:s:x:md: OPTION
 do
     case "${OPTION}" in
         h) HELP=true;;
@@ -65,6 +68,7 @@ do
         r) REPO_FILE=${OPTARG};;
         a) CLASSIFIERS=${OPTARG};;
         s) CHECKSUM_MODE=${OPTARG};;
+        x) EXCLUDED_TYPES=${OPTARG};;
         o) OUTPUT_DIR=${OPTARG};;
         m) METADATA=true;;
         l) LOGLEVEL=${OPTARG};;
@@ -106,6 +110,10 @@ if [[ ! -z ${CHECKSUM_MODE} ]]; then
     MRB_PARAMS+=("-s")
     MRB_PARAMS+=(${CHECKSUM_MODE})
 fi
+if [[ ! -z ${EXCLUDED_TYPES} ]]; then
+    MRB_PARAMS+=("-x")
+    MRB_PARAMS+=(${EXCLUDED_TYPES})
+fi
 if [[ ! -z ${LOGLEVEL} ]]; then
     MRB_PARAMS+=("-l")
     MRB_PARAMS+=(${LOGLEVEL})
@@ -119,7 +127,7 @@ fi
 if [ $# -gt 0 ]; then
     while [ $# -gt 0 ] && [ ${1:0:1} = '-' ]; do
         L=${1:1:2}
-        if [ $L = 'c' ] || [ $L = 'r' ] || [ $L = 'a' ] || [ $L = 'o' ] || [ $L = 'u' ] || [ $L = 's' ] || [ $L = 'l' ] || [ $L = 'L' ] || [ $L = 'd' ] ; then
+        if [ $L = 'c' ] || [ $L = 'r' ] || [ $L = 'a' ] || [ $L = 'o' ] || [ $L = 'u' ] || [ $L = 's' ] || [ $L = 'x' ] || [ $L = 'l' ] || [ $L = 'L' ] || [ $L = 'd' ] ; then
             shift
         fi
         shift
