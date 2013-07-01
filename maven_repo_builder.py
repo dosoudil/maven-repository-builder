@@ -88,7 +88,7 @@ def download(url, checksumMode, filePath=None):
                     checksumsOk = True
 
                 if checksumsOk:
-                    logging.debug('Download complete')
+                    logging.debug('Download of %s complete', filePath)
                 elif retries > 0:
                     logging.warning('Checksum problem with %s, retrying download...', url)
                     retries -= 1
@@ -122,9 +122,18 @@ def downloadFile(fileUrl, fileLocalPath, checksumMode):
 
 def downloadArtifacts(remoteRepoUrl, localRepoDir, artifact, classifiers, checksumMode):
     """Download artifact from a remote repository along with pom and additional classifiers' jar"""
+    logging.debug("Starting download of %s", str(artifact))
+
     artifactLocalDir = localRepoDir + '/' + artifact.getDirPath()
     if not os.path.exists(artifactLocalDir):
-        os.makedirs(artifactLocalDir)
+        try:
+            os.makedirs(artifactLocalDir)
+        except BaseException as ex:
+            # handle parallelism, when two threads checks if a directory exists and then both tries
+            # to create it
+            if not os.path.exists(artifactLocalDir):
+                logging.error("Error while creating directory %s: %s", artifactLocalDir, str(ex))
+                raise ex
 
     remoteRepoUrl = maven_repo_util.slashAtTheEnd(remoteRepoUrl)
 
@@ -358,7 +367,7 @@ def main():
 
         fetchArtifacts(options.url, options.output, artifacts, classifiers, excludedtypes, options.checksummode)
     else:
-        # generate lists of artifacts from confiuration and the fetch them each list from it's repo
+        # generate lists of artifacts from configuration and the fetch them each list from it's repo
         artifactList = artifact_list_generator.generateArtifactList(options)
         for repoUrl in artifactList.keys():
             artifacts = artifactList[repoUrl]
