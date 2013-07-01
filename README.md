@@ -53,6 +53,9 @@ Maven Repository Builder Usage
                             generate - generate the checksums (default)
                             download - download the checksums if available, if not, generate them
                             check - check if downloaded and generated checksums are equal
+      -x EXCLUDED_TYPES
+                            Colon-separated list of filetypes to exclude. Defaults to
+                            zip:ear:war:tar:gz:tar.gz:bz2:tar.bz2:7z:tar.7z
       -m
                             Generate metadata in the created repository
       -l LOGLEVEL
@@ -104,12 +107,15 @@ maven_repo_builder.py or it can be used as a separate tool. Configuration struct
 
     Options:
       -h                    show this help message and exit
-      -c CONFIG
+      -c CONFIG, --config CONFIG
                             Configuration file to use to generate an artifact list
                             for the repository builder
-      -l LOGLEVEL
+      -l LOGLEVEL, --loglevel=LOGLEVEL
                             Set the level of log output.  Can be set to debug,
                             info, warning, error, or critical
+      -L LOGFILE, --logfile=LOGFILE
+                            Set the file in which the log output should be
+                            written.
 
 
 ### Artifact List Generator Config
