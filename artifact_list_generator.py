@@ -58,11 +58,11 @@ def generateArtifactList(options):
     #build sane structure - url to MavenArtifact list
     urlToMAList = {}
     for gat in artifactList:
-        prioList = artifactList[gat]
-        for priority in prioList:
-            verList = prioList[priority]
-            for version in verList:
-                url = verList[version]
+        priorityList = artifactList[gat]
+        for priority in priorityList:
+            versionList = priorityList[priority]
+            for version in versionList:
+                url = versionList[version]
                 urlToMAList.setdefault(url, []).append(MavenArtifact.createFromGAV(gat + ":" + version))
 
     return urlToMAList
@@ -76,10 +76,12 @@ def main():
     cliOptParser.add_option('-l', '--loglevel',
             default='info',
             help='Set the level of log output.  Can be set to debug, info, warning, error, or critical')
+    cliOptParser.add_option('-L', '--logfile',
+            help='Set the file in which the log output should be written.')
     (options, args) = cliOptParser.parse_args()
 
     # Set the log level
-    maven_repo_util.setLogLevel(options.loglevel)
+    maven_repo_util.setLogLevel(options.loglevel, options.logfile)
 
     artifactList = _generateArtifactList(options)
 
