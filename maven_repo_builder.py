@@ -16,6 +16,7 @@ import sys
 import threading
 import urllib2
 import urlparse
+import Queue
 
 import artifact_list_generator
 import maven_repo_util
@@ -123,11 +124,12 @@ def downloadFile(fileUrl, fileLocalPath, checksumMode):
             logging.warning("Error code %d returned while downloading %s", returnCode, fileUrl)
 
 
-def downloadArtifacts(remoteRepoUrl, localRepoDir, artifact, classifiers, checksumMode, mkdirLock):
+def downloadArtifacts(remoteRepoUrl, localRepoDir, artifact, classifiers, checksumMode, mkdirLock, errors):
     """Download artifact from a remote repository along with pom and additional classifiers' jar"""
     logging.debug("Starting download of %s", str(artifact))
 
     artifactLocalDir = localRepoDir + '/' + artifact.getDirPath()
+
     try:
         # handle parallelism, when two threads checks if a directory exists and then both tries to create it
         mkdirLock.acquire()
@@ -154,10 +156,9 @@ def downloadArtifacts(remoteRepoUrl, localRepoDir, artifact, classifiers, checks
                 artifactClassifierUrl = remoteRepoUrl + '/' + artifact.getClassifierFilepath(classifier)
                 artifactClassifierLocalPath = os.path.join(localRepoDir, artifact.getClassifierFilepath(classifier))
                 downloadFile(artifactClassifierUrl, artifactClassifierLocalPath, checksumMode)
-    except BaseException as ex:
-        if not os.path.exists(artifactLocalDir):
-            logging.error("Error while downloading artifact %s: %s", artifact, str(ex))
-            raise ex
+    except Exception as ex:
+        logging.error("Error while downloading artifact %s: %s", artifact, str(ex))
+        errors.put(ex)
 
 
 def copyFile(filePath, fileLocalPath, checksumMode):
@@ -239,6 +240,7 @@ def fetchArtifacts(remoteRepoUrl, localRepoDir, artifactList, classifiers, exclu
     if protocol == 'http' or protocol == 'https':
         # Create thread pool
         pool = ThreadPool(maven_repo_util.MAX_THREADS)
+        errors = Queue.Queue()
         mkdirLock = threading.Lock()
 
         for artifact in artifactList:
@@ -250,12 +252,17 @@ def fetchArtifacts(remoteRepoUrl, localRepoDir, artifactList, classifiers, exclu
                 maven_repo_util.updateSnapshotVersionSuffix(artifact, remoteRepoUrl)
             pool.apply_async(
                 downloadArtifacts,
-                [remoteRepoUrl, localRepoDir, artifact, classifiers, checksumMode, mkdirLock]
+                [remoteRepoUrl, localRepoDir, artifact, classifiers, checksumMode, mkdirLock, errors]
             )
 
         # Close pool and wait till all workers are finnished
         pool.close()
         pool.join()
+
+        # If one of the workers threw error, exit with 1
+        if not errors.empty():
+            sys.exit(1)
+
     elif protocol == 'file':
         repoPath = remoteRepoUrl.replace('file://', '')
         for artifact in artifactList:
