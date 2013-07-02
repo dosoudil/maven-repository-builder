@@ -277,7 +277,7 @@ class ArtifactListBuilder:
                 gav = regexGAV.search(gavPath)
                 #If gavPath is e.g. example/sth, then gav is None
                 if not gav:
-                    break
+                    continue
                 av = self._getSnapshotAwareVersionRegEx(re.escape(gav.group(2) + "-" + gav.group(3) + "."))
                 regexExt = re.compile(av + self._fileExtRegExp)
                 exts = set()
