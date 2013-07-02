@@ -18,7 +18,7 @@ def _generateArtifactList(options):
     # build list
     logging.info("Building artifact list...")
     listBuilder = ArtifactListBuilder(config)
-    artifactList = listBuilder.buildList()
+    artifactList = listBuilder.buildList(options.allclassifiers)
 
     logging.debug("Generated list contents:")
     for gat in artifactList:
@@ -54,6 +54,8 @@ def generateArtifactList(options):
       L artifacts (list of MavenArtifact)
     """
 
+    options.allclassifiers = (options.classifiers == '*')
+
     artifactList = _generateArtifactList(options)
     #build sane structure - url to MavenArtifact list
     urlToMAList = {}
@@ -62,8 +64,12 @@ def generateArtifactList(options):
         for priority in priorityList:
             versionList = priorityList[priority]
             for version in versionList:
-                url = versionList[version]
+                artSpec = versionList[version]
+                url = artSpec.url
                 urlToMAList.setdefault(url, []).append(MavenArtifact.createFromGAV(gat + ":" + version))
+                if options.allclassifiers and artSpec.classifiers:
+                    for classifier in artSpec.classifiers:
+                        urlToMAList[url].append(MavenArtifact.createFromGAV(gat + ":" + classifier + ":" + version))
 
     return urlToMAList
 
@@ -83,6 +89,7 @@ def main():
     # Set the log level
     maven_repo_util.setLogLevel(options.loglevel, options.logfile)
 
+    options.allclassifiers = False
     artifactList = _generateArtifactList(options)
 
     maven_repo_util.printArtifactList(artifactList)

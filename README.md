@@ -23,9 +23,9 @@ Maven Repository Builder Usage
 ------------------------------
 
     Usage:
-        maven_repo_builder.sh -u URL [-r REPO_FILENAME] [-m] [-o OUTPUT] [-a CLASSIFIERS] [-s CHECKSUM_MODE] [-d ADDITION] FILE...
+        maven_repo_builder.sh -u URL [-r REPO_FILENAME] [-m] [-o OUTPUT] [-a CLASSIFIERS] [-s CHECKSUM_MODE] [-x EXCLUDED_TYPES] [-d ADDITION] FILE...
         or
-        maven_repo_builder.sh -c CONFIG [-r REPO_FILENAME] [-m] [-o OUTPUT] [-a CLASSIFIERS] [-s CHECKSUM_MODE] [-d ADDITION]
+        maven_repo_builder.sh -c CONFIG [-r REPO_FILENAME] [-m] [-o OUTPUT] [-a CLASSIFIERS] [-s CHECKSUM_MODE] [-x EXCLUDED_TYPES] [-d ADDITION]
 
     Generate a Maven repository based on a file (or files) containing a list of artifacts.  Each list file must contain
     a single artifact per line in the format groupId:artifactId:fileType:<classifier>:version The example artifact list
@@ -44,8 +44,10 @@ Maven Repository Builder Usage
                             Local output directory for the new repository. By default
                             "local-maven-repository" will be used.
       -a CLASSIFIERS
-                            Comma-separated list of additional classifiers to download.
-                            By default "sources" will be used.
+                            Colon-separated list of additional classifiers to download.
+                            By default "sources" will be used. It is possible to use *
+                            to require all available classifiers (works only when artifact
+                            list is generated from config).
       -r REPO_FILENAME
                             Zip teh created repository in a file with provided name
       -s CHECKSUM_MODE

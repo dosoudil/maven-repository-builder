@@ -314,7 +314,8 @@ def main():
             help='Local output directory for the new repository')
     cliOptParser.add_option('-a', '--classifiers',
             default='sources',
-            help='Colon-separated list of additional classifiers to download')
+            help='Colon-separated list of additional classifiers to download. It is possible to use * to '
+                 'require all available classifiers (works only when artifact list is generated from config).')
     cliOptParser.add_option('-s', '--checksummode',
             default=_ChecksumMode.generate,
             choices=(_ChecksumMode.generate, _ChecksumMode.download, _ChecksumMode.check),
@@ -337,7 +338,7 @@ def main():
     # Set the log level
     maven_repo_util.setLogLevel(options.loglevel, options.logfile)
 
-    if not options.classifiers:
+    if not options.classifiers or options.classifiers == '*':
         classifiers = []
     else:
         classifiers = options.classifiers.split(":")
