@@ -169,13 +169,13 @@ class Tests(unittest.TestCase):
 
         i = ["org.abc.def:qwer:1.0.1", "org.abc.def:qwer:1.2.1",
              "r/r.\..*/"]
-        o = {""}
+        o = set([""])
         out = alb._getPrefixes(i)
         self.assertEqual(out, o)
 
         i = ["org.abc.def:qwer:1.0.1", "org.abc.def:qwer:1.2.1",
              "r/(org|com).*/"]
-        o = {""}
+        o = set([""])
         out = alb._getPrefixes(i)
         self.assertEqual(out, o)
 
