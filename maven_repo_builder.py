@@ -32,7 +32,6 @@ class _ChecksumMode:
 
 def download(url, checksumMode, filePath=None):
     """Download the given url to a local file"""
-
     logging.debug('Attempting download: %s', url)
 
     if filePath:
@@ -57,53 +56,59 @@ def download(url, checksumMode, filePath=None):
         return os.path.basename(urlparse.urlsplit(openUrl.url)[2])
 
     try:
-        retries = 2
+        retries = 3
         checksumsOk = False
         while retries > 0 and not checksumsOk:
-            httpResponse = urllib2.urlopen(urllib2.Request(url))
-            if (httpResponse.code == 200):
-                filePath = filePath or getFileName(url, httpResponse)
-                with open(filePath, 'wb') as localfile:
-                    shutil.copyfileobj(httpResponse, localfile)
+            try:
+                httpResponse = urllib2.urlopen(urllib2.Request(url))
+                if (httpResponse.code == 200):
+                    filePath = filePath or getFileName(url, httpResponse)
+                    with open(filePath, 'wb') as localfile:
+                        shutil.copyfileobj(httpResponse, localfile)
 
-                if checksumMode in (_ChecksumMode.download, _ChecksumMode.check):
-                    logging.debug('Downloading MD5 checksum from %s', url + ".md5")
-                    csHttpResponse = urllib2.urlopen(urllib2.Request(url + ".md5"))
-                    checksumFilePath = filePath + ".md5"
-                    with open(checksumFilePath, 'wb') as localfile:
-                        shutil.copyfileobj(csHttpResponse, localfile)
-                    if (csHttpResponse.code != 200):
-                        logging.warning('Unable to download MD5 checksum, http code: %s', csHttpResponse.code)
+                    if checksumMode in (_ChecksumMode.download, _ChecksumMode.check):
+                        logging.debug('Downloading MD5 checksum from %s', url + ".md5")
+                        csHttpResponse = urllib2.urlopen(urllib2.Request(url + ".md5"))
+                        checksumFilePath = filePath + ".md5"
+                        with open(checksumFilePath, 'wb') as localfile:
+                            shutil.copyfileobj(csHttpResponse, localfile)
+                        if (csHttpResponse.code != 200):
+                            logging.warning('Unable to download MD5 checksum, http code: %s', csHttpResponse.code)
 
-                    logging.debug('Downloading SHA1 checksum from %s', url + ".sha1")
-                    csHttpResponse = urllib2.urlopen(urllib2.Request(url + ".sha1"))
-                    checksumFilePath = filePath + ".sha1"
-                    with open(checksumFilePath, 'wb') as localfile:
-                        shutil.copyfileobj(csHttpResponse, localfile)
-                    if (csHttpResponse.code != 200):
-                        logging.warning('Unable to download SHA1 checksum, http code: %s', csHttpResponse.code)
+                        logging.debug('Downloading SHA1 checksum from %s', url + ".sha1")
+                        csHttpResponse = urllib2.urlopen(urllib2.Request(url + ".sha1"))
+                        checksumFilePath = filePath + ".sha1"
+                        with open(checksumFilePath, 'wb') as localfile:
+                            shutil.copyfileobj(csHttpResponse, localfile)
+                        if (csHttpResponse.code != 200):
+                            logging.warning('Unable to download SHA1 checksum, http code: %s', csHttpResponse.code)
 
-                if checksumMode == _ChecksumMode.check:
-                    if maven_repo_util.checkChecksum(filePath):
+                    if checksumMode == _ChecksumMode.check:
+                        if maven_repo_util.checkChecksum(filePath):
+                            checksumsOk = True
+                    else:
                         checksumsOk = True
-                else:
-                    checksumsOk = True
 
-                if checksumsOk:
-                    logging.debug('Download of %s complete', filePath)
-                elif retries > 0:
-                    logging.warning('Checksum problem with %s, retrying download...', url)
+                    if checksumsOk:
+                        logging.debug('Download of %s complete', filePath)
+                    elif retries > 1:
+                        logging.warning('Checksum problem with %s, retrying download...', url)
+                        retries -= 1
+                    else:
+                        logging.error('Checksum problem with %s. No chance to download the file correctly. Exiting', url)
+                        # Raise exception instaed of sys.exit as this code is not running in the main thread
+                        raise Exception("Exiting...")
+                else:
+                    logging.warning('Unable to download, http code: %s', httpResponse.code)
+                httpResponse.close()
+                return httpResponse.code
+            except urllib2.HTTPError as e:
+                if retries > 1:
+                    logging.debug('Unable to download, HTTP Response code = %s, trying again...', e.code)
                     retries -= 1
                 else:
-                    logging.error('Checksum problem with %s. No chance to download the file correctly. Exiting', url)
-                    sys.exit(1)
-            else:
-                logging.warning('Unable to download, http code: %s', httpResponse.code)
-        httpResponse.close()
-        return httpResponse.code
-    except urllib2.HTTPError as e:
-        logging.debug('Unable to download, HTTP Response code = %s', e.code)
-        return e.code
+                    logging.debug('Unable to download, HTTP Response code = %s, giving up...', e.code)
+                    return e.code
     except urllib2.URLError as e:
         logging.error('Unable to download, URLError: %s', e.reason)
     except httplib.HTTPException as e:
