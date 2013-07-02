@@ -103,7 +103,7 @@ def download(url, checksumMode, filePath=None):
                 httpResponse.close()
                 return httpResponse.code
             except urllib2.HTTPError as e:
-                if retries > 1:
+                if retries > 1 and e.code / 100 == 5:
                     logging.debug('Unable to download, HTTP Response code = %s, trying again...', e.code)
                     retries -= 1
                 else:
