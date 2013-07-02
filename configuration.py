@@ -17,6 +17,7 @@ class Configuration:
     excludedRepositories = []
     multiVersionGAs = []
     _configFiles = set()
+    allClassifiers = False
 
     def load(self, opts):
         """
@@ -28,6 +29,9 @@ class Configuration:
         if opts.config is None:
             logging.error('You must specify a config file')
             sys.exit(1)
+
+        if "allclassifiers" in opts:
+            self.allClassifiers = opts.allclassifiers
 
         self.loadFromFile(opts.config)
 

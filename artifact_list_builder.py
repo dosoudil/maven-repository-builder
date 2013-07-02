@@ -25,11 +25,10 @@ class ArtifactListBuilder:
     def __init__(self, configuration):
         self.configuration = configuration
 
-    def buildList(self, allClassifiers=False):
+    def buildList(self):
         """
         Build the artifact "list" from sources defined in the given configuration.
 
-        :param allClassifiers: finds all available classifiers if true
         :returns: Dictionary descirebed above.
         """
         artifactList = {}
@@ -42,18 +41,15 @@ class ArtifactListBuilder:
                 artifacts = self._listMeadTagArtifacts(source['koji-url'],
                                                        source['download-root-url'],
                                                        source['tag-name'],
-                                                       source['included-gav-patterns'],
-                                                       allClassifiers)
+                                                       source['included-gav-patterns'])
             elif source['type'] == 'dependency-list':
                 logging.info("Building artifact list from top level list of GAVs")
                 artifacts = self._listDependencies(source['repo-url'],
-                                                   self._parseDepList(source['top-level-gavs']),
-                                                   allClassifiers)
+                                                   self._parseDepList(source['top-level-gavs']))
             elif source['type'] == 'repository':
                 logging.info("Building artifact list from repository %s", source['repo-url'])
                 artifacts = self._listRepository(source['repo-url'],
-                                                 source['included-gav-patterns'],
-                                                 allClassifiers)
+                                                 source['included-gav-patterns'])
             else:
                 logging.warning("Unsupported source type: %s", source['type'])
                 continue
@@ -66,14 +62,13 @@ class ArtifactListBuilder:
 
         return artifactList
 
-    def _listMeadTagArtifacts(self, kojiUrl, downloadRootUrl, tagName, gavPatterns, allClassifiers):
+    def _listMeadTagArtifacts(self, kojiUrl, downloadRootUrl, tagName, gavPatterns):
         """
         Loads maven artifacts from koji (brew/mead).
 
         :param kojiUrl: Koji/Brew/Mead URL
         :param downloadRootUrl: Download root URL of the artifacts
         :param tagName: Koji/Brew/Mead tag name
-        :param allClassifiers: finds all available classifiers if true
         :returns: Dictionary where index is MavenArtifact object and value is it's repo root URL.
         """
         import koji
@@ -99,13 +94,12 @@ class ArtifactListBuilder:
 
         return self._filterArtifactsByPatterns(artifacts, gavPatterns)
 
-    def _listDependencies(self, repoUrls, gavs, allClassifiers):
+    def _listDependencies(self, repoUrls, gavs):
         """
         Loads maven artifacts from mvn dependency:list.
 
         :param repoUrls: URL of the repositories that contains the listed artifacts
         :param gavs: List of top level GAVs
-        :param allClassifiers: finds all available classifiers if true
         :returns: Dictionary where index is MavenArtifact object and value is
                   it's repo root URL, or empty dictionary if something goes wrong.
         """
@@ -145,18 +139,17 @@ class ArtifactListBuilder:
                 mvnLines = mvnOutFile.readlines()
             gavList = self._parseDepList(mvnLines)
 
-            artifacts.update(self._listArtifacts(repoUrls, gavList, allClassifiers))
+            artifacts.update(self._listArtifacts(repoUrls, gavList))
 
         return artifacts
 
-    def _listRepository(self, repoUrls, gavPatterns, allClassifiers):
+    def _listRepository(self, repoUrls, gavPatterns):
         """
         Loads maven artifacts from a repository.
 
         :param repoUrl: repository URL (local or remote, supported are [file://], http:// and
                         https:// urls)
         :param gavPatterns: list of patterns to filter by GAV
-        :param allClassifiers: finds all available classifiers if true
         :returns: Dictionary where index is MavenArtifact object and value is it's repo root URL.
         """
 
@@ -167,13 +160,13 @@ class ArtifactListBuilder:
             protocol = maven_repo_util.urlProtocol(urlWithSlash)
             if protocol == 'file':
                 for prefix in prefixes:
-                    artifacts.update(self._listLocalRepository(urlWithSlash[7:], allClassifiers, prefix))
+                    artifacts.update(self._listLocalRepository(urlWithSlash[7:], prefix))
             elif protocol == '':
                 for prefix in prefixes:
-                    artifacts.update(self._listLocalRepository(urlWithSlash, allClassifiers, prefix))
+                    artifacts.update(self._listLocalRepository(urlWithSlash, prefix))
             elif protocol == 'http' or protocol == 'https':
                 for prefix in prefixes:
-                    artifacts.update(self._listRemoteRepository(urlWithSlash, allClassifiers, prefix))
+                    artifacts.update(self._listRemoteRepository(urlWithSlash, prefix))
             else:
                 raise "Invalid protocol!", protocol
 
@@ -223,7 +216,7 @@ class ArtifactListBuilder:
                 prefixes.add(pattern)
         return prefixes
 
-    def _listRemoteRepository(self, repoUrl, allClassifiers, prefix=""):
+    def _listRemoteRepository(self, repoUrl, prefix=""):
         logging.debug("Listing remote repository %s prefix '%s'", repoUrl, prefix)
         artifacts = {}
         (out, _) = Popen(r'lftp -c "set ssl:verify-certificate no ; open ' + repoUrl + prefix
@@ -262,12 +255,11 @@ class ArtifactListBuilder:
                 artifacts[mavenArtifact] = repoUrl
         return artifacts
 
-    def _listLocalRepository(self, directoryPath, allClassifiers, prefix=""):
+    def _listLocalRepository(self, directoryPath, prefix=""):
         """
         Loads maven artifacts from local directory.
 
         :param directoryPath: Path of the local directory.
-        :param allClassifiers: finds all available classifiers if true
         :returns: Dictionary where index is MavenArtifact object and value is it's repo root URL
                   starting with 'file://'.
         """
@@ -316,14 +308,13 @@ class ArtifactListBuilder:
         named with the timestamp and build number as usual in case of snapshot versions."""
         return version.replace("-SNAPSHOT", "-(SNAPSHOT|\d+\.\d+-\d+)")
 
-    def _listArtifacts(self, urls, gavs, allClassifiers):
+    def _listArtifacts(self, urls, gavs):
         """
         Loads maven artifacts from list of GAVs and tries to locate the artifacts in one of the
         specified repositories.
 
         :param urls: repository URLs where the given GAVs can be located
         :param gavs: List of GAVs
-        :param allClassifiers: finds all available classifiers if true
         :returns: Dictionary where index is MavenArtifact object and value is it's repo root URL.
         """
         def findArtifact(gav, urls, artifacts):

@@ -18,7 +18,7 @@ def _generateArtifactList(options):
     # build list
     logging.info("Building artifact list...")
     listBuilder = ArtifactListBuilder(config)
-    artifactList = listBuilder.buildList(options.allclassifiers)
+    artifactList = listBuilder.buildList()
 
     logging.debug("Generated list contents:")
     for gat in artifactList:
