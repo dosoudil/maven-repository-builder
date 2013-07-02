@@ -268,8 +268,8 @@ class ArtifactListBuilder:
         """
         logging.debug("Listing local repository %s prefix '%s'", directoryPath, prefix)
         artifacts = {}
-        # ^(groupId)/(artifactId)/(version)$
-        regexGAV = re.compile(r'^(.*)/([^/]*)/([^/]*)$')
+        # ^(groupId)/(artifactId)/(version)/?$
+        regexGAV = re.compile(r'^(.+)/([^/]+)/([^/]+)/?$')
         for dirname, dirnames, filenames in os.walk(directoryPath + prefix, followlinks=True):
             if filenames:
                 logging.debug("Looking for artifacts in %s", dirname)
