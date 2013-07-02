@@ -275,9 +275,18 @@ class ArtifactListBuilder:
                 #If gavPath is e.g. example/sth, then gav is None
                 if not gav:
                     continue
-                av = self._getSnapshotAwareVersionRegEx(re.escape(gav.group(2) + "-" + gav.group(3) + "."))
-                regexExt = re.compile(av + self._fileExtRegExp)
+                groupIdSlashes = gav.group(1)
+                artifactId = gav.group(2)
+                version = gav.group(3)
+
+                av = self._getSnapshotAwareVersionRegEx(re.escape(artifactId + "-" + version))
+                avc = av + "(-([^.]+))\."
+                logging.warning(avc)
+                regexExt = re.compile(av + "\." + self._fileExtRegExp)
+                classifierRegExp = re.compile(avc)
+
                 exts = set()
+                classifiers = set()
                 suffix = None
                 for filename in filenames:
                     ext = regexExt.match(filename)
@@ -290,16 +299,21 @@ class ArtifactListBuilder:
                             if suffix is None or suffix < ext.group(1):
                                 suffix = ext.group(1)
 
+                    classifierMatch = classifierRegExp.match(filename)
+                    if classifierMatch:
+                        classifiers.add(classifierMatch.group(2))
+
                 if len(exts) > 1 and "pom" in exts:
                     exts.remove("pom")
                 for ext in exts:
                     # Remove first slash if present then convert to GroupId
-                    groupId = re.sub("^/", "", gav.group(1)).replace('/', '.')
-                    mavenArtifact = MavenArtifact(groupId, gav.group(2), ext, gav.group(3))
+                    groupId = re.sub("^/", "", groupIdSlashes).replace('/', '.')
+                    mavenArtifact = MavenArtifact(groupId, artifactId, ext, version)
                     if suffix is not None:
                         mavenArtifact.snapshotVersionSuffix = suffix
                     logging.debug("Adding artifact %s", str(mavenArtifact))
-                    artifacts[mavenArtifact] = "file://" + directoryPath
+                    artifacts[mavenArtifact] = ArtifactSpec("file://" + directoryPath)
+                    artifacts[mavenArtifact].classifiers = classifiers
         return artifacts
 
     def _getSnapshotAwareVersionRegEx(self, version):
@@ -372,3 +386,6 @@ class ArtifactSpec:
 
     def __init__(self, url):
         self.url = url
+
+    def __str__(self):
+        return self.url + " " + str(self.classifiers)
