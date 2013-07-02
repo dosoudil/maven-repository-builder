@@ -156,12 +156,12 @@ class Tests(unittest.TestCase):
              "r/eu\.test\.qwe:.*:.*/", "r/eu\.trest\..*/",
              "r/com\.part[abc]\.poiu:mark:1\.0/",
              "r/ru\.uju\.mnou:jaja:1\.[23].*/"]
-        o = {"org/abc/def/qwer/1.0.1/", "org/abc/def/qwer/1.2.1/",
+        o = set(["org/abc/def/qwer/1.0.1/", "org/abc/def/qwer/1.2.1/",
              "org/abc/def/qwera/", "org/abc/ret/popo/2.0/",
              "org/abc/ret/papa/", "org/abc/zir/",
              "org/abc/zar/", "org/zui/",
              "eu/test/qwe/", "eu/trest/",
-             "com/", "ru/uju/mnou/jaja/"}
+             "com/", "ru/uju/mnou/jaja/"])
         config = Configuration()
         alb = ArtifactListBuilder(config)
         out = alb._getPrefixes(i)
