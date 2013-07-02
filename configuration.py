@@ -30,8 +30,7 @@ class Configuration:
             logging.error('You must specify a config file')
             sys.exit(1)
 
-        if "allclassifiers" in opts:
-            self.allClassifiers = opts.allclassifiers
+        self.allClassifiers = opts.allclassifiers
 
         self.loadFromFile(opts.config)
 
