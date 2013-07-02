@@ -159,16 +159,17 @@ class ArtifactListBuilder:
         prefixes = self._getPrefixes(gavPatterns)
         artifacts = {}
         for repoUrl in reversed(repoUrls):
-            protocol = maven_repo_util.urlProtocol(repoUrl)
+            urlWithSlash = maven_repo_util.slashAtTheEnd(repoUrl)
+            protocol = maven_repo_util.urlProtocol(urlWithSlash)
             if protocol == 'file':
                 for prefix in prefixes:
-                    artifacts.update(self._listLocalRepository(repoUrl[7:], prefix))
+                    artifacts.update(self._listLocalRepository(urlWithSlash[7:], prefix))
             elif protocol == '':
                 for prefix in prefixes:
-                    artifacts.update(self._listLocalRepository(repoUrl, prefix))
+                    artifacts.update(self._listLocalRepository(urlWithSlash, prefix))
             elif protocol == 'http' or protocol == 'https':
                 for prefix in prefixes:
-                    artifacts.update(self._listRemoteRepository(repoUrl, prefix))
+                    artifacts.update(self._listRemoteRepository(urlWithSlash, prefix))
             else:
                 raise "Invalid protocol!", protocol
 
