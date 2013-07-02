@@ -291,7 +291,7 @@ def somethingMatch(regexs, string):
     return False
 
 
-def _sortVersionsWithAtlas(versions, versionSortedDir="versionSorter/"):
+def _sortVersionsWithAtlas(versions, versionSorterDir="versionSorter/"):
     """
     Returns sorted list of given verisons using Atlas versionSorter
 
@@ -299,12 +299,12 @@ def _sortVersionsWithAtlas(versions, versionSortedDir="versionSorter/"):
     :param versionSorterDir: directory with version sorter maven project
     :returns: sorted versions.
     """
-    jarLocation = versionSortedDir + "target/versionSorter-1.0-SNAPSHOT.jar"
+    jarLocation = versionSorterDir + "target/versionSorter.jar"
     if not os.path.isfile(jarLocation):
         logging.debug("Version sorter jar '%s' not found, running 'mvn clean package' in '%s'",
                       jarLocation,
-                      versionSortedDir)
-        Popen(["mvn", "clean", "package"], cwd=versionSortedDir).wait()
+                      versionSorterDir)
+        Popen(["mvn", "clean", "package"], cwd=versionSorterDir).wait()
     args = ["java", "-jar", jarLocation] + versions
     ret = Popen(args, stdout=PIPE).communicate()[0].split('\n')[::-1]
     ret.remove("")
