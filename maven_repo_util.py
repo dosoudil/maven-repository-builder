@@ -196,7 +196,9 @@ def printArtifactList(artifactList):
     for gat in artifactList:
         for priority in artifactList[gat]:
             for version in artifactList[gat][priority]:
-                print artifactList[gat][priority][version] + "\t" + gat + ":" + version
+                print artifactList[gat][priority][version].url + "\t" + gat + ":" + version
+                for classifier in artifactList[gat][priority][version].classifiers:
+	               print artifactList[gat][priority][version].url + "\t" + gat + ":" + classifier + ":" + version
 
 
 def fetchFile(fileUrl, destDir):
