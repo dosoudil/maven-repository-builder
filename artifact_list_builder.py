@@ -78,19 +78,28 @@ class ArtifactListBuilder:
 
         gavsWithExts = {}
         for artifact in kojiArtifacts:
-            artifactType = re.search('.*\.(.+)$', artifact['filename']).group(1)
-            gavUrl = maven_repo_util.slashAtTheEnd(downloadRootUrl) + artifact['build_name'] + '/'\
-                     + artifact['build_version'] + '/' + artifact['build_release'] + '/maven/'
-            gavu = (artifact['group_id'], artifact['artifact_id'], artifact['version'], gavUrl)
-            gavsWithExts.setdefault(gavu, []).append(artifactType)
+            av = self._getArtifactVersionREString(artifact['artifact_id'], artifact['version'])
+            extensionRegEx = re.compile(av + "(-([^.]+))?" + "\." + self._fileExtRegExp)
+            extension = extensionRegEx.match(artifact['filename'])
+            if extension is not None:
+                if len(extension.groups()) == 3:
+                    artifactType = extension.group(3)
+                else:
+                    artifactType = extension.group(4)
+                gavUrl = maven_repo_util.slashAtTheEnd(downloadRootUrl) + artifact['build_name'] + '/'\
+                         + artifact['build_version'] + '/' + artifact['build_release'] + '/maven/'
+                gavu = (artifact['group_id'], artifact['artifact_id'], artifact['version'], gavUrl)
+                gavsWithExts.setdefault(gavu, {}).setdefault(artifactType, set())
+                if extension.group(2):
+                    gavsWithExts[gavu][artifactType].add(extension.group(2))
 
         artifacts = {}
         for gavu in gavsWithExts:
             if len(gavsWithExts[gavu]) > 1:
-                gavsWithExts[gavu].remove("pom")
+                gavsWithExts[gavu].pop("pom",None)
             for ext in gavsWithExts[gavu]:
                 mavenArtifact = MavenArtifact(gavu[0], gavu[1], ext, gavu[2])
-                artifacts[mavenArtifact] = ArtifactSpec(gavu[3])
+                artifacts[mavenArtifact] = ArtifactSpec(gavu[3],gavsWithExts[gavu][ext])
 
         return self._filterArtifactsByPatterns(artifacts, gavPatterns)
 
@@ -331,6 +340,9 @@ class ArtifactListBuilder:
         version is a snapshot version, it corrects the suffix to match even when the files are
         named with the timestamp and build number as usual in case of snapshot versions."""
         return version.replace("-SNAPSHOT", "-(SNAPSHOT|\d+\.\d+-\d+)")
+
+    def _getArtifactVersionREString(self, artifactId, version):
+        return self._getSnapshotAwareVersionRegEx(re.escape(artifactId + "-" + version))
 
     def _listArtifacts(self, urls, gavs):
         """
