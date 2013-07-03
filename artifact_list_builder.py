@@ -226,14 +226,16 @@ class ArtifactListBuilder:
         regexGAVF = re.compile(r'\./(.+)/([^/]+)/([^/]+)/([^/]+\.[^/.]+)$')
         gavsWithExts = {}
         suffixes = {}
+        classifiers = {}
         for line in out.split('\n'):
             if (line):
                 line = "./" + prefix + line[2:]
                 gavf = regexGAVF.match(line)
                 if gavf is not None:
-                    av = self._getSnapshotAwareVersionRegEx(re.escape(gavf.group(2) + "-" + gavf.group(3) + "."))
-                    regexExt = re.compile(av + self._fileExtRegExp)
-                    ext = regexExt.match(gavf.group(4))
+                    filename = gavf.group(4)
+                    av = self._getSnapshotAwareVersionRegEx(re.escape(gavf.group(2) + "-" + gavf.group(3)))
+                    regexExt = re.compile(av + "\." + self._fileExtRegExp)
+                    ext = regexExt.match(filename)
                     if ext is not None:
                         gav = (gavf.group(1).replace('/', '.'), gavf.group(2), gavf.group(3))
                         if len(ext.groups()) == 1:
@@ -244,6 +246,12 @@ class ArtifactListBuilder:
                             if gav not in suffixes or suffixes[gav] < suffix:
                                 suffixes[gav] = suffix
 
+                    avc = av + "-([^.]+)\.jar$"
+                    classifierRegExp = re.compile(avc)
+                    classifierMatch = classifierRegExp.match(filename)
+                    if classifierMatch:
+                        classifiers.setdefault(gav, set()).add(classifierMatch.group(1))
+
         for gav in gavsWithExts:
             exts = gavsWithExts[gav]
             if len(exts) > 1:
@@ -252,7 +260,10 @@ class ArtifactListBuilder:
                 mavenArtifact = MavenArtifact(gav[0], gav[1], ext, gav[2])
                 if gav in suffixes:
                     mavenArtifact.snapshotVersionSuffix = suffixes[gav]
-                artifacts[mavenArtifact] = ArtifactSpec(repoUrl)
+                if gav in classifiers:
+                    artifacts[mavenArtifact] = ArtifactSpec(repoUrl, classifiers[gav])
+                else:
+                    artifacts[mavenArtifact] = ArtifactSpec(repoUrl)
         return artifacts
 
     def _listLocalRepository(self, directoryPath, prefix=""):
@@ -280,9 +291,9 @@ class ArtifactListBuilder:
                 version = gav.group(3)
 
                 av = self._getSnapshotAwareVersionRegEx(re.escape(artifactId + "-" + version))
-                avc = av + "(-([^.]+))\."
-                logging.warning(avc)
                 regexExt = re.compile(av + "\." + self._fileExtRegExp)
+
+                avc = av + "-([^.]+)\.jar$"
                 classifierRegExp = re.compile(avc)
 
                 exts = set()
@@ -301,7 +312,7 @@ class ArtifactListBuilder:
 
                     classifierMatch = classifierRegExp.match(filename)
                     if classifierMatch:
-                        classifiers.add(classifierMatch.group(2))
+                        classifiers.add(classifierMatch.group(1))
 
                 if len(exts) > 1 and "pom" in exts:
                     exts.remove("pom")
