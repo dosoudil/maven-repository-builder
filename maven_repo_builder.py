@@ -95,7 +95,8 @@ def download(url, checksumMode, filePath=None):
                         logging.warning('Checksum problem with %s, retrying download...', url)
                         retries -= 1
                     else:
-                        logging.error('Checksum problem with %s. No chance to download the file correctly. Exiting', url)
+                        logging.error('Checksum problem with %s. No chance to download the file correctly. Exiting',
+                                      url)
                         # Raise exception instaed of sys.exit as this code is not running in the main thread
                         raise Exception("Exiting...")
                 else:
@@ -103,9 +104,13 @@ def download(url, checksumMode, filePath=None):
                 httpResponse.close()
                 return httpResponse.code
             except urllib2.HTTPError as e:
-                if retries > 1 and e.code / 100 == 5:
-                    logging.debug('Unable to download, HTTP Response code = %s, trying again...', e.code)
-                    retries -= 1
+                if retries > 1:
+                    if e.code / 100 == 5:
+                        logging.debug('Unable to download, HTTP Response code = %s, trying again...', e.code)
+                        retries -= 1
+                    else:
+                        logging.debug('Unable to download, HTTP Response code = %s.', e.code)
+                        return e.code
                 else:
                     logging.debug('Unable to download, HTTP Response code = %s, giving up...', e.code)
                     return e.code
