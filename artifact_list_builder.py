@@ -90,7 +90,7 @@ class ArtifactListBuilder:
                 gavsWithExts[gavu].remove("pom")
             for ext in gavsWithExts[gavu]:
                 mavenArtifact = MavenArtifact(gavu[0], gavu[1], ext, gavu[2])
-                artifacts[mavenArtifact] = gavu[3]
+                artifacts[mavenArtifact] = ArtifactSpec(gavu[3])
 
         return self._filterArtifactsByPatterns(artifacts, gavPatterns)
 
@@ -252,7 +252,7 @@ class ArtifactListBuilder:
                 mavenArtifact = MavenArtifact(gav[0], gav[1], ext, gav[2])
                 if gav in suffixes:
                     mavenArtifact.snapshotVersionSuffix = suffixes[gav]
-                artifacts[mavenArtifact] = repoUrl
+                artifacts[mavenArtifact] = ArtifactSpec(repoUrl)
         return artifacts
 
     def _listLocalRepository(self, directoryPath, prefix=""):
@@ -312,8 +312,7 @@ class ArtifactListBuilder:
                     if suffix is not None:
                         mavenArtifact.snapshotVersionSuffix = suffix
                     logging.debug("Adding artifact %s", str(mavenArtifact))
-                    artifacts[mavenArtifact] = ArtifactSpec("file://" + directoryPath)
-                    artifacts[mavenArtifact].classifiers = classifiers
+                    artifacts[mavenArtifact] = ArtifactSpec("file://" + directoryPath, classifiers)
         return artifacts
 
     def _getSnapshotAwareVersionRegEx(self, version):
@@ -336,7 +335,7 @@ class ArtifactListBuilder:
             for url in urls:
                 if maven_repo_util.gavExists(url, artifact):
                     #Critical section?
-                    artifacts[artifact] = url
+                    artifacts[artifact] = ArtifactSpec(url)
                     return
 
             logging.warning('artifact %s not found in any url!', artifact)
@@ -382,10 +381,9 @@ class ArtifactListBuilder:
 class ArtifactSpec:
     """Specification of artifact location and contents."""
 
-    classifiers = []
-
-    def __init__(self, url):
+    def __init__(self, url, classifiers=[]):
         self.url = url
+        self.classifiers = classifiers
 
     def __str__(self):
         return self.url + " " + str(self.classifiers)
