@@ -45,9 +45,9 @@ Maven Repository Builder Usage
                             "local-maven-repository" will be used.
       -a CLASSIFIERS
                             Colon-separated list of additional classifiers to download.
-                            By default "sources" will be used. It is possible to use *
-                            to require all available classifiers (works only when artifact
-                            list is generated from config).
+                            By default "sources" will be used. It is possible to use
+                            "__all__" to request all available classifiers (works only when
+                            artifact list is generated from config).
       -r REPO_FILENAME
                             Zip teh created repository in a file with provided name
       -s CHECKSUM_MODE

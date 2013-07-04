@@ -68,37 +68,40 @@ def download(url, checksumMode, filePath=None):
 
                     if checksumMode in (_ChecksumMode.download, _ChecksumMode.check):
                         checksumRetries = 3
-                        checksumDownloaded = False
-                        while checksumRetries > 0 and not checksumDownloaded:
+                        md5Downloaded = False
+                        while checksumRetries > 0 and not md5Downloaded:
                             retries -= 1
                             logging.debug('Downloading MD5 checksum from %s', url + ".md5")
                             csHttpResponse = urllib2.urlopen(urllib2.Request(url + ".md5"))
-                            checksumFilePath = filePath + ".md5"
-                            with open(checksumFilePath, 'wb') as localfile:
+                            md5FilePath = filePath + ".md5"
+                            with open(md5FilePath, 'wb') as localfile:
                                 shutil.copyfileobj(csHttpResponse, localfile)
                             if (csHttpResponse.code != 200):
                                 logging.warning('Unable to download MD5 checksum, http code: %s', csHttpResponse.code)
-                            elif os.path.getsize(checksumFilePath) != 32:
+                            elif os.path.getsize(md5FilePath) != 32:
                                 logging.warning('Downloaded MD5 checksum have %d bytes instead of 32 bytes',
-                                                os.path.getsize(checksumFilePath))
+                                                os.path.getsize(md5FilePath))
                             else:
-                                checksumDownloaded = True
+                                md5Downloaded = True
 
+                        sha1Downloaded = False
+                        while checksumRetries > 0 and not sha1Downloaded:
+                            retries -= 1
                             logging.debug('Downloading SHA1 checksum from %s', url + ".sha1")
                             csHttpResponse = urllib2.urlopen(urllib2.Request(url + ".sha1"))
-                            checksumFilePath = filePath + ".sha1"
-                            with open(checksumFilePath, 'wb') as localfile:
+                            sha1FilePath = filePath + ".sha1"
+                            with open(sha1FilePath, 'wb') as localfile:
                                 shutil.copyfileobj(csHttpResponse, localfile)
                             if (csHttpResponse.code != 200):
                                 logging.warning('Unable to download SHA1 checksum, http code: %s', csHttpResponse.code)
-                            elif os.path.getsize(checksumFilePath) != 40:
+                            elif os.path.getsize(sha1FilePath) != 40:
                                 logging.warning('Downloaded SHA1 checksum have %d bytes instead of 40 bytes',
-                                                os.path.getsize(checksumFilePath))
+                                                os.path.getsize(sha1FilePath))
                             else:
-                                checksumDownloaded = True
-                        if not checksumDownloaded:
-                            logging.error('Problem downloading checksum. No chance to download the file correctly.'
-                                          ' Exiting')
+                                sha1Downloaded = True
+
+                        if not md5Downloaded or not sha1Downloaded:
+                            logging.warning('No chance to download checksums to %s correctly.', filePath)
                             # Raise exception instaed of sys.exit as this code is not running in the main thread
                             raise Exception("Exiting...")
 
@@ -350,8 +353,8 @@ def main():
             help='Local output directory for the new repository')
     cliOptParser.add_option('-a', '--classifiers',
             default='sources',
-            help='Colon-separated list of additional classifiers to download. It is possible to use * to '
-                 'require all available classifiers (works only when artifact list is generated from config).')
+            help='Colon-separated list of additional classifiers to download. It is possible to use "__all__" to '
+                 'request all available classifiers (works only when artifact list is generated from config).')
     cliOptParser.add_option('-s', '--checksummode',
             default=_ChecksumMode.generate,
             choices=(_ChecksumMode.generate, _ChecksumMode.download, _ChecksumMode.check),
