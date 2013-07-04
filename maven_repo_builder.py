@@ -99,12 +99,14 @@ def download(url, checksumMode, filePath=None):
         retries = 3
         checksumsOk = False
         while retries > 0 and not checksumsOk:
+            retries -= 1
             try:
                 httpResponse = urllib2.urlopen(urllib2.Request(url))
                 if (httpResponse.code == 200):
                     filePath = filePath or getFileName(url, httpResponse)
                     with open(filePath, 'wb') as localfile:
                         shutil.copyfileobj(httpResponse, localfile)
+                    httpResponse.close()
 
                     if checksumMode in (_ChecksumMode.download, _ChecksumMode.check):
                         md5Downloaded = _downloadChecksum(url, filePath, "md5", 32)
@@ -120,9 +122,9 @@ def download(url, checksumMode, filePath=None):
 
                     if checksumsOk:
                         logging.debug('Download of %s complete', filePath)
-                    elif retries > 1:
+                        return httpResponse.code
+                    elif retries > 0:
                         logging.warning('Checksum problem with %s, trying again...', url)
-                        retries -= 1
                         os.remove(filePath)
                         if os.path.exists(filePath + ".md5"):
                             os.remove(filePath + ".md5")
@@ -134,14 +136,17 @@ def download(url, checksumMode, filePath=None):
                         # Raise exception instaed of sys.exit as this code is not running in the main thread
                         raise Exception("Exiting...")
                 else:
-                    logging.warning('Unable to download, http code: %s', httpResponse.code)
-                httpResponse.close()
-                return httpResponse.code
+                    httpResponse.close()
+                    if retries:
+                        logging.warning('Unable to download, HTTP Response code: %s. Trying again...',
+                                        httpResponse.code)
+                    else:
+                        logging.warning('Unable to download, HTTP Response code: %s. Exiting', httpResponse.code)
+                        raise Exception("Exiting...")
             except urllib2.HTTPError as err:
-                if retries > 1:
+                if retries > 0:
                     if err.code / 100 == 5:
                         logging.debug('Unable to download, HTTP Response code = %s, trying again...', err.code)
-                        retries -= 1
                     else:
                         logging.debug('Unable to download, HTTP Response code = %s.', err.code)
                         return err.code
