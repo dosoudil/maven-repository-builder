@@ -96,10 +96,10 @@ class ArtifactListBuilder:
         artifacts = {}
         for gavu in gavsWithExts:
             if len(gavsWithExts[gavu]) > 1:
-                gavsWithExts[gavu].pop("pom",None)
+                gavsWithExts[gavu].pop("pom", None)
             for ext in gavsWithExts[gavu]:
                 mavenArtifact = MavenArtifact(gavu[0], gavu[1], ext, gavu[2])
-                artifacts[mavenArtifact] = ArtifactSpec(gavu[3],gavsWithExts[gavu][ext])
+                artifacts[mavenArtifact] = ArtifactSpec(gavu[3], gavsWithExts[gavu][ext])
 
         return self._filterArtifactsByPatterns(artifacts, gavPatterns)
 
@@ -241,12 +241,12 @@ class ArtifactListBuilder:
                 line = "./" + prefix + line[2:]
                 gavf = regexGAVF.match(line)
                 if gavf is not None:
+                    gav = (gavf.group(1).replace('/', '.'), gavf.group(2), gavf.group(3))
                     filename = gavf.group(4)
                     av = self._getSnapshotAwareVersionRegEx(re.escape(gavf.group(2) + "-" + gavf.group(3)))
                     regexExt = re.compile(av + "\." + self._fileExtRegExp)
                     ext = regexExt.match(filename)
                     if ext is not None:
-                        gav = (gavf.group(1).replace('/', '.'), gavf.group(2), gavf.group(3))
                         if len(ext.groups()) == 1:
                             gavsWithExts.setdefault(gav, set()).add(ext.group(1))
                         else:
