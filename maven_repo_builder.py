@@ -67,10 +67,10 @@ def download(url, checksumMode, filePath=None):
                         shutil.copyfileobj(httpResponse, localfile)
 
                     if checksumMode in (_ChecksumMode.download, _ChecksumMode.check):
-                        checksumRetries = 3
+                        md5Retries = 3
                         md5Downloaded = False
-                        while checksumRetries > 0 and not md5Downloaded:
-                            retries -= 1
+                        while md5Retries > 0 and not md5Downloaded:
+                            md5Retries -= 1
                             logging.debug('Downloading MD5 checksum from %s', url + ".md5")
                             csHttpResponse = urllib2.urlopen(urllib2.Request(url + ".md5"))
                             md5FilePath = filePath + ".md5"
@@ -84,9 +84,10 @@ def download(url, checksumMode, filePath=None):
                             else:
                                 md5Downloaded = True
 
+                        sha1Retries = 3
                         sha1Downloaded = False
-                        while checksumRetries > 0 and not sha1Downloaded:
-                            retries -= 1
+                        while sha1Retries > 0 and not sha1Downloaded:
+                            sha1Retries -= 1
                             logging.debug('Downloading SHA1 checksum from %s', url + ".sha1")
                             csHttpResponse = urllib2.urlopen(urllib2.Request(url + ".sha1"))
                             sha1FilePath = filePath + ".sha1"
@@ -102,8 +103,6 @@ def download(url, checksumMode, filePath=None):
 
                         if not md5Downloaded or not sha1Downloaded:
                             logging.warning('No chance to download checksums to %s correctly.', filePath)
-                            # Raise exception instaed of sys.exit as this code is not running in the main thread
-                            raise Exception("Exiting...")
 
                     if checksumMode == _ChecksumMode.check:
                         if maven_repo_util.checkChecksum(filePath):
