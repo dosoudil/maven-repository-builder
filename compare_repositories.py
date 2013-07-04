@@ -30,7 +30,10 @@ def compareArtifacts(localRepoPath, remoteUrl):
             # Attempt to download remote artifact
             tempDownloadFile = os.path.join(tempDownloadDir, relRepoPath)
             remoteFileUrl = remoteUrl + "/" + relRepoPath
-            maven_repo_builder.download(remoteFileUrl, maven_repo_builder._ChecksumMode.generate, tempDownloadFile)
+            try:
+                maven_repo_builder.download(remoteFileUrl, maven_repo_builder._ChecksumMode.generate, tempDownloadFile)
+            except Exception:
+                logging.error("An error occured while downloading %s", remoteFileUrl)
 
             # Compare the local and remote artifact checksums
             if os.path.exists(tempDownloadFile):

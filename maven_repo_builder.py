@@ -31,22 +31,42 @@ class _ChecksumMode:
 
 
 def _downloadChecksum(url, filePath, checksumType, expectedSize, retries=3):
+    """
+    Download specified checksum from given orl to filepath. Both these inputs include filename of the original file
+    to which the checksum belongs.
+
+    :param url: url of the original file
+    :param filePath: local filepath where the original file is stored
+    :param checksumType: the type of downloaded checksum, e.g. md5 or sha1
+    :param expectedSize: expected filesize of the downloaded file
+    :param retries: number of retries when a strange error occurs or filesize doesn't match the expected one'
+    """
     csDownloaded = False
     while retries > 0 and not csDownloaded:
         retries -= 1
-        logging.debug('Downloading %s checksum from %s', checksumType.upper(), url + "." + checksumType.lower())
-        csHttpResponse = urllib2.urlopen(urllib2.Request(url + "." + checksumType.lower()))
-        csFilePath = filePath + "." + checksumType.lower()
-        with open(csFilePath, 'wb') as localfile:
-            shutil.copyfileobj(csHttpResponse, localfile)
-        if (csHttpResponse.code != 200):
-            logging.warning('Unable to download %s checksum, http code: %s', checksumType.upper(), csHttpResponse.code)
-        elif os.path.getsize(csFilePath) != expectedSize:
-            logging.warning('Downloaded %s checksum have %d bytes instead of %s bytes', checksumType.upper(),
-                            expectedSize, os.path.getsize(csFilePath))
-            os.remove(csFilePath)
-        else:
-            csDownloaded = True
+        csUrl = url + "." + checksumType.lower()
+        logging.debug('Downloading %s checksum from %s', checksumType.upper(), csUrl)
+        try:
+            csHttpResponse = urllib2.urlopen(urllib2.Request(csUrl))
+            csFilePath = filePath + "." + checksumType.lower()
+            with open(csFilePath, 'wb') as localfile:
+                shutil.copyfileobj(csHttpResponse, localfile)
+            if (csHttpResponse.code != 200):
+                logging.warning('Unable to download checksum from %s, error code: %s', csUrl, csHttpResponse.code)
+                if csHttpResponse.code / 100 != 5:  # if other than 5xx error occurs then try again
+                    retries = 0
+            elif os.path.getsize(csFilePath) != expectedSize:
+                logging.warning('Downloaded %s checksum have %d bytes instead of %s bytes', checksumType.upper(),
+                                expectedSize, os.path.getsize(csFilePath))
+                os.remove(csFilePath)
+            else:
+                csDownloaded = True
+        except urllib2.HTTPError as err:
+                logging.warning('Unable to download checksum from %s, error code: %s', csUrl, err.code)
+                if csHttpResponse.code / 100 != 5:  # if other than 5xx error occurs then try again
+                    retries = 0
+        except urllib2.URLError as err:
+            logging.warning('Unknown error while downloading checksum from %s: %s', csUrl, str(err))
     return csDownloaded
 
 
@@ -101,8 +121,13 @@ def download(url, checksumMode, filePath=None):
                     if checksumsOk:
                         logging.debug('Download of %s complete', filePath)
                     elif retries > 1:
-                        logging.warning('Checksum problem with %s, retrying download...', url)
+                        logging.warning('Checksum problem with %s, trying again...', url)
                         retries -= 1
+                        os.remove(filePath)
+                        if os.path.exists(filePath + ".md5"):
+                            os.remove(filePath + ".md5")
+                        if os.path.exists(filePath + ".sha1"):
+                            os.remove(filePath + ".sha1")
                     else:
                         logging.error('Checksum problem with %s. No chance to download the file correctly. Exiting',
                                       url)
@@ -112,17 +137,17 @@ def download(url, checksumMode, filePath=None):
                     logging.warning('Unable to download, http code: %s', httpResponse.code)
                 httpResponse.close()
                 return httpResponse.code
-            except urllib2.HTTPError as e:
+            except urllib2.HTTPError as err:
                 if retries > 1:
-                    if e.code / 100 == 5:
-                        logging.debug('Unable to download, HTTP Response code = %s, trying again...', e.code)
+                    if err.code / 100 == 5:
+                        logging.debug('Unable to download, HTTP Response code = %s, trying again...', err.code)
                         retries -= 1
                     else:
-                        logging.debug('Unable to download, HTTP Response code = %s.', e.code)
-                        return e.code
+                        logging.debug('Unable to download, HTTP Response code = %s.', err.code)
+                        return err.code
                 else:
-                    logging.debug('Unable to download, HTTP Response code = %s, giving up...', e.code)
-                    return e.code
+                    logging.debug('Unable to download, HTTP Response code = %s, giving up...', err.code)
+                    return err.code
     except urllib2.URLError as e:
         logging.error('Unable to download, URLError: %s', e.reason)
     except httplib.HTTPException as e:
