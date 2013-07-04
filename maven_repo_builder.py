@@ -67,21 +67,37 @@ def download(url, checksumMode, filePath=None):
                         shutil.copyfileobj(httpResponse, localfile)
 
                     if checksumMode in (_ChecksumMode.download, _ChecksumMode.check):
-                        logging.debug('Downloading MD5 checksum from %s', url + ".md5")
-                        csHttpResponse = urllib2.urlopen(urllib2.Request(url + ".md5"))
-                        checksumFilePath = filePath + ".md5"
-                        with open(checksumFilePath, 'wb') as localfile:
-                            shutil.copyfileobj(csHttpResponse, localfile)
-                        if (csHttpResponse.code != 200):
-                            logging.warning('Unable to download MD5 checksum, http code: %s', csHttpResponse.code)
+                        checksumRetries = 3
+                        checksumDownloaded = False;
+                        while retries > 0 and not checksumDownloaded:
+                            retries -= 1
+                            logging.debug('Downloading MD5 checksum from %s', url + ".md5")
+                            csHttpResponse = urllib2.urlopen(urllib2.Request(url + ".md5"))
+                            checksumFilePath = filePath + ".md5"
+                            with open(checksumFilePath, 'wb') as localfile:
+                                shutil.copyfileobj(csHttpResponse, localfile)
+                            if (csHttpResponse.code != 200):
+                                logging.warning('Unable to download MD5 checksum, http code: %s', csHttpResponse.code)
+                            elif os.path.getsize(checksumFilePath) != 32:
+                                logging.warning('Downloaded MD5 checksum have %d bytes instead of 32 bytes', os.path.getsize(checksumFilePath))
+                            else:
+                                checksumDownloaded = True;
 
-                        logging.debug('Downloading SHA1 checksum from %s', url + ".sha1")
-                        csHttpResponse = urllib2.urlopen(urllib2.Request(url + ".sha1"))
-                        checksumFilePath = filePath + ".sha1"
-                        with open(checksumFilePath, 'wb') as localfile:
-                            shutil.copyfileobj(csHttpResponse, localfile)
-                        if (csHttpResponse.code != 200):
-                            logging.warning('Unable to download SHA1 checksum, http code: %s', csHttpResponse.code)
+                            logging.debug('Downloading SHA1 checksum from %s', url + ".sha1")
+                            csHttpResponse = urllib2.urlopen(urllib2.Request(url + ".sha1"))
+                            checksumFilePath = filePath + ".sha1"
+                            with open(checksumFilePath, 'wb') as localfile:
+                                shutil.copyfileobj(csHttpResponse, localfile)
+                            if (csHttpResponse.code != 200):
+                                logging.warning('Unable to download SHA1 checksum, http code: %s', csHttpResponse.code)
+                            elif os.path.getsize(checksumFilePath) != 40:
+                                logging.warning('Downloaded SHA1 checksum have %d bytes instead of 40 bytes', os.path.getsize(checksumFilePath))
+                            else:
+                                checksumDownloaded = True;
+                        if not checksumDownloaded:
+                            logging.error('Problem downloading checksum. No chance to download the file correctly. Exiting')
+                            # Raise exception instaed of sys.exit as this code is not running in the main thread
+                            raise Exception("Exiting...")
 
                     if checksumMode == _ChecksumMode.check:
                         if maven_repo_util.checkChecksum(filePath):
