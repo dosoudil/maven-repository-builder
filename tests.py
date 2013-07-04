@@ -179,6 +179,11 @@ class Tests(unittest.TestCase):
         out = alb._getPrefixes(i)
         self.assertEqual(out, o)
 
+        i = []
+        o = set([""])
+        out = alb._getPrefixes(i)
+        self.assertEqual(out, o)
+
     def test_filter_multiple_versions(self):
         config = Configuration()
         config.singleVersion = True
