@@ -96,10 +96,10 @@ class MavenArtifact:
 
     def getArtifactFilename(self):
         """Returns the filename of the artifact"""
-        filename = self.getBaseFilename()
         if (self.classifier):
-            filename += '-' + self.classifier
-        return filename + '.' + self.artifactType
+            return self.getClassifierFilename(self.classifier)
+        else:
+            return self.getBaseFilename() + '.' + self.artifactType
 
     def getArtifactFilepath(self):
         """Return the path to the artifact file"""
@@ -115,7 +115,7 @@ class MavenArtifact:
 
     def getSourcesFilename(self):
         """Returns the filename of the sources artifact"""
-        return self.getBaseFilename() + '-sources.jar'
+        return self.getClassifierFilename('sources')
 
     def getSourcesFilepath(self):
         """Return the path to the artifact file"""

@@ -125,7 +125,7 @@ def download(url, checksumMode, filePath=None):
 def downloadFile(fileUrl, fileLocalPath, checksumMode):
     """Downloads file from the given URL to local path if the path does not exist yet."""
     if os.path.exists(fileLocalPath):
-        logging.debug("Artifact already downloaded: " + fileUrl)
+        logging.debug("Artifact already downloaded: %s", fileUrl)
     else:
         returnCode = download(fileUrl, checksumMode, fileLocalPath)
         if (returnCode == 404):
@@ -154,18 +154,18 @@ def downloadArtifacts(remoteRepoUrl, localRepoDir, artifact, classifiers, checks
         artifactLocalPath = os.path.join(localRepoDir, artifact.getArtifactFilepath())
         downloadFile(artifactUrl, artifactLocalPath, checksumMode)
 
-        # Download pom
-        if artifact.getArtifactFilename() != artifact.getPomFilename():
-            artifactPomUrl = remoteRepoUrl + '/' + artifact.getPomFilepath()
-            artifactPomLocalPath = os.path.join(localRepoDir, artifact.getPomFilepath())
-            downloadFile(artifactPomUrl, artifactPomLocalPath, checksumMode)
+        if not artifact.getClassifier():
+            # Download pom if the main type is not pom
+            if artifact.getArtifactFilename() != artifact.getPomFilename():
+                artifactPomUrl = remoteRepoUrl + artifact.getPomFilepath()
+                artifactPomLocalPath = os.path.join(localRepoDir, artifact.getPomFilepath())
+                downloadFile(artifactPomUrl, artifactPomLocalPath, checksumMode)
 
-        # Download additional classifiers
-        if artifact.getArtifactType() != 'pom' and not artifact.getClassifier():
-            for classifier in classifiers:
-                artifactClassifierUrl = remoteRepoUrl + '/' + artifact.getClassifierFilepath(classifier)
-                artifactClassifierLocalPath = os.path.join(localRepoDir, artifact.getClassifierFilepath(classifier))
-                downloadFile(artifactClassifierUrl, artifactClassifierLocalPath, checksumMode)
+                # Download additional classifiers (only for non-pom artifacts)
+                for classifier in classifiers:
+                    artifactClassifierUrl = remoteRepoUrl + artifact.getClassifierFilepath(classifier)
+                    artifactClassifierLocalPath = os.path.join(localRepoDir, artifact.getClassifierFilepath(classifier))
+                    downloadFile(artifactClassifierUrl, artifactClassifierLocalPath, checksumMode)
     except Exception as ex:
         logging.error("Error while downloading artifact %s: %s", artifact, str(ex))
         errors.put(ex)
@@ -194,32 +194,32 @@ def copyFile(filePath, fileLocalPath, checksumMode):
 
 def copyArtifact(remoteRepoPath, localRepoDir, artifact, classifiers, checksumMode):
     """Copy artifact from a repository on the local file system along with pom and source jar"""
-    # Download main artifact
+    # Copy main artifact
     artifactPath = os.path.join(remoteRepoPath, artifact.getArtifactFilepath())
     artifactLocalPath = os.path.join(localRepoDir, artifact.getArtifactFilepath())
     if os.path.exists(artifactPath) and not os.path.exists(artifactLocalPath):
         artifactLocalDir = os.path.join(localRepoDir, artifact.getDirPath())
         if not os.path.exists(artifactLocalDir):
             os.makedirs(artifactLocalDir)
-        logging.info('Copying file: ' + artifactPath)
+        logging.info('Copying file: %s', artifactPath)
         copyFile(artifactPath, artifactLocalPath, checksumMode)
 
-    # Download pom
-    if artifact.getArtifactFilename() != artifact.getPomFilename():
-        artifactPomPath = os.path.join(remoteRepoPath, artifact.getPomFilepath())
-        artifactPomLocalPath = os.path.join(localRepoDir, artifact.getPomFilepath())
-        if os.path.exists(artifactPomPath) and not os.path.exists(artifactPomLocalPath):
-            logging.info('Copying file: ' + artifactPomPath)
-            copyFile(artifactPomPath, artifactPomLocalPath, checksumMode)
+    if not artifact.getClassifier():
+        # Copy pom if the main type is not pom
+        if artifact.getArtifactFilename() != artifact.getPomFilename():
+            artifactPomPath = os.path.join(remoteRepoPath, artifact.getPomFilepath())
+            artifactPomLocalPath = os.path.join(localRepoDir, artifact.getPomFilepath())
+            if os.path.exists(artifactPomPath) and not os.path.exists(artifactPomLocalPath):
+                logging.info('Copying file: %s', artifactPomPath)
+                copyFile(artifactPomPath, artifactPomLocalPath, checksumMode)
 
-    # Download additional classifiers
-    if artifact.getArtifactType() != 'pom' and not artifact.getClassifier():
-        for classifier in classifiers:
-            artifactClassifierPath = os.path.join(remoteRepoPath, artifact.getClassifierFilepath(classifier))
-            artifactClassifierLocalPath = os.path.join(localRepoDir, artifact.getClassifierFilepath(classifier))
-            if os.path.exists(artifactClassifierPath) and not os.path.exists(artifactClassifierLocalPath):
-                logging.info('Copying file: ' + artifactClassifierPath)
-                copyFile(artifactClassifierPath, artifactClassifierLocalPath, checksumMode)
+            # Copy additional classifiers
+            for classifier in classifiers:
+                artifactClassifierPath = os.path.join(remoteRepoPath, artifact.getClassifierFilepath(classifier))
+                artifactClassifierLocalPath = os.path.join(localRepoDir, artifact.getClassifierFilepath(classifier))
+                if os.path.exists(artifactClassifierPath) and not os.path.exists(artifactClassifierLocalPath):
+                    logging.info('Copying file: %s', artifactClassifierPath)
+                    copyFile(artifactClassifierPath, artifactClassifierLocalPath, checksumMode)
 
 
 def depListToArtifactList(depList):
