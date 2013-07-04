@@ -68,8 +68,8 @@ def download(url, checksumMode, filePath=None):
 
                     if checksumMode in (_ChecksumMode.download, _ChecksumMode.check):
                         checksumRetries = 3
-                        checksumDownloaded = False;
-                        while retries > 0 and not checksumDownloaded:
+                        checksumDownloaded = False
+                        while checksumRetries > 0 and not checksumDownloaded:
                             retries -= 1
                             logging.debug('Downloading MD5 checksum from %s', url + ".md5")
                             csHttpResponse = urllib2.urlopen(urllib2.Request(url + ".md5"))
@@ -79,9 +79,10 @@ def download(url, checksumMode, filePath=None):
                             if (csHttpResponse.code != 200):
                                 logging.warning('Unable to download MD5 checksum, http code: %s', csHttpResponse.code)
                             elif os.path.getsize(checksumFilePath) != 32:
-                                logging.warning('Downloaded MD5 checksum have %d bytes instead of 32 bytes', os.path.getsize(checksumFilePath))
+                                logging.warning('Downloaded MD5 checksum have %d bytes instead of 32 bytes',
+                                                os.path.getsize(checksumFilePath))
                             else:
-                                checksumDownloaded = True;
+                                checksumDownloaded = True
 
                             logging.debug('Downloading SHA1 checksum from %s', url + ".sha1")
                             csHttpResponse = urllib2.urlopen(urllib2.Request(url + ".sha1"))
@@ -91,11 +92,13 @@ def download(url, checksumMode, filePath=None):
                             if (csHttpResponse.code != 200):
                                 logging.warning('Unable to download SHA1 checksum, http code: %s', csHttpResponse.code)
                             elif os.path.getsize(checksumFilePath) != 40:
-                                logging.warning('Downloaded SHA1 checksum have %d bytes instead of 40 bytes', os.path.getsize(checksumFilePath))
+                                logging.warning('Downloaded SHA1 checksum have %d bytes instead of 40 bytes',
+                                                os.path.getsize(checksumFilePath))
                             else:
-                                checksumDownloaded = True;
+                                checksumDownloaded = True
                         if not checksumDownloaded:
-                            logging.error('Problem downloading checksum. No chance to download the file correctly. Exiting')
+                            logging.error('Problem downloading checksum. No chance to download the file correctly.'
+                                          ' Exiting')
                             # Raise exception instaed of sys.exit as this code is not running in the main thread
                             raise Exception("Exiting...")
 
@@ -229,7 +232,7 @@ def copyArtifact(remoteRepoPath, localRepoDir, artifact, classifiers, checksumMo
                 logging.info('Copying file: %s', artifactPomPath)
                 copyFile(artifactPomPath, artifactPomLocalPath, checksumMode)
 
-            # Copy additional classifiers
+            # Copy additional classifiers (only for non-pom artifacts)
             for classifier in classifiers:
                 artifactClassifierPath = os.path.join(remoteRepoPath, artifact.getClassifierFilepath(classifier))
                 artifactClassifierLocalPath = os.path.join(localRepoDir, artifact.getClassifierFilepath(classifier))
@@ -371,7 +374,7 @@ def main():
     # Set the log level
     maven_repo_util.setLogLevel(options.loglevel, options.logfile)
 
-    if not options.classifiers or options.classifiers == '*':
+    if not options.classifiers or options.classifiers == '__all__':
         classifiers = []
     else:
         classifiers = options.classifiers.split(":")

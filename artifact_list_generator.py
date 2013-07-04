@@ -54,7 +54,7 @@ def generateArtifactList(options):
       L artifacts (list of MavenArtifact)
     """
 
-    options.allclassifiers = (options.classifiers == '*')
+    options.allclassifiers = (options.classifiers == '__all__')
 
     artifactList = _generateArtifactList(options)
     #build sane structure - url to MavenArtifact list
