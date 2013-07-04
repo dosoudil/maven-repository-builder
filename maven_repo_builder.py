@@ -53,7 +53,7 @@ def _downloadChecksum(url, filePath, checksumType, expectedSize, retries=3):
                 shutil.copyfileobj(csHttpResponse, localfile)
             if (csHttpResponse.code != 200):
                 logging.warning('Unable to download checksum from %s, error code: %s', csUrl, csHttpResponse.code)
-                if csHttpResponse.code / 100 != 5:  # if other than 5xx error occurs then try again
+                if csHttpResponse.code / 100 != 5:  # if other than 5xx error occurs do not try again
                     retries = 0
             elif os.path.getsize(csFilePath) != expectedSize:
                 logging.warning('Downloaded %s checksum have %d bytes instead of %s bytes', checksumType.upper(),
@@ -63,7 +63,7 @@ def _downloadChecksum(url, filePath, checksumType, expectedSize, retries=3):
                 csDownloaded = True
         except urllib2.HTTPError as err:
                 logging.warning('Unable to download checksum from %s, error code: %s', csUrl, err.code)
-                if csHttpResponse.code / 100 != 5:  # if other than 5xx error occurs then try again
+                if err.code / 100 != 5:  # if other than 5xx error occurs do not try again
                     retries = 0
         except urllib2.URLError as err:
             logging.warning('Unknown error while downloading checksum from %s: %s', csUrl, str(err))
