@@ -97,7 +97,7 @@ class MavenArtifact:
     def getArtifactFilename(self):
         """Returns the filename of the artifact"""
         if (self.classifier):
-            return self.getClassifierFilename(self.classifier)
+            return self.getBaseFilename() + '-' + self.classifier + '.' + self.artifactType
         else:
             return self.getBaseFilename() + '.' + self.artifactType
 
