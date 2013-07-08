@@ -20,7 +20,6 @@ class ArtifactListBuilder:
             L artifact specification (repo url string and list of found classifiers)
     """
 
-    _fileExtRegExp = "((?:tar\.)?[^.]+)$"
 
     def __init__(self, configuration):
         self.configuration = configuration
@@ -76,30 +75,30 @@ class ArtifactListBuilder:
         kojiSession = koji.ClientSession(kojiUrl)
         kojiArtifacts = kojiSession.getLatestMavenArchives(tagName)
 
-        gavsWithExts = {}
+        gavuExtClass = {} # { (g,a,v,url): {ext: set([class])} }
+        suffixes = {} # { (g,a,v,url): suffix }
         for artifact in kojiArtifacts:
-            av = self._getArtifactVersionREString(artifact['artifact_id'], artifact['version'])
-            extensionRegEx = re.compile(av + "(-([^.]+))?" + "\." + self._fileExtRegExp)
-            extension = extensionRegEx.match(artifact['filename'])
-            if extension is not None:
-                if len(extension.groups()) == 3:
-                    artifactType = extension.group(3)
-                else:
-                    artifactType = extension.group(4)
+            groupId = artifact['group_id']
+            artifactId = artifact['artifact_id']
+            version = artifact['version']
+            filename = artifact['filename']
+
+            (extsAndClass, suffix) = self._getExtensionsAndClassifiers(artifactId, version, [filename])
+
+            if extsAndClass:
                 gavUrl = maven_repo_util.slashAtTheEnd(downloadRootUrl) + artifact['build_name'] + '/'\
                          + artifact['build_version'] + '/' + artifact['build_release'] + '/maven/'
-                gavu = (artifact['group_id'], artifact['artifact_id'], artifact['version'], gavUrl)
-                gavsWithExts.setdefault(gavu, {}).setdefault(artifactType, set())
-                if extension.group(2):
-                    gavsWithExts[gavu][artifactType].add(extension.group(2))
+                gavu = (groupId, artifactId, version, gavUrl)
+
+                gavuExtClass.setdefault(gavu, {})
+                self._updateExtensionsAndClassifiers(gavuExtClass[gavu], extsAndClass)
+
+                if suffix is not None and (gavu not in suffixes or suffixes[gavu] < suffix):
+                    suffixes[gavu] = suffix
 
         artifacts = {}
-        for gavu in gavsWithExts:
-            if len(gavsWithExts[gavu]) > 1:
-                gavsWithExts[gavu].pop("pom", None)
-            for ext in gavsWithExts[gavu]:
-                mavenArtifact = MavenArtifact(gavu[0], gavu[1], ext, gavu[2])
-                artifacts[mavenArtifact] = ArtifactSpec(gavu[3], gavsWithExts[gavu][ext])
+        for gavu in gavuExtClass:
+            self._addArtifact(artifacts, gavu[0], gavu[1], gavu[2], gavuExtClass[gavu], suffixes.get(gavu), gavu[3])
 
         return self._filterArtifactsByPatterns(artifacts, gavPatterns)
 
@@ -227,52 +226,36 @@ class ArtifactListBuilder:
 
     def _listRemoteRepository(self, repoUrl, prefix=""):
         logging.debug("Listing remote repository %s prefix '%s'", repoUrl, prefix)
-        artifacts = {}
         (out, _) = Popen(r'lftp -c "set ssl:verify-certificate no ; open ' + repoUrl + prefix
                          + ' ; find  ."', stdout=PIPE, shell=True).communicate()
 
         # ^./(groupId)/(artifactId)/(version)/(filename)$
         regexGAVF = re.compile(r'\./(.+)/([^/]+)/([^/]+)/([^/]+\.[^/.]+)$')
-        gavsWithExts = {}
-        suffixes = {}
-        classifiers = {}
+        gavExtClass = {} # { (g,a,v): {ext: set([class])} }
+        suffixes = {} # { (g,a,v): suffix }
         for line in out.split('\n'):
             if (line):
                 line = "./" + prefix + line[2:]
                 gavf = regexGAVF.match(line)
                 if gavf is not None:
-                    gav = (gavf.group(1).replace('/', '.'), gavf.group(2), gavf.group(3))
+                    groupId = gavf.group(1).replace('/', '.')
+                    artifactId = gavf.group(2)
+                    version = gavf.group(3)
                     filename = gavf.group(4)
-                    av = self._getSnapshotAwareVersionRegEx(re.escape(gavf.group(2) + "-" + gavf.group(3)))
-                    regexExt = re.compile(av + "\." + self._fileExtRegExp)
-                    ext = regexExt.match(filename)
-                    if ext is not None:
-                        if len(ext.groups()) == 1:
-                            gavsWithExts.setdefault(gav, set()).add(ext.group(1))
-                        else:
-                            gavsWithExts.setdefault(gav, set()).add(ext.group(2))
-                            suffix = ext.group(1)
-                            if gav not in suffixes or suffixes[gav] < suffix:
-                                suffixes[gav] = suffix
 
-                    avc = av + "-([^.]+)\.jar$"
-                    classifierRegExp = re.compile(avc)
-                    classifierMatch = classifierRegExp.match(filename)
-                    if classifierMatch:
-                        classifiers.setdefault(gav, set()).add(classifierMatch.group(1))
+                    (extsAndClass, suffix) = self._getExtensionsAndClassifiers(artifactId, version, [filename])
 
-        for gav in gavsWithExts:
-            exts = gavsWithExts[gav]
-            if len(exts) > 1:
-                exts.remove("pom")
-            for ext in exts:
-                mavenArtifact = MavenArtifact(gav[0], gav[1], ext, gav[2])
-                if gav in suffixes:
-                    mavenArtifact.snapshotVersionSuffix = suffixes[gav]
-                if gav in classifiers:
-                    artifacts[mavenArtifact] = ArtifactSpec(repoUrl, classifiers[gav])
-                else:
-                    artifacts[mavenArtifact] = ArtifactSpec(repoUrl)
+                    gav = (groupId, artifactId, version)
+
+                    gavExtClass.setdefault(gav, {})
+                    self._updateExtensionsAndClassifiers(gavExtClass[gav], extsAndClass)
+
+                    if suffix is not None and (gav not in suffixes or suffixes[gav] < suffix):
+                        suffixes[gav] = suffix
+
+        artifacts = {}
+        for gav in gavExtClass:
+            self._addArtifact(artifacts, gav[0], gav[1], gav[2], gavExtClass[gav], suffixes.get(gav), repoUrl)
         return artifacts
 
     def _listLocalRepository(self, directoryPath, prefix=""):
@@ -295,54 +278,67 @@ class ArtifactListBuilder:
                 #If gavPath is e.g. example/sth, then gav is None
                 if not gav:
                     continue
-                groupIdSlashes = gav.group(1)
+
+                # Remove first slash if present then convert to GroupId
+                groupId = re.sub("^/", "", gav.group(1)).replace('/', '.')
                 artifactId = gav.group(2)
                 version = gav.group(3)
 
-                av = self._getSnapshotAwareVersionRegEx(re.escape(artifactId + "-" + version))
-                regexExt = re.compile(av + "\." + self._fileExtRegExp)
+                (extsAndClass, suffix) = self._getExtensionsAndClassifiers(artifactId, version, filenames)
 
-                avc = av + "-([^.]+)\.jar$"
-                classifierRegExp = re.compile(avc)
+                url = "file://" + directoryPath
+                self._addArtifact(artifacts, groupId, artifactId, version, extsAndClass, suffix, url)
 
-                exts = set()
-                classifiers = set()
-                suffix = None
-                for filename in filenames:
-                    ext = regexExt.match(filename)
-
-                    if ext is not None:
-                        if len(ext.groups()) == 1:
-                            exts.add(ext.group(1))
-                        else:
-                            exts.add(ext.group(2))
-                            if suffix is None or suffix < ext.group(1):
-                                suffix = ext.group(1)
-
-                    classifierMatch = classifierRegExp.match(filename)
-                    if classifierMatch:
-                        classifiers.add(classifierMatch.group(1))
-
-                if len(exts) > 1 and "pom" in exts:
-                    exts.remove("pom")
-                for ext in exts:
-                    # Remove first slash if present then convert to GroupId
-                    groupId = re.sub("^/", "", groupIdSlashes).replace('/', '.')
-                    mavenArtifact = MavenArtifact(groupId, artifactId, ext, version)
-                    if suffix is not None:
-                        mavenArtifact.snapshotVersionSuffix = suffix
-                    logging.debug("Adding artifact %s", str(mavenArtifact))
-                    artifacts[mavenArtifact] = ArtifactSpec("file://" + directoryPath, classifiers)
         return artifacts
 
-    def _getSnapshotAwareVersionRegEx(self, version):
-        """Prepares the version string to be part of regular expression for filename and when the
-        version is a snapshot version, it corrects the suffix to match even when the files are
-        named with the timestamp and build number as usual in case of snapshot versions."""
-        return version.replace("-SNAPSHOT", "-(SNAPSHOT|\d+\.\d+-\d+)")
+    def _getExtensionsAndClassifiers(self, artifactId, version, filenames):
+        # returns ({ext: set([classifier])}, suffix)
+        av = self._getArtifactVersionREString(artifactId, version)
+        # artifactId-(version)-(classifier).(extension)
+        #                          (classifier)       (   extension   )
+        ceRegEx = re.compile(av + "(?:-([^.]+))\." + "((?:tar\.)?[^.]+)$")
+
+        suffix = None
+        extensions = {}
+        for filename in filenames:
+            ce = ceRegEx.match(filename)
+            if ce:
+                realVersion = ce.group(1)
+                classifier = ce.group(2)
+                ext = ce.group(3)
+
+                extensions.setdefault(ext, set())
+                if classifier is not None:
+                    extensions[ext].add(classifier)
+
+                if realVersion != version:
+                    if suffix is None or suffix < realVersion:
+                        suffix = realVersion
+        return (extensions, suffix)
+
+    def _addArtifact(self, artifacts, groupId, artifactId, version, extsAndClass, suffix, url):
+        if extsAndClass > 1 and "pom" in extsAndClass:
+            del extsAndClass["pom"]
+        for ext in extsAndClass:
+            mavenArtifact = MavenArtifact(groupId, artifactId, ext, version)
+            if suffix is not None:
+                mavenArtifact.snapshotVersionSuffix = suffix
+            logging.debug("Adding artifact %s", str(mavenArtifact))
+            artifacts[mavenArtifact] = ArtifactSpec(url, extsAndClass[ext])
+
+    def _updateExtensionsAndClassifiers(self, d, u):
+        for extension, classifiers in u.iteritems():
+            d.setdefault(extension, set()).update(classifiers)
 
     def _getArtifactVersionREString(self, artifactId, version):
-        return self._getSnapshotAwareVersionRegEx(re.escape(artifactId + "-" + version))
+        if version == "SNAPSHOT":
+            # """Prepares the version string to be part of regular expression for filename and when the
+            # version is a snapshot version, it corrects the suffix to match even when the files are
+            # named with the timestamp and build number as usual in case of snapshot versions."""
+            versionPattern = r'(SNAPSHOT|\d+\.\d+-\d+)'
+        else:
+            versionPattern = "(" + re.escape(version) + ")"
+        return re.escape(artifactId) + "-" + versionPattern
 
     def _listArtifacts(self, urls, gavs):
         """
