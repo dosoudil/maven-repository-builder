@@ -212,6 +212,12 @@ def downloadArtifacts(remoteRepoUrl, localRepoDir, artifact, classifiers, checks
 
 def copyFile(filePath, fileLocalPath, checksumMode):
     """Copies file from the given path to local path if the path does not exist yet."""
+    logging.info('Copying file: %s', filePath)
+
+    dirname = os.path.dirname(fileLocalPath)
+    if not os.path.exists(dirname):
+        os.makedirs(dirname)
+
     if os.path.exists(fileLocalPath):
         logging.debug("Artifact already copy: " + filePath)
     else:
@@ -237,10 +243,6 @@ def copyArtifact(remoteRepoPath, localRepoDir, artifact, classifiers, checksumMo
     artifactPath = os.path.join(remoteRepoPath, artifact.getArtifactFilepath())
     artifactLocalPath = os.path.join(localRepoDir, artifact.getArtifactFilepath())
     if os.path.exists(artifactPath) and not os.path.exists(artifactLocalPath):
-        artifactLocalDir = os.path.join(localRepoDir, artifact.getDirPath())
-        if not os.path.exists(artifactLocalDir):
-            os.makedirs(artifactLocalDir)
-        logging.info('Copying file: %s', artifactPath)
         copyFile(artifactPath, artifactLocalPath, checksumMode)
 
     if not artifact.getClassifier():
@@ -249,7 +251,6 @@ def copyArtifact(remoteRepoPath, localRepoDir, artifact, classifiers, checksumMo
             artifactPomPath = os.path.join(remoteRepoPath, artifact.getPomFilepath())
             artifactPomLocalPath = os.path.join(localRepoDir, artifact.getPomFilepath())
             if os.path.exists(artifactPomPath) and not os.path.exists(artifactPomLocalPath):
-                logging.info('Copying file: %s', artifactPomPath)
                 copyFile(artifactPomPath, artifactPomLocalPath, checksumMode)
 
             # Copy additional classifiers (only for non-pom artifacts)
@@ -257,7 +258,6 @@ def copyArtifact(remoteRepoPath, localRepoDir, artifact, classifiers, checksumMo
                 artifactClassifierPath = os.path.join(remoteRepoPath, artifact.getClassifierFilepath(classifier))
                 artifactClassifierLocalPath = os.path.join(localRepoDir, artifact.getClassifierFilepath(classifier))
                 if os.path.exists(artifactClassifierPath) and not os.path.exists(artifactClassifierLocalPath):
-                    logging.info('Copying file: %s', artifactClassifierPath)
                     copyFile(artifactClassifierPath, artifactClassifierLocalPath, checksumMode)
 
 
