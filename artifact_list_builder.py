@@ -20,7 +20,6 @@ class ArtifactListBuilder:
             L artifact specification (repo url string and list of found classifiers)
     """
 
-
     def __init__(self, configuration):
         self.configuration = configuration
 
@@ -75,8 +74,8 @@ class ArtifactListBuilder:
         kojiSession = koji.ClientSession(kojiUrl)
         kojiArtifacts = kojiSession.getLatestMavenArchives(tagName)
 
-        gavuExtClass = {} # { (g,a,v,url): {ext: set([class])} }
-        suffixes = {} # { (g,a,v,url): suffix }
+        gavuExtClass = {}  # { (g,a,v,url): {ext: set([class])} }
+        suffixes = {}      # { (g,a,v,url): suffix }
         for artifact in kojiArtifacts:
             groupId = artifact['group_id']
             artifactId = artifact['artifact_id']
@@ -231,8 +230,8 @@ class ArtifactListBuilder:
 
         # ^./(groupId)/(artifactId)/(version)/(filename)$
         regexGAVF = re.compile(r'\./(.+)/([^/]+)/([^/]+)/([^/]+\.[^/.]+)$')
-        gavExtClass = {} # { (g,a,v): {ext: set([class])} }
-        suffixes = {} # { (g,a,v): suffix }
+        gavExtClass = {}  # { (g,a,v): {ext: set([class])} }
+        suffixes = {}     # { (g,a,v): suffix }
         for line in out.split('\n'):
             if (line):
                 line = "./" + prefix + line[2:]
