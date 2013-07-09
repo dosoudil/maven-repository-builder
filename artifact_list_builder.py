@@ -296,7 +296,7 @@ class ArtifactListBuilder:
         av = self._getArtifactVersionREString(artifactId, version)
         # artifactId-(version)-(classifier).(extension)
         #                          (classifier)       (   extension   )
-        ceRegEx = re.compile(av + "(?:-([^.]+))\." + "((?:tar\.)?[^.]+)$")
+        ceRegEx = re.compile(av + "(?:-([^.]+))?\." + "((?:tar\.)?[^.]+)$")
 
         suffix = None
         extensions = {}
