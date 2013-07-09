@@ -317,7 +317,7 @@ class ArtifactListBuilder:
         return (extensions, suffix)
 
     def _addArtifact(self, artifacts, groupId, artifactId, version, extsAndClass, suffix, url):
-        if extsAndClass > 1 and "pom" in extsAndClass:
+        if len(extsAndClass) > 1 and "pom" in extsAndClass:
             del extsAndClass["pom"]
         for ext in extsAndClass:
             mavenArtifact = MavenArtifact(groupId, artifactId, ext, version)
