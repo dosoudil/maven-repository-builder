@@ -5,7 +5,6 @@ import logging
 from multiprocessing.pool import ThreadPool
 from subprocess import Popen
 from subprocess import PIPE
-from subprocess import call
 from maven_artifact import MavenArtifact
 
 
@@ -113,6 +112,7 @@ class ArtifactListBuilder:
         artifacts = {}
 
         for gav in gavs:
+            logging.debug("Resolving dependencies for %s", gav)
             artifact = MavenArtifact.createFromGAV(gav)
 
             pomDir = 'poms'
@@ -128,25 +128,37 @@ class ArtifactListBuilder:
                 continue
 
             # Build dependency:list
-            mvnOutDir = "maven"
-            if not os.path.isdir(mvnOutDir):
-                os.makedirs(mvnOutDir)
-            mvnOutFilename = mvnOutDir + "/" + artifact.getBaseFilename() + "-maven.out"
-            with open(mvnOutFilename, "w") as mvnOutputFile:
-                retCode = call(['mvn', 'dependency:list', '-N', '-f',
-                                pomDir + '/' + artifact.getPomFilename()], stdout=mvnOutputFile)
+            args = ['mvn', 'dependency:list', '-N', '-f', pomDir + '/' + artifact.getPomFilename()]
+            mvn = Popen(args, stdout=PIPE)
+            out = mvn.communicate()[0]
 
-                if retCode != 0:
-                    logging.warning("Maven failed to finish with success. Skipping artifact %s",
-                                    gav)
-                    continue
+            if mvn.returncode != 0:
+                logging.warning("Maven failed to finish with success. Skipping artifact %s", gav)
+                continue
 
-            # Parse GAVs from maven output
-            with open(mvnOutFilename, "r") as mvnOutFile:
-                mvnLines = mvnOutFile.readlines()
-            gavList = self._parseDepList(mvnLines)
+            gavList = self._parseDepList(out.split('\n'))
+            newArtifacts = self._listArtifacts(repoUrls, gavList)
 
-            artifacts.update(self._listArtifacts(repoUrls, gavList))
+            if True:# self.configuration.allClassifiers:
+                for artifact in newArtifacts.keys():
+                    spec = newArtifacts[artifact]
+                    out = self._lftpFind(spec.url + artifact.getDirPath())
+
+                    files = []
+                    for line in out.split('\n'):
+                        if line != "./" and line != "":
+                            files.append(line[2:])
+
+                    (extsAndClass, suffix) = self._getExtensionsAndClassifiers(artifact.artifactId,
+                                artifact.version, files)
+                    if len(extsAndClass) > 1 and "pom" in extsAndClass:
+                        del extsAndClass["pom"]
+                    spec.classifiers = extsAndClass[artifact.artifactType]
+                    del extsAndClass[artifact.artifactType]
+                    self._addArtifact(newArtifacts, artifact.groupId, artifact.artifactId,
+                            artifact.version, extsAndClass, suffix, spec.url)
+
+            artifacts.update(newArtifacts)
 
         return artifacts
 
@@ -225,8 +237,7 @@ class ArtifactListBuilder:
 
     def _listRemoteRepository(self, repoUrl, prefix=""):
         logging.debug("Listing remote repository %s prefix '%s'", repoUrl, prefix)
-        (out, _) = Popen(r'lftp -c "set ssl:verify-certificate no ; open ' + repoUrl + prefix
-                         + ' ; find  ."', stdout=PIPE, shell=True).communicate()
+        out = self._lftpFind(repoUrl + prefix)
 
         # ^./(groupId)/(artifactId)/(version)/(filename)$
         regexGAVF = re.compile(r'\./(.+)/([^/]+)/([^/]+)/([^/]+\.[^/.]+)$')
@@ -394,6 +405,11 @@ class ArtifactListBuilder:
             if maven_repo_util.somethingMatch(regExps, artifact.getGAV()):
                 includedArtifacts[artifact] = artifacts[artifact]
         return includedArtifacts
+
+    def _lftpFind(self, url):
+        lftp = Popen(r'lftp -c "set ssl:verify-certificate no ; open ' + url
+                         + ' ; find  ."', stdout=PIPE, shell=True)
+        return lftp.communicate()[0]
 
 
 class ArtifactSpec:
