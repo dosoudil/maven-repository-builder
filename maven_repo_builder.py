@@ -345,7 +345,7 @@ def generateChecksumFiles(filepath):
             continue
         checksum = maven_repo_util.getChecksum(filepath, sum_constr)
         with open(sumfile, 'w') as sumobj:
-            sumobj.write(checksum + '\n')
+            sumobj.write(checksum)
 
 
 def main():
