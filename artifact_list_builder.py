@@ -341,11 +341,11 @@ class ArtifactListBuilder:
             d.setdefault(extension, set()).update(classifiers)
 
     def _getArtifactVersionREString(self, artifactId, version):
-        if version[-9:] == "-SNAPSHOT":
+        if version.endswith("-SNAPSHOT"):
             # """Prepares the version string to be part of regular expression for filename and when the
             # version is a snapshot version, it corrects the suffix to match even when the files are
             # named with the timestamp and build number as usual in case of snapshot versions."""
-            versionPattern = r'(SNAPSHOT|\d+\.\d+-\d+)'
+            versionPattern = version.replace("SNAPSHOT",r'(SNAPSHOT|\d+\.\d+-\d+)')
         else:
             versionPattern = "(" + re.escape(version) + ")"
         return re.escape(artifactId) + "-" + versionPattern
