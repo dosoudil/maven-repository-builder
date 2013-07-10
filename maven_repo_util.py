@@ -202,6 +202,17 @@ def printArtifactList(artifactList):
 
 
 def fetchFile(fileUrl, destDir):
+    """
+    Fetch file from specified url (supported protocols: http, https, file) and store
+    it to specified directory. If the directory doesn't exists it will be created.
+
+    :param fileUrl: Url of the file to be fetched.
+    :param destDir: Directory to which the file should be stored.
+    :returns: True if the file is fetched successfully or if the file already exists.
+              False if the file couldn't be downloaded.
+              None if the protocol is unknown or the fileUrl does not contain filename.
+    """
+
     parsedUrl = urlparse.urlparse(fileUrl)
     protocol = parsedUrl[0]
     filename = fileUrl.split("/")[-1]
@@ -210,8 +221,11 @@ def fetchFile(fileUrl, destDir):
     if not os.path.isdir(destDir):
         os.makedirs(destDir)
 
+    if os.path.isfile(filepath):
+        return True
+
     # Download only files that do not exist yet
-    if filename and not os.path.isfile(filepath):
+    if filename:
         logging.debug("Downloading file %s", fileUrl)
         if protocol == 'http' or protocol == 'https':
             try:
