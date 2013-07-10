@@ -120,13 +120,17 @@ class Filter:
             if maven_repo_util.somethingMatch(regExps, ga):
                 continue
 
-            # Should be the same for all types
-            priorities = sorted(artifactList[list(gats)[0]].keys())
+            # Gather all priorities from all types
+            priorities = set()
+            for gat in gats:
+                priorities.update(artifactList[gat].keys())
+            priorities = sorted(priorities)
             priority = priorities[0]
             # Gather all versions from all types
             versions = set()
             for gat in gats:
-                versions.update(artifactList[gat][priority].keys())
+                # update versions only if this gat contains highest priority
+                versions.update(artifactList[gat].get(priority, {}).keys())
             versions = list(versions)
 
             if len(versions) > 1:  # list of 1 is sorted by definition
@@ -135,12 +139,12 @@ class Filter:
             # Remove version, priorities and gats from artifactList as necessary
             for gat in gats:
                 for version in versions[1:]:
-                    artifactList[gat][priority].pop(version, None)  # remove if present
-                if not artifactList[gat][priority]:  # all versions were removed
-                    del artifactList[gat]
-                else:  # all versions were not removed, remove unecessary priorities
-                    for priority in priorities[1:]:
-                        del artifactList[gat][priority]
+                    artifactList[gat].get(priority, {}).pop(version, None)
+                for p in priorities[1:]:
+                    artifactList[gat].pop(p, None)
+
+                if not artifactList[gat] or not artifactList[gat][priority]:
+                    del artifactList[gat]  # all versions or priorities were removed
         return artifactList
 
 
