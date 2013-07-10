@@ -1,5 +1,7 @@
+import re
 import logging
 import maven_repo_util
+from itertools import groupby
 from multiprocessing.pool import ThreadPool
 from maven_artifact import MavenArtifact
 
@@ -111,19 +113,34 @@ class Filter:
     def _filterMultipleVersions(self, artifactList):
         logging.debug("Filtering multi-version artifacts to have just a single version.")
         regExps = maven_repo_util.getRegExpsFromStrings(self.config.multiVersionGAs, False)
-        for gat in artifactList.keys():
-            if maven_repo_util.somethingMatch(regExps, gat):
+
+        removeT = lambda gat: re.sub('\:[^:]+$', '', gat)
+        for ga, gats in groupby(sorted(artifactList.keys()), removeT):
+            gats = list(gats)
+            if maven_repo_util.somethingMatch(regExps, ga):
                 continue
 
-            priorities = sorted(artifactList[gat].keys())
+            # Should be the same for all types
+            priorities = sorted(artifactList[list(gats)[0]].keys())
             priority = priorities[0]
-            versions = artifactList[gat][priority].keys()
+            # Gather all versions from all types
+            versions = set()
+            for gat in gats:
+                versions.update(artifactList[gat][priority].keys())
+            versions = list(versions)
+
             if len(versions) > 1:  # list of 1 is sorted by definition
                 versions = maven_repo_util._sortVersionsWithAtlas(versions)
-            for version in versions[1:]:
-                del artifactList[gat][priority][version]
-            for priority in priorities[1:]:
-                del artifactList[gat][priority]
+
+            # Remove version, priorities and gats from artifactList as necessary
+            for gat in gats:
+                for version in versions[1:]:
+                    artifactList[gat][priority].pop(version, None)  # remove if present
+                if not artifactList[gat][priority]:  # all versions were removed
+                    del artifactList[gat]
+                else:  # all versions were not removed, remove unecessary priorities
+                    for priority in priorities[1:]:
+                        del artifactList[gat][priority]
         return artifactList
 
 
