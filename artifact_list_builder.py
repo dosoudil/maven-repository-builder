@@ -139,7 +139,7 @@ class ArtifactListBuilder:
             gavList = self._parseDepList(out.split('\n'))
             newArtifacts = self._listArtifacts(repoUrls, gavList)
 
-            if True:# self.configuration.allClassifiers:
+            if self.configuration.allClassifiers:
                 for artifact in newArtifacts.keys():
                     spec = newArtifacts[artifact]
                     out = self._lftpFind(spec.url + artifact.getDirPath())
