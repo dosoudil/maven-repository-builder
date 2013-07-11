@@ -83,6 +83,10 @@ def main():
         help='Configuration file to use for generation of an artifact list for the repository builder'
     )
     cliOptParser.add_option(
+        '-a', '--allclassifiers', default=False, action='store_true',
+        help='Find all available classifiers'
+    )
+    cliOptParser.add_option(
         '-l', '--loglevel',
         default='info',
         help='Set the level of log output.  Can be set to debug, info, warning, error, or critical'
@@ -96,7 +100,6 @@ def main():
     # Set the log level
     maven_repo_util.setLogLevel(options.loglevel, options.logfile)
 
-    options.allclassifiers = False
     artifactList = _generateArtifactList(options)
 
     maven_repo_util.printArtifactList(artifactList)

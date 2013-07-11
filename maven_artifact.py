@@ -137,5 +137,7 @@ class MavenArtifact:
         result = self.groupId + ':' + self.artifactId
         if self.artifactType:
             result += ':' + self.artifactType
+        if self.classifier:
+            result += ':' + self.classifier
         result += ':' + self.version
         return result
