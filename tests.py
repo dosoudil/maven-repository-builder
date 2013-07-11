@@ -8,8 +8,8 @@ import tempfile
 import unittest
 import copy
 
-import maven_repo_builder
-
+import maven_repo_util
+from maven_repo_util import ChecksumMode
 from maven_artifact import MavenArtifact
 from artifact_list_builder import ArtifactListBuilder
 from configuration import Configuration
@@ -47,10 +47,10 @@ class Tests(unittest.TestCase):
         tempDownloadDir = tempfile.mkdtemp()
         filepath = os.path.join(tempDownloadDir, "downloadfile.txt")
         self.assertFalse(os.path.exists(filepath), "Download file already exists: " + filepath)
-        maven_repo_builder.download(url, maven_repo_builder._ChecksumMode.generate, filepath)
+        maven_repo_util.download(url, filepath, ChecksumMode.generate)
         self.assertTrue(os.path.exists(filepath), "File not downloaded")
 
-        maven_repo_builder.download(url, maven_repo_builder._ChecksumMode.generate)
+        maven_repo_util.download(url, None, ChecksumMode.generate)
         localfilename = "jboss-parent-10.pom"
         self.assertTrue(os.path.exists(localfilename))
         if os.path.exists(localfilename):
@@ -59,17 +59,17 @@ class Tests(unittest.TestCase):
 
     def test_bad_urls(self):
         url = "junk://repo1.maven.org/maven2/org/jboss/jboss-parent/10/jboss-parent-10.p"
-        maven_repo_builder.download(url, maven_repo_builder._ChecksumMode.generate)
+        maven_repo_util.download(url, None, ChecksumMode.generate)
 
         url = "sadjfasfjsl"
-        maven_repo_builder.download(url, maven_repo_builder._ChecksumMode.generate)
+        maven_repo_util.download(url, None, ChecksumMode.generate)
 
         url = "http://1234/maven2/org/jboss/jboss-parent/10/jboss-parent-10.p"
-        maven_repo_builder.download(url, maven_repo_builder._ChecksumMode.generate)
+        maven_repo_util.download(url, None, ChecksumMode.generate)
 
     def test_http_404(self):
         url = "http://repo1.maven.org/maven2/somefilethatdoesnotexist"
-        code = maven_repo_builder.download(url, maven_repo_builder._ChecksumMode.generate)
+        code = maven_repo_util.download(url, None, ChecksumMode.generate)
         self.assertEqual(code, 404)
 
     def test_maven_artifact(self):

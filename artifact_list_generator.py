@@ -2,11 +2,12 @@
 
 import logging
 import optparse
+
+import maven_repo_util
 from configuration import Configuration
 from artifact_list_builder import ArtifactListBuilder
 from filter import Filter
 from maven_artifact import MavenArtifact
-import maven_repo_util
 
 
 def _generateArtifactList(options):

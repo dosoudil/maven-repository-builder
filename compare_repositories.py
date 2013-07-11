@@ -10,7 +10,7 @@ import sys
 import tempfile
 
 import maven_repo_util
-import maven_repo_builder
+from maven_repo_util import ChecksumMode
 
 
 def compareArtifacts(localRepoPath, remoteUrl):
@@ -31,7 +31,7 @@ def compareArtifacts(localRepoPath, remoteUrl):
             tempDownloadFile = os.path.join(tempDownloadDir, relRepoPath)
             remoteFileUrl = remoteUrl + "/" + relRepoPath
             try:
-                maven_repo_builder.download(remoteFileUrl, maven_repo_builder._ChecksumMode.generate, tempDownloadFile)
+                maven_repo_util.download(remoteFileUrl, tempDownloadFile, ChecksumMode.generate)
             except Exception:
                 logging.error("An error occured while downloading %s", remoteFileUrl)
 

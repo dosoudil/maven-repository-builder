@@ -6,9 +6,10 @@ import httplib
 import logging
 import os
 import shutil
-import urllib
+import urllib2
 import urlparse
 import re
+import sys
 from subprocess import Popen
 from subprocess import PIPE
 from xml.etree.ElementTree import ElementTree
@@ -18,27 +19,200 @@ from xml.etree.ElementTree import ElementTree
 MAX_THREADS = 10
 
 
-# Functions
+class ChecksumMode:
+    generate = 'generate'
+    download = 'download'
+    check = 'check'
+
+
+def _downloadChecksum(url, filePath, checksumType, expectedSize, retries=3):
+    """
+    Download specified checksum from given orl to filepath. Both these inputs include filename of the original file
+    to which the checksum belongs.
+
+    :param url: url of the original file
+    :param filePath: local filepath where the original file is stored
+    :param checksumType: the type of downloaded checksum, e.g. md5 or sha1
+    :param expectedSize: expected filesize of the downloaded file
+    :param retries: number of retries when a strange error occurs or filesize doesn't match the expected one'
+    """
+    csDownloaded = False
+    while retries > 0 and not csDownloaded:
+        retries -= 1
+        csUrl = url + "." + checksumType.lower()
+        logging.debug('Downloading %s checksum from %s', checksumType.upper(), csUrl)
+        try:
+            csHttpResponse = urllib2.urlopen(urllib2.Request(csUrl))
+            csFilePath = filePath + "." + checksumType.lower()
+            with open(csFilePath, 'wb') as localfile:
+                shutil.copyfileobj(csHttpResponse, localfile)
+            if (csHttpResponse.code != 200):
+                logging.warning('Unable to download checksum from %s, error code: %s', csUrl, csHttpResponse.code)
+                if csHttpResponse.code / 100 != 5:  # if other than 5xx error occurs do not try again
+                    retries = 0
+            elif os.path.getsize(csFilePath) != expectedSize:
+                logging.warning('Downloaded %s checksum have %d bytes instead of %s bytes', checksumType.upper(),
+                                expectedSize, os.path.getsize(csFilePath))
+                os.remove(csFilePath)
+            else:
+                csDownloaded = True
+        except urllib2.HTTPError as err:
+                logging.warning('Unable to download checksum from %s, error code: %s', csUrl, err.code)
+                if err.code / 100 != 5:  # if other than 5xx error occurs do not try again
+                    retries = 0
+        except urllib2.URLError as err:
+            logging.warning('Unknown error while downloading checksum from %s: %s', csUrl, str(err))
+    return csDownloaded
+
+
+def download(url, filePath=None, checksumMode=ChecksumMode.check):
+    """Download the given url to a local file"""
+    logging.debug('Attempting download: %s', url)
+
+    if filePath:
+        if os.path.exists(filePath):
+            logging.debug('Local file already exists, skipping: %s', filePath)
+            return
+        localdir = os.path.dirname(filePath)
+        if not os.path.exists(localdir):
+            os.makedirs(localdir)
+
+    def getFileName(url, openUrl):
+        if 'Content-Disposition' in openUrl.info():
+            # If the response has Content-Disposition, try to get filename from it
+            cd = dict(map(
+                lambda x: x.strip().split('=') if '=' in x else (x.strip(), ''),
+                openUrl.info()['Content-Disposition'].split(';')))
+            if 'filename' in cd:
+                filename = cd['filename'].strip("\"'")
+                if filename:
+                    return filename
+        # if no filename was found above, parse it out of the final URL.
+        return os.path.basename(urlparse.urlsplit(openUrl.url)[2])
+
+    try:
+        retries = 3
+        checksumsOk = False
+        while retries > 0 and not checksumsOk:
+            retries -= 1
+            try:
+                httpResponse = urllib2.urlopen(urllib2.Request(url))
+                if (httpResponse.code == 200):
+                    filePath = filePath or getFileName(url, httpResponse)
+                    with open(filePath, 'wb') as localfile:
+                        shutil.copyfileobj(httpResponse, localfile)
+                    httpResponse.close()
+
+                    if checksumMode in (ChecksumMode.download, ChecksumMode.check):
+                        md5Downloaded = _downloadChecksum(url, filePath, "md5", 32)
+                        sha1Downloaded = _downloadChecksum(url, filePath, "sha1", 40)
+                        if not md5Downloaded or not sha1Downloaded:
+                            logging.warning('No chance to download checksums to %s correctly.', filePath)
+
+                    if checksumMode == ChecksumMode.check:
+                        if checkChecksum(filePath):
+                            checksumsOk = True
+                    else:
+                        checksumsOk = True
+
+                    if checksumsOk:
+                        logging.debug('Download of %s complete', filePath)
+                        return httpResponse.code
+                    elif retries > 0:
+                        logging.warning('Checksum problem with %s, trying again...', url)
+                        os.remove(filePath)
+                        if os.path.exists(filePath + ".md5"):
+                            os.remove(filePath + ".md5")
+                        if os.path.exists(filePath + ".sha1"):
+                            os.remove(filePath + ".sha1")
+                    else:
+                        logging.error('Checksum problem with %s. No chance to download the file correctly. Exiting',
+                                      url)
+                        sys.exit(1)
+                else:
+                    httpResponse.close()
+                    if retries:
+                        logging.warning('Unable to download, HTTP Response code: %s. Trying again...',
+                                        httpResponse.code)
+                    else:
+                        logging.warning('Unable to download, HTTP Response code: %s. Exiting', httpResponse.code)
+                        sys.exit(1)
+            except urllib2.HTTPError as err:
+                if retries > 0:
+                    if err.code / 100 == 5:
+                        logging.debug('Unable to download, HTTP Response code = %s, trying again...', err.code)
+                    else:
+                        logging.debug('Unable to download, HTTP Response code = %s.', err.code)
+                        return err.code
+                else:
+                    logging.debug('Unable to download, HTTP Response code = %s, giving up...', err.code)
+                    return err.code
+    except urllib2.URLError as e:
+        logging.error('Unable to download, URLError: %s', e.reason)
+    except httplib.HTTPException as e:
+        logging.exception('Unable to download, HTTPException: %s', e.message)
+    except ValueError as e:
+        logging.error('ValueError: %s', e.message)
+
+
+def downloadFile(url, filePath, checksumMode=ChecksumMode.check):
+    """Downloads file from the given URL to local path if the path does not exist yet."""
+    fetched = False
+    if os.path.exists(filePath):
+        logging.debug("File already downloaded: %s", url)
+        fetched = True
+    else:
+        returnCode = download(url, filePath, checksumMode)
+        if (returnCode == 404):
+            logging.warning("Remote file not found: %s", url)
+        elif (returnCode >= 400):
+            logging.warning("Error code %d returned while downloading %s", returnCode, url)
+        fetched = (returnCode == 200)
+
+    return fetched
+
+
+def copyFile(filePath, fileLocalPath, checksumMode=ChecksumMode.check):
+    """Copies file from the given path to local path if the path does not exist yet."""
+    logging.info('Copying file: %s', filePath)
+
+    dirname = os.path.dirname(fileLocalPath)
+    if not os.path.exists(dirname):
+        os.makedirs(dirname)
+
+    if os.path.exists(fileLocalPath):
+        logging.debug("File already copy: " + filePath)
+    else:
+        if os.path.exists(filePath):
+            shutil.copyfile(filePath, fileLocalPath)
+            if checksumMode in (ChecksumMode.download, ChecksumMode.check):
+                if os.path.exists(filePath + ".md5"):
+                    shutil.copyfile(filePath + ".md5", fileLocalPath + ".md5")
+                if os.path.exists(filePath + ".sha1"):
+                    shutil.copyfile(filePath + ".sha1", fileLocalPath + ".sha1")
+
+            if checksumMode == ChecksumMode.check:
+                if not checkChecksum(filePath):
+                    logging.error('Checksum problem with copy of %s. Exiting', filePath)
+                    sys.exit(1)
+        else:
+            logging.warning("Source file not found: %s", filePath)
+
+
 def setLogLevel(level, logfile=None):
     """Sets the desired log level."""
-    lLevel = level.lower()
-    if (lLevel == 'debug'):
-        logLevel = logging.DEBUG
-    elif (lLevel == 'info'):
+    logLevel = getattr(logging, level.upper(), None)
+    unknownLevel = False
+    if not isinstance(logLevel, int):
+        unknownLevel = True
         logLevel = logging.INFO
-    elif (lLevel == 'warning'):
-        logLevel = logging.WARNING
-    elif (lLevel == 'error'):
-        logLevel = logging.ERROR
-    elif (lLevel == 'critical'):
-        logLevel = logging.CRITICAL
-    else:
-        logLevel = logging.INFO
-        logging.warning('Unrecognized log level: %s  Log level set to info', level)
     if logfile:
         logging.basicConfig(format='%(levelname)s: %(message)s', level=logLevel, filename=logfile, filemode='a')
     else:
         logging.basicConfig(format='%(levelname)s: %(message)s', level=logLevel)
+
+    if unknownLevel:
+        logging.warning('Unrecognized log level: %s  Log level set to info', level)
 
 
 def getSha1Checksum(filepath):
@@ -53,7 +227,6 @@ def getChecksum(filepath, sum_constr):
         while True:
             content = fobj.read(8192)
             if not content:
-                fobj.close()
                 break
             checksum.update(content)
     return checksum.hexdigest()
@@ -61,8 +234,6 @@ def getChecksum(filepath, sum_constr):
 
 def checkChecksum(filepath):
     """Checks if SHA1 and MD5 checksums equals to the ones saved in corresponding files if they are available."""
-    assert os.path.exists(filepath)
-
     return _checkChecksum(filepath, hashlib.md5()) and _checkChecksum(filepath, hashlib.sha1())
 
 
@@ -85,6 +256,13 @@ def _checkChecksum(filepath, sum_constr):
 
 
 def str2bool(v):
+    """Convert string value to bool.
+
+    :param v: String representation of bool value
+    :returns: True if value of lowercased v is 'true', 'yes', 't', 'y' or '1',
+              False if its 'false', 'no', 'f', 'n' or '0',
+              raises ValueError if its none of the above
+    """
     if v.lower() in ['true', 'yes', 't', 'y', '1']:
         return True
     elif v.lower() in ['false', 'no', 'f', 'n', '0']:
@@ -110,7 +288,7 @@ def gavExists(repoUrl, artifact):
         if os.path.exists(metadataFilePath):
             fetched = True
         else:
-            fetched = fetchFile(metadataUrl, gaPath)
+            fetched = downloadFile(metadataUrl, metadataFilePath)
         if fetched:
             metadataDoc = ElementTree(file=metadataFilePath)
             root = metadataDoc.getroot()
@@ -159,10 +337,7 @@ def slashAtTheEnd(url):
     :param url: url to check and update
     :returns: updated url
     """
-    if url.endswith('/'):
-        return url
-    else:
-        return url + '/'
+    return url if url.endswith('/') else url + '/'
 
 
 def transformAsterixStringToRegexp(string):
@@ -171,24 +346,20 @@ def transformAsterixStringToRegexp(string):
 
 def getRegExpsFromStrings(strings, exact=True):
     """
-    Compiles all given strings into regular expressions. If exact=True, the expressions have
-    prepended ^ and appended $.
+    Compiles all given strings into regular expressions. If exact=True, the
+    expressions have prepended ^ and appended $.
     """
     rep = re.compile("^r\/.*\/$")
     regExps = []
     for s in strings:
-        # Prepend ^ and append $ to the pattern so that it is exact match
         if rep.match(s):
-            if exact:
-                regExps.append(re.compile("^" + s[2:-1] + "$"))
-            else:
-                regExps.append(re.compile(s[2:-1]))
+            regexpString = s[2:-1]
         else:
             regexpString = transformAsterixStringToRegexp(s).strip()
-            if exact:
-                regExps.append(re.compile("^" + regexpString + "$"))
-            else:
-                regExps.append(re.compile(regexpString))
+        if exact:
+            regexpString = "^" + regexpString + "$"
+        regExps.append(re.compile(regexpString))
+
     return regExps
 
 
@@ -199,47 +370,6 @@ def printArtifactList(artifactList):
                 print artifactList[gat][priority][version].url + "\t" + gat + ":" + version
                 for classifier in artifactList[gat][priority][version].classifiers:
                     print artifactList[gat][priority][version].url + "\t" + gat + ":" + classifier + ":" + version
-
-
-def fetchFile(fileUrl, destDir):
-    """
-    Fetch file from specified url (supported protocols: http, https, file) and store
-    it to specified directory. If the directory doesn't exists it will be created.
-
-    :param fileUrl: Url of the file to be fetched.
-    :param destDir: Directory to which the file should be stored.
-    :returns: True if the file is fetched successfully or if the file already exists.
-              False if the file couldn't be downloaded.
-              None if the protocol is unknown or the fileUrl does not contain filename.
-    """
-
-    parsedUrl = urlparse.urlparse(fileUrl)
-    protocol = parsedUrl[0]
-    filename = fileUrl.split("/")[-1]
-    filepath = destDir + '/' + filename
-
-    if not os.path.isdir(destDir):
-        os.makedirs(destDir)
-
-    if os.path.isfile(filepath):
-        return True
-
-    # Download only files that do not exist yet
-    if filename:
-        logging.debug("Downloading file %s", fileUrl)
-        if protocol == 'http' or protocol == 'https':
-            try:
-                (filename, headers) = urllib.URLopener().retrieve(fileUrl, filepath)
-                return True
-            except Exception as ex:
-                logging.debug("Unable to retrieve %s: %s", fileUrl, str(ex))
-                return False
-        elif protocol == 'file':
-            shutil.copy2(fileUrl.replace('file://', ''), destDir)
-            return True
-        else:
-            logging.warning("File %s could not be downloaded, protocol %s is not supported",
-                            fileUrl, protocol)
 
 
 def getTempDir(relativePath=""):
@@ -276,7 +406,7 @@ def updateSnapshotVersionSuffix(artifact, repoUrl):
     metadataUrl = slashAtTheEnd(repoUrl) + artifact.getDirPath() + 'maven-metadata.xml'
     gavPath = getTempDir(artifact.getDirPath())
     metadataFilePath = gavPath + 'maven-metadata.xml'
-    if not os.path.exists(metadataFilePath) and not fetchFile(metadataUrl, gavPath):
+    if not os.path.exists(metadataFilePath) and not downloadFile(metadataUrl, metadataFilePath):
         logging.debug("Unable to read metadata from %s", metadataUrl)
         return
 
@@ -300,11 +430,7 @@ def somethingMatch(regexs, string):
     :param filename: string to match
     :returns: True if at least one of the regular expresions matched the string.
     """
-
-    for regex in regexs:
-        if regex.match(string):
-            return True
-    return False
+    return any(regex.match(string) for regex in regexs)
 
 
 def _sortVersionsWithAtlas(versions, versionSorterDir="versionSorter/"):
