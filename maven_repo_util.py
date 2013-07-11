@@ -233,9 +233,15 @@ def str2bool(v):
 
     :param v: String representation of bool value
     :returns: True if value of lowercased v is 'true', 'yes', 't', 'y' or '1',
-              False otherwise
+              False if its 'false', 'no', 'f', 'n' or '0',
+              raises ValueError if its none of the above
     """
-    return v.lower() in ['true', 'yes', 't', 'y', '1']
+    if v.lower() in ['true', 'yes', 't', 'y', '1']:
+        return True
+    elif v.lower() in ['false', 'no', 'f', 'n', '0']:
+        return False
+    else:
+        raise ValueError("Failed to convert '" + v + "' to boolean")
 
 
 def gavExists(repoUrl, artifact):
