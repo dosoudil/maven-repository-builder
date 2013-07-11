@@ -10,7 +10,6 @@ import logging
 import optparse
 import os
 import re
-import shutil
 import sys
 import threading
 import urlparse
@@ -62,40 +61,13 @@ def downloadArtifacts(remoteRepoUrl, localRepoDir, artifact, classifiers, checks
         errors.put(ex)
 
 
-def copyFile(filePath, fileLocalPath, checksumMode):
-    """Copies file from the given path to local path if the path does not exist yet."""
-    logging.info('Copying file: %s', filePath)
-
-    dirname = os.path.dirname(fileLocalPath)
-    if not os.path.exists(dirname):
-        os.makedirs(dirname)
-
-    if os.path.exists(fileLocalPath):
-        logging.debug("Artifact already copy: " + filePath)
-    else:
-        if os.path.exists(filePath):
-            shutil.copyfile(filePath, fileLocalPath)
-            if checksumMode in (ChecksumMode.download, ChecksumMode.check):
-                if os.path.exists(filePath + ".md5"):
-                    shutil.copyfile(filePath + ".md5", fileLocalPath + ".md5")
-                if os.path.exists(filePath + ".sha1"):
-                    shutil.copyfile(filePath + ".sha1", fileLocalPath + ".sha1")
-
-            if checksumMode == ChecksumMode.check:
-                if not maven_repo_util.checkChecksum(filePath):
-                    logging.error('Checksum problem with copy of %s. Exiting', filePath)
-                    sys.exit(1)
-        else:
-            logging.warning("Source file not found: %s", filePath)
-
-
 def copyArtifact(remoteRepoPath, localRepoDir, artifact, classifiers, checksumMode):
     """Copy artifact from a repository on the local file system along with pom and source jar"""
     # Copy main artifact
     artifactPath = os.path.join(remoteRepoPath, artifact.getArtifactFilepath())
     artifactLocalPath = os.path.join(localRepoDir, artifact.getArtifactFilepath())
     if os.path.exists(artifactPath) and not os.path.exists(artifactLocalPath):
-        copyFile(artifactPath, artifactLocalPath, checksumMode)
+        maven_repo_util.copyFile(artifactPath, artifactLocalPath, checksumMode)
 
     if not artifact.getClassifier():
         # Copy pom if the main type is not pom
@@ -103,14 +75,14 @@ def copyArtifact(remoteRepoPath, localRepoDir, artifact, classifiers, checksumMo
             artifactPomPath = os.path.join(remoteRepoPath, artifact.getPomFilepath())
             artifactPomLocalPath = os.path.join(localRepoDir, artifact.getPomFilepath())
             if os.path.exists(artifactPomPath) and not os.path.exists(artifactPomLocalPath):
-                copyFile(artifactPomPath, artifactPomLocalPath, checksumMode)
+                maven_repo_util.copyFile(artifactPomPath, artifactPomLocalPath, checksumMode)
 
             # Copy additional classifiers (only for non-pom artifacts)
             for classifier in classifiers:
                 artifactClassifierPath = os.path.join(remoteRepoPath, artifact.getClassifierFilepath(classifier))
                 artifactClassifierLocalPath = os.path.join(localRepoDir, artifact.getClassifierFilepath(classifier))
                 if os.path.exists(artifactClassifierPath) and not os.path.exists(artifactClassifierLocalPath):
-                    copyFile(artifactClassifierPath, artifactClassifierLocalPath, checksumMode)
+                    maven_repo_util.copyFile(artifactClassifierPath, artifactClassifierLocalPath, checksumMode)
 
 
 def depListToArtifactList(depList):

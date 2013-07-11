@@ -172,6 +172,33 @@ def downloadFile(url, filePath, checksumMode=ChecksumMode.check):
     return fetched
 
 
+def copyFile(filePath, fileLocalPath, checksumMode=ChecksumMode.check):
+    """Copies file from the given path to local path if the path does not exist yet."""
+    logging.info('Copying file: %s', filePath)
+
+    dirname = os.path.dirname(fileLocalPath)
+    if not os.path.exists(dirname):
+        os.makedirs(dirname)
+
+    if os.path.exists(fileLocalPath):
+        logging.debug("File already copy: " + filePath)
+    else:
+        if os.path.exists(filePath):
+            shutil.copyfile(filePath, fileLocalPath)
+            if checksumMode in (ChecksumMode.download, ChecksumMode.check):
+                if os.path.exists(filePath + ".md5"):
+                    shutil.copyfile(filePath + ".md5", fileLocalPath + ".md5")
+                if os.path.exists(filePath + ".sha1"):
+                    shutil.copyfile(filePath + ".sha1", fileLocalPath + ".sha1")
+
+            if checksumMode == ChecksumMode.check:
+                if not checkChecksum(filePath):
+                    logging.error('Checksum problem with copy of %s. Exiting', filePath)
+                    sys.exit(1)
+        else:
+            logging.warning("Source file not found: %s", filePath)
+
+
 def setLogLevel(level, logfile=None):
     """Sets the desired log level."""
     logLevel = getattr(logging, level.upper(), None)
