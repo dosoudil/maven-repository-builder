@@ -155,7 +155,7 @@ def download(url, filePath=None, checksumMode=ChecksumMode.check):
         logging.error('ValueError: %s', e.message)
 
 
-def downloadFile(url, filePath, checksumMode=ChecksumMode.check):
+def downloadFile(url, filePath, checksumMode=ChecksumMode.check, warnOnError=True):
     """Downloads file from the given URL to local path if the path does not exist yet."""
     fetched = False
     if os.path.exists(filePath):
@@ -164,9 +164,11 @@ def downloadFile(url, filePath, checksumMode=ChecksumMode.check):
     else:
         returnCode = download(url, filePath, checksumMode)
         if (returnCode == 404):
-            logging.warning("Remote file not found: %s", url)
+            if warnOnError:
+                logging.warning("Remote file not found: %s", url)
         elif (returnCode >= 400):
-            logging.warning("Error code %d returned while downloading %s", returnCode, url)
+            if warnOnError:
+                logging.warning("Error code %d returned while downloading %s", returnCode, url)
         fetched = (returnCode == 200)
 
     return fetched
@@ -288,7 +290,7 @@ def gavExists(repoUrl, artifact):
         if os.path.exists(metadataFilePath):
             fetched = True
         else:
-            fetched = downloadFile(metadataUrl, metadataFilePath)
+            fetched = downloadFile(metadataUrl, metadataFilePath, warnOnError=False)
         if fetched:
             metadataDoc = ElementTree(file=metadataFilePath)
             root = metadataDoc.getroot()
