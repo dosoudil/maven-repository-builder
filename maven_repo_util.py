@@ -159,7 +159,7 @@ def downloadFile(url, filePath, checksumMode=ChecksumMode.check):
     """Downloads file from the given URL to local path if the path does not exist yet."""
     fetched = False
     if os.path.exists(filePath):
-        logging.debug("Artifact already downloaded: %s", url)
+        logging.debug("File already downloaded: %s", url)
         fetched = True
     else:
         returnCode = download(url, filePath, checksumMode)
