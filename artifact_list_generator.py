@@ -77,13 +77,19 @@ def generateArtifactList(options):
 def main():
     description = "Generate artifact list from sources defined in the given congiguration file"
     cliOptParser = optparse.OptionParser(usage="Usage: %prog -c CONFIG", description=description)
-    cliOptParser.add_option('-c', '--config', dest='config',
-            help='Configuration file to use for generation of an artifact list for the repository builder')
-    cliOptParser.add_option('-l', '--loglevel',
-            default='info',
-            help='Set the level of log output.  Can be set to debug, info, warning, error, or critical')
-    cliOptParser.add_option('-L', '--logfile',
-            help='Set the file in which the log output should be written.')
+    cliOptParser.add_option(
+        '-c', '--config', dest='config',
+        help='Configuration file to use for generation of an artifact list for the repository builder'
+    )
+    cliOptParser.add_option(
+        '-l', '--loglevel',
+        default='info',
+        help='Set the level of log output.  Can be set to debug, info, warning, error, or critical'
+    )
+    cliOptParser.add_option(
+        '-L', '--logfile',
+        help='Set the file in which the log output should be written.'
+    )
     (options, args) = cliOptParser.parse_args()
 
     # Set the log level

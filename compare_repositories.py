@@ -47,16 +47,23 @@ def compareArtifacts(localRepoPath, remoteUrl):
 
 def main():
     usage = "usage: %prog [options] REPOSITORY_PATH"
-    cliOptParser = optparse.OptionParser(usage=usage, description='Compare a local Maven repository'
-            ' to a remote repository.')
-    cliOptParser.add_option('-l', '--loglevel',
-            default='info',
-            help='Set the level of log output.  Can be set to debug, info, warning, error, or critical')
-    cliOptParser.add_option('-L', '--logfile',
-            help='Set the file in which the log output should be written.')
-    cliOptParser.add_option('-u', '--url',
-            default='http://repo1.maven.org/maven2/',
-            help='URL of the remote repository to use for comparison, defaults to Maven central')
+    cliOptParser = optparse.OptionParser(
+        usage=usage, description='Compare a local Maven repository to a remote repository.'
+    )
+    cliOptParser.add_option(
+        '-l', '--loglevel',
+        default='info',
+        help='Set the level of log output.  Can be set to debug, info, warning, error, or critical'
+    )
+    cliOptParser.add_option(
+        '-L', '--logfile',
+        help='Set the file in which the log output should be written.'
+    )
+    cliOptParser.add_option(
+        '-u', '--url',
+        default='http://repo1.maven.org/maven2/',
+        help='URL of the remote repository to use for comparison, defaults to Maven central'
+    )
 
     (options, args) = cliOptParser.parse_args()
 
@@ -76,7 +83,7 @@ def main():
         sys.exit()
     elif not os.path.isdir(localRepoPath):
         logging.error('Local repository path must point to the root directory of a local maven repository: %s',
-                localRepoPath)
+                      localRepoPath)
         sys.exit()
 
     logging.info('Remote repository URL: %s', options.url)
@@ -84,5 +91,5 @@ def main():
     compareArtifacts(localRepoPath, options.url)
 
 
-if  __name__ == '__main__':
+if __name__ == '__main__':
     main()

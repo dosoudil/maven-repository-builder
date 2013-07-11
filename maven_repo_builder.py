@@ -295,7 +295,7 @@ def fetchArtifacts(remoteRepoUrl, localRepoDir, artifactList, classifiers, exclu
         for artifact in artifactList:
             if artifact.artifactType in excludedTypes:
                 logging.info("Skipping download of %s:%s:%s:%s because of excluded type", artifact.groupId,
-                              artifact.artifactId, artifact.artifactType, artifact.version)
+                             artifact.artifactId, artifact.artifactType, artifact.version)
                 continue
             if artifact.isSnapshot():
                 maven_repo_util.updateSnapshotVersionSuffix(artifact, remoteRepoUrl)
@@ -317,7 +317,7 @@ def fetchArtifacts(remoteRepoUrl, localRepoDir, artifactList, classifiers, exclu
         for artifact in artifactList:
             if artifact.artifactType in excludedTypes:
                 logging.info("Skipping copy of %s:%s:%s:%s because of excluded type", artifact.groupId,
-                              artifact.artifactId, artifact.artifactType, artifact.version)
+                             artifact.artifactId, artifact.artifactType, artifact.version)
                 continue
             if artifact.isSnapshot():
                 maven_repo_util.updateSnapshotVersionSuffix(artifact, remoteRepoUrl)
@@ -359,35 +359,52 @@ def main():
 
     # TODO: pkocandr - use argparse instead of optparse, which is deprecated since python 2.7
     cliOptParser = optparse.OptionParser(usage=usage, description=description)
-    cliOptParser.add_option('-c', '--config', dest='config',
-            help='Configuration file to use for generation of an artifact list for the repository builder')
-    cliOptParser.add_option('-u', '--url',
-            default='http://repo1.maven.org/maven2/',
-            help='URL of the remote repository from which artifacts are downloaded. It is used along with '
-                 'artifact list files when no config file is specified.')
-    cliOptParser.add_option('-o', '--output',
-            default='local-maven-repository',
-            help='Local output directory for the new repository')
-    cliOptParser.add_option('-a', '--classifiers',
-            default='sources',
-            help='Colon-separated list of additional classifiers to download. It is possible to use "__all__" to '
-                 'request all available classifiers (works only when artifact list is generated from config).')
-    cliOptParser.add_option('-s', '--checksummode',
-            default=_ChecksumMode.generate,
-            choices=(_ChecksumMode.generate, _ChecksumMode.download, _ChecksumMode.check),
-            help='Mode of dealing with MD5 and SHA1 checksums. Possible choices are:                                   '
-                 'generate - generate the checksums (default)                   '
-                 'download - download the checksums if available, if not, generate them                              '
-                 'check - check if downloaded and generated checksums are equal')
-    cliOptParser.add_option('-x', '--excludedtypes',
-            default='zip:ear:war:tar:gz:tar.gz:bz2:tar.bz2:7z:tar.7z',
-            help='Colon-separated list of filetypes to exclude. Defaults to '
-                 'zip:ear:war:tar:gz:tar.gz:bz2:tar.bz2:7z:tar.7z.')
-    cliOptParser.add_option('-l', '--loglevel',
-            default='info',
-            help='Set the level of log output.  Can be set to debug, info, warning, error, or critical')
-    cliOptParser.add_option('-L', '--logfile',
-            help='Set the file in which the log output should be written.')
+    cliOptParser.add_option(
+        '-c', '--config', dest='config',
+        help='Configuration file to use for generation of an artifact list for the repository builder'
+    )
+    cliOptParser.add_option(
+        '-u', '--url',
+        default='http://repo1.maven.org/maven2/',
+        help='URL of the remote repository from which artifacts are downloaded. '
+             'It is used along with artifact list files when no config file is specified.'
+    )
+    cliOptParser.add_option(
+        '-o', '--output',
+        default='local-maven-repository',
+        help='Local output directory for the new repository'
+    )
+    cliOptParser.add_option(
+        '-a', '--classifiers',
+        default='sources',
+        help='Colon-separated list of additional classifiers to download. It is '
+             'possible to use "__all__" to request all available classifiers '
+             '(works only when artifact list is generated from config).'
+    )
+    cliOptParser.add_option(
+        '-s', '--checksummode',
+        default=_ChecksumMode.generate,
+        choices=(_ChecksumMode.generate, _ChecksumMode.download, _ChecksumMode.check),
+        help='Mode of dealing with MD5 and SHA1 checksums. Possible choices are:                                   '
+             'generate - generate the checksums (default)                   '
+             'download - download the checksums if available, if not, generate them                              '
+             'check - check if downloaded and generated checksums are equal'
+    )
+    cliOptParser.add_option(
+        '-x', '--excludedtypes',
+        default='zip:ear:war:tar:gz:tar.gz:bz2:tar.bz2:7z:tar.7z',
+        help='Colon-separated list of filetypes to exclude. Defaults to '
+             'zip:ear:war:tar:gz:tar.gz:bz2:tar.bz2:7z:tar.7z.'
+    )
+    cliOptParser.add_option(
+        '-l', '--loglevel',
+        default='info',
+        help='Set the level of log output.  Can be set to debug, info, warning, error, or critical'
+    )
+    cliOptParser.add_option(
+        '-L', '--logfile',
+        help='Set the file in which the log output should be written.'
+    )
 
     (options, args) = cliOptParser.parse_args()
 
@@ -443,5 +460,5 @@ def main():
     maven_repo_util.cleanTempDir()
 
 
-if  __name__ == '__main__':
+if __name__ == '__main__':
     main()

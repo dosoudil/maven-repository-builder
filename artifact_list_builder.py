@@ -85,7 +85,7 @@ class ArtifactListBuilder:
 
             if extsAndClass:
                 gavUrl = maven_repo_util.slashAtTheEnd(downloadRootUrl) + artifact['build_name'] + '/'\
-                         + artifact['build_version'] + '/' + artifact['build_release'] + '/maven/'
+                    + artifact['build_version'] + '/' + artifact['build_release'] + '/maven/'
                 gavu = (groupId, artifactId, version, gavUrl)
 
                 gavuExtClass.setdefault(gavu, {})
@@ -149,14 +149,14 @@ class ArtifactListBuilder:
                         if line != "./" and line != "":
                             files.append(line[2:])
 
-                    (extsAndClass, suffix) = self._getExtensionsAndClassifiers(artifact.artifactId,
-                                artifact.version, files)
+                    (extsAndClass, suffix) = self._getExtensionsAndClassifiers(
+                        artifact.artifactId, artifact.version, files)
                     if len(extsAndClass) > 1 and "pom" in extsAndClass:
                         del extsAndClass["pom"]
                     spec.classifiers = extsAndClass[artifact.artifactType]
                     del extsAndClass[artifact.artifactType]
                     self._addArtifact(newArtifacts, artifact.groupId, artifact.artifactId,
-                            artifact.version, extsAndClass, suffix, spec.url)
+                                      artifact.version, extsAndClass, suffix, spec.url)
 
             artifacts.update(newArtifacts)
 
@@ -345,7 +345,7 @@ class ArtifactListBuilder:
             # """Prepares the version string to be part of regular expression for filename and when the
             # version is a snapshot version, it corrects the suffix to match even when the files are
             # named with the timestamp and build number as usual in case of snapshot versions."""
-            versionPattern = version.replace("SNAPSHOT",r'(SNAPSHOT|\d+\.\d+-\d+)')
+            versionPattern = version.replace("SNAPSHOT", r'(SNAPSHOT|\d+\.\d+-\d+)')
         else:
             versionPattern = "(" + re.escape(version) + ")"
         return re.escape(artifactId) + "-" + versionPattern
@@ -408,7 +408,7 @@ class ArtifactListBuilder:
 
     def _lftpFind(self, url):
         lftp = Popen(r'lftp -c "set ssl:verify-certificate no ; open ' + url
-                         + ' ; find  ."', stdout=PIPE, shell=True)
+                     + ' ; find  ."', stdout=PIPE, shell=True)
         return lftp.communicate()[0]
 
 

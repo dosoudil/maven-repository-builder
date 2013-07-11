@@ -89,7 +89,7 @@ class MavenArtifact:
         """Returns the filename without the file extension"""
         if self.snapshotVersionSuffix:
             baseFilename = self.artifactId + '-' \
-                         + self.version.replace("-SNAPSHOT", self.snapshotVersionSuffix)
+                + self.version.replace("-SNAPSHOT", self.snapshotVersionSuffix)
         else:
             baseFilename = self.artifactId + '-' + self.version
         return baseFilename
