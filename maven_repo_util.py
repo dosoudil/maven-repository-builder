@@ -52,7 +52,7 @@ def _downloadChecksum(url, filePath, checksumType, expectedSize, retries=3):
                     retries = 0
             elif os.path.getsize(csFilePath) != expectedSize:
                 logging.warning('Downloaded %s checksum have %d bytes instead of %s bytes', checksumType.upper(),
-                                expectedSize, os.path.getsize(csFilePath))
+                                os.path.getsize(csFilePath), expectedSize)
                 os.remove(csFilePath)
             else:
                 csDownloaded = True
