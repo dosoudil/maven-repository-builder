@@ -1,10 +1,11 @@
 import os
 import re
-import maven_repo_util
 import logging
 from multiprocessing.pool import ThreadPool
 from subprocess import Popen
 from subprocess import PIPE
+
+import maven_repo_util
 from maven_artifact import MavenArtifact
 
 
@@ -115,11 +116,11 @@ class ArtifactListBuilder:
             logging.debug("Resolving dependencies for %s", gav)
             artifact = MavenArtifact.createFromGAV(gav)
 
-            pomDir = 'poms'
+            pomFilename = 'poms/' + artifact.getPomFilename()
             fetched = False
             for repoUrl in repoUrls:
                 pomUrl = maven_repo_util.slashAtTheEnd(repoUrl) + artifact.getPomFilepath()
-                fetched = maven_repo_util.fetchFile(pomUrl, pomDir)
+                fetched = maven_repo_util.downloadFile(pomUrl, pomFilename)
                 if fetched:
                     break
 
@@ -128,7 +129,7 @@ class ArtifactListBuilder:
                 continue
 
             # Build dependency:list
-            args = ['mvn', 'dependency:list', '-N', '-f', pomDir + '/' + artifact.getPomFilename()]
+            args = ['mvn', 'dependency:list', '-N', '-f', pomFilename]
             mvn = Popen(args, stdout=PIPE)
             out = mvn.communicate()[0]
 

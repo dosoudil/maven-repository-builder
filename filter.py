@@ -1,8 +1,9 @@
 import re
 import logging
-import maven_repo_util
 from itertools import groupby
 from multiprocessing.pool import ThreadPool
+
+import maven_repo_util
 from maven_artifact import MavenArtifact
 
 

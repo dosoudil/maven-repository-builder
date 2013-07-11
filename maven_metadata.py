@@ -2,9 +2,10 @@ import datetime
 import copy
 import os
 import re
-import maven_repo_util
 from optparse import OptionParser
 from xml.dom.minidom import parseString
+
+import maven_repo_util
 
 
 def _isSnapshot(version):
@@ -14,7 +15,7 @@ def _isSnapshot(version):
 def ffilter(parent, dname, art_id):
     if _isSnapshot(dname):
         pomRE = re.compile((re.escape(art_id + "-" + dname + ".pom"))
-                .replace("-SNAPSHOT", "-(SNAPSHOT|\d+\.\d+-\d+)"))
+                  .replace("-SNAPSHOT", "-(SNAPSHOT|\d+\.\d+-\d+)"))
         for filename in os.listdir(os.path.join(parent, dname)):
             if pomRE.match(filename):
                 return True

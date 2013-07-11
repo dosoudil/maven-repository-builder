@@ -6,7 +6,6 @@ a list of artifacts and a remote repository URL.
 """
 
 import hashlib
-import httplib
 import logging
 import optparse
 import os
@@ -14,163 +13,14 @@ import re
 import shutil
 import sys
 import threading
-import urllib2
 import urlparse
 import Queue
+from multiprocessing.pool import ThreadPool
 
 import artifact_list_generator
 import maven_repo_util
+from maven_repo_util import ChecksumMode
 from maven_artifact import MavenArtifact
-from multiprocessing.pool import ThreadPool
-
-
-class _ChecksumMode:
-    generate = 'generate'
-    download = 'download'
-    check = 'check'
-
-
-def _downloadChecksum(url, filePath, checksumType, expectedSize, retries=3):
-    """
-    Download specified checksum from given orl to filepath. Both these inputs include filename of the original file
-    to which the checksum belongs.
-
-    :param url: url of the original file
-    :param filePath: local filepath where the original file is stored
-    :param checksumType: the type of downloaded checksum, e.g. md5 or sha1
-    :param expectedSize: expected filesize of the downloaded file
-    :param retries: number of retries when a strange error occurs or filesize doesn't match the expected one'
-    """
-    csDownloaded = False
-    while retries > 0 and not csDownloaded:
-        retries -= 1
-        csUrl = url + "." + checksumType.lower()
-        logging.debug('Downloading %s checksum from %s', checksumType.upper(), csUrl)
-        try:
-            csHttpResponse = urllib2.urlopen(urllib2.Request(csUrl))
-            csFilePath = filePath + "." + checksumType.lower()
-            with open(csFilePath, 'wb') as localfile:
-                shutil.copyfileobj(csHttpResponse, localfile)
-            if (csHttpResponse.code != 200):
-                logging.warning('Unable to download checksum from %s, error code: %s', csUrl, csHttpResponse.code)
-                if csHttpResponse.code / 100 != 5:  # if other than 5xx error occurs do not try again
-                    retries = 0
-            elif os.path.getsize(csFilePath) != expectedSize:
-                logging.warning('Downloaded %s checksum have %d bytes instead of %s bytes', checksumType.upper(),
-                                expectedSize, os.path.getsize(csFilePath))
-                os.remove(csFilePath)
-            else:
-                csDownloaded = True
-        except urllib2.HTTPError as err:
-                logging.warning('Unable to download checksum from %s, error code: %s', csUrl, err.code)
-                if err.code / 100 != 5:  # if other than 5xx error occurs do not try again
-                    retries = 0
-        except urllib2.URLError as err:
-            logging.warning('Unknown error while downloading checksum from %s: %s', csUrl, str(err))
-    return csDownloaded
-
-
-def download(url, checksumMode, filePath=None):
-    """Download the given url to a local file"""
-    logging.debug('Attempting download: %s', url)
-
-    if filePath:
-        if os.path.exists(filePath):
-            logging.debug('Local file already exists, skipping: %s', filePath)
-            return
-        localdir = os.path.dirname(filePath)
-        if not os.path.exists(localdir):
-            os.makedirs(localdir)
-
-    def getFileName(url, openUrl):
-        if 'Content-Disposition' in openUrl.info():
-            # If the response has Content-Disposition, try to get filename from it
-            cd = dict(map(
-                lambda x: x.strip().split('=') if '=' in x else (x.strip(), ''),
-                openUrl.info()['Content-Disposition'].split(';')))
-            if 'filename' in cd:
-                filename = cd['filename'].strip("\"'")
-                if filename:
-                    return filename
-        # if no filename was found above, parse it out of the final URL.
-        return os.path.basename(urlparse.urlsplit(openUrl.url)[2])
-
-    try:
-        retries = 3
-        checksumsOk = False
-        while retries > 0 and not checksumsOk:
-            retries -= 1
-            try:
-                httpResponse = urllib2.urlopen(urllib2.Request(url))
-                if (httpResponse.code == 200):
-                    filePath = filePath or getFileName(url, httpResponse)
-                    with open(filePath, 'wb') as localfile:
-                        shutil.copyfileobj(httpResponse, localfile)
-                    httpResponse.close()
-
-                    if checksumMode in (_ChecksumMode.download, _ChecksumMode.check):
-                        md5Downloaded = _downloadChecksum(url, filePath, "md5", 32)
-                        sha1Downloaded = _downloadChecksum(url, filePath, "sha1", 40)
-                        if not md5Downloaded or not sha1Downloaded:
-                            logging.warning('No chance to download checksums to %s correctly.', filePath)
-
-                    if checksumMode == _ChecksumMode.check:
-                        if maven_repo_util.checkChecksum(filePath):
-                            checksumsOk = True
-                    else:
-                        checksumsOk = True
-
-                    if checksumsOk:
-                        logging.debug('Download of %s complete', filePath)
-                        return httpResponse.code
-                    elif retries > 0:
-                        logging.warning('Checksum problem with %s, trying again...', url)
-                        os.remove(filePath)
-                        if os.path.exists(filePath + ".md5"):
-                            os.remove(filePath + ".md5")
-                        if os.path.exists(filePath + ".sha1"):
-                            os.remove(filePath + ".sha1")
-                    else:
-                        logging.error('Checksum problem with %s. No chance to download the file correctly. Exiting',
-                                      url)
-                        # Raise exception instaed of sys.exit as this code is not running in the main thread
-                        raise Exception("Exiting...")
-                else:
-                    httpResponse.close()
-                    if retries:
-                        logging.warning('Unable to download, HTTP Response code: %s. Trying again...',
-                                        httpResponse.code)
-                    else:
-                        logging.warning('Unable to download, HTTP Response code: %s. Exiting', httpResponse.code)
-                        raise Exception("Exiting...")
-            except urllib2.HTTPError as err:
-                if retries > 0:
-                    if err.code / 100 == 5:
-                        logging.debug('Unable to download, HTTP Response code = %s, trying again...', err.code)
-                    else:
-                        logging.debug('Unable to download, HTTP Response code = %s.', err.code)
-                        return err.code
-                else:
-                    logging.debug('Unable to download, HTTP Response code = %s, giving up...', err.code)
-                    return err.code
-    except urllib2.URLError as e:
-        logging.error('Unable to download, URLError: %s', e.reason)
-    except httplib.HTTPException as e:
-        logging.exception('Unable to download, HTTPException: %s', e.message)
-    except ValueError as e:
-        logging.error('ValueError: %s', e.message)
-
-
-def downloadFile(fileUrl, fileLocalPath, checksumMode):
-    """Downloads file from the given URL to local path if the path does not exist yet."""
-    if os.path.exists(fileLocalPath):
-        logging.debug("Artifact already downloaded: %s", fileUrl)
-    else:
-        returnCode = download(fileUrl, checksumMode, fileLocalPath)
-        if (returnCode == 404):
-            logging.warning("Remote file not found: %s", fileUrl)
-        elif (returnCode >= 400):
-            logging.warning("Error code %d returned while downloading %s", returnCode, fileUrl)
 
 
 def downloadArtifacts(remoteRepoUrl, localRepoDir, artifact, classifiers, checksumMode, mkdirLock, errors):
@@ -191,21 +41,23 @@ def downloadArtifacts(remoteRepoUrl, localRepoDir, artifact, classifiers, checks
         # Download main artifact
         artifactUrl = remoteRepoUrl + artifact.getArtifactFilepath()
         artifactLocalPath = os.path.join(localRepoDir, artifact.getArtifactFilepath())
-        downloadFile(artifactUrl, artifactLocalPath, checksumMode)
+        maven_repo_util.downloadFile(artifactUrl, artifactLocalPath, checksumMode)
 
         if not artifact.getClassifier():
             # Download pom if the main type is not pom
             if artifact.getArtifactFilename() != artifact.getPomFilename():
                 artifactPomUrl = remoteRepoUrl + artifact.getPomFilepath()
                 artifactPomLocalPath = os.path.join(localRepoDir, artifact.getPomFilepath())
-                downloadFile(artifactPomUrl, artifactPomLocalPath, checksumMode)
+                maven_repo_util.downloadFile(artifactPomUrl, artifactPomLocalPath, checksumMode)
 
                 # Download additional classifiers (only for non-pom artifacts)
                 for classifier in classifiers:
                     artifactClassifierUrl = remoteRepoUrl + artifact.getClassifierFilepath(classifier)
-                    artifactClassifierLocalPath = os.path.join(localRepoDir, artifact.getClassifierFilepath(classifier))
-                    downloadFile(artifactClassifierUrl, artifactClassifierLocalPath, checksumMode)
-    except Exception as ex:
+                    artifactClassifierLocalPath = os.path.join(
+                        localRepoDir, artifact.getClassifierFilepath(classifier))
+                    maven_repo_util.downloadFile(
+                        artifactClassifierUrl, artifactClassifierLocalPath, checksumMode)
+    except BaseException as ex:
         logging.error("Error while downloading artifact %s: %s", artifact, str(ex))
         errors.put(ex)
 
@@ -223,13 +75,13 @@ def copyFile(filePath, fileLocalPath, checksumMode):
     else:
         if os.path.exists(filePath):
             shutil.copyfile(filePath, fileLocalPath)
-            if checksumMode in (_ChecksumMode.download, _ChecksumMode.check):
+            if checksumMode in (ChecksumMode.download, ChecksumMode.check):
                 if os.path.exists(filePath + ".md5"):
                     shutil.copyfile(filePath + ".md5", fileLocalPath + ".md5")
                 if os.path.exists(filePath + ".sha1"):
                     shutil.copyfile(filePath + ".sha1", fileLocalPath + ".sha1")
 
-            if checksumMode == _ChecksumMode.check:
+            if checksumMode == ChecksumMode.check:
                 if not maven_repo_util.checkChecksum(filePath):
                     logging.error('Checksum problem with copy of %s. Exiting', filePath)
                     sys.exit(1)
@@ -383,8 +235,8 @@ def main():
     )
     cliOptParser.add_option(
         '-s', '--checksummode',
-        default=_ChecksumMode.generate,
-        choices=(_ChecksumMode.generate, _ChecksumMode.download, _ChecksumMode.check),
+        default=ChecksumMode.generate,
+        choices=(ChecksumMode.generate, ChecksumMode.download, ChecksumMode.check),
         help='Mode of dealing with MD5 and SHA1 checksums. Possible choices are:                                   '
              'generate - generate the checksums (default)                   '
              'download - download the checksums if available, if not, generate them                              '
