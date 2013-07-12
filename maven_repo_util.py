@@ -365,13 +365,24 @@ def getRegExpsFromStrings(strings, exact=True):
     return regExps
 
 
-def printArtifactList(artifactList):
+def printArtifactList(artifactList, printClassifiers):
+    """
+    Prints each artifact from given artifact list with its url on each line. When print
+    classifiers is True, then all classifiers are printed. When false, only artifacts with
+    empty classifier are printed. The format of each line is:
+        <url>\t<groupId>:<artifactId>:<type>[:<classifier>]:<version>
+
+    :param artifactList: artifact structure to print
+    :param printClassifiers: if False only artifacts with empty classifier are printed, if
+                             True then it prints all given artifacts with classifiers
+    """
     for gat in artifactList:
         for priority in artifactList[gat]:
             for version in artifactList[gat][priority]:
-                print artifactList[gat][priority][version].url + "\t" + gat + ":" + version
                 for classifier in artifactList[gat][priority][version].classifiers:
-                    print artifactList[gat][priority][version].url + "\t" + gat + ":" + classifier + ":" + version
+                    if classifier == "" or printClassifiers:
+                        print artifactList[gat][priority][version].url + "\t" + gat\
+                            + ((":" + classifier) if classifier else "") + ":" + version
 
 
 def getTempDir(relativePath=""):

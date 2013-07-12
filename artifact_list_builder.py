@@ -306,8 +306,8 @@ class ArtifactListBuilder:
         # returns ({ext: set([classifier])}, suffix)
         av = self._getArtifactVersionREString(artifactId, version)
         # artifactId-(version)-(classifier).(extension)
-        #                          (classifier)       (   extension   )
-        ceRegEx = re.compile(av + "(?:-([^.]+))?\." + "((?:tar\.)?[^.]+)$")
+        #                          (classifier)   (   extension   )
+        ceRegEx = re.compile(av + "(?:-([^.]+))?\.((?:tar\.)?[^.]+)$")
 
         suffix = None
         extensions = {}
@@ -319,7 +319,9 @@ class ArtifactListBuilder:
                 ext = ce.group(3)
 
                 extensions.setdefault(ext, set())
-                if classifier is not None:
+                if classifier is None:
+                    extensions[ext].add("")
+                else:
                     extensions[ext].add(classifier)
 
                 if realVersion != version:
@@ -328,7 +330,7 @@ class ArtifactListBuilder:
         return (extensions, suffix)
 
     def _addArtifact(self, artifacts, groupId, artifactId, version, extsAndClass, suffix, url):
-        if len(extsAndClass) > 1 and "pom" in extsAndClass:
+        if len(extsAndClass) > 1 and self._containsNonPomWithoutClassifier(extsAndClass) and "pom" in extsAndClass:
             del extsAndClass["pom"]
         for ext in extsAndClass:
             mavenArtifact = MavenArtifact(groupId, artifactId, ext, version)
@@ -336,6 +338,21 @@ class ArtifactListBuilder:
                 mavenArtifact.snapshotVersionSuffix = suffix
             logging.debug("Adding artifact %s", str(mavenArtifact))
             artifacts[mavenArtifact] = ArtifactSpec(url, extsAndClass[ext])
+
+    def _containsNonPomWithoutClassifier(self, extsAndClass):
+        """
+        Checks if the given dictionary with structure extension -> classifier[] contains an extension
+        different from "pom" with an empty classifier.
+
+        :param extsAndClass: the dictionary
+        :returns: True if such an extesion is found, False otherwise
+        """
+        result = False
+        for ext in extsAndClass:
+            if ext != "pom" and "" in extsAndClass[ext]:
+                result = True
+                break
+        return result
 
     def _updateExtensionsAndClassifiers(self, d, u):
         for extension, classifiers in u.iteritems():

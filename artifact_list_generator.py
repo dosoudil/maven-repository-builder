@@ -27,7 +27,12 @@ def _generateArtifactList(options):
         for priority in priorityList:
             versionList = priorityList[priority]
             for version in versionList:
-                logging.debug("  %s:%s", gat, version)
+                artSpec = versionList[version]
+                for classifier in artSpec.classifiers:
+                    if classifier == "":
+                        logging.debug("  %s:%s", gat, version)
+                    else:
+                        logging.debug("  %s:%s:%s", gat, classifier, version)
 
     #filter list
     logging.info("Filtering artifact list...")
@@ -40,7 +45,12 @@ def _generateArtifactList(options):
         for priority in priorityList:
             versionList = priorityList[priority]
             for version in versionList:
-                logging.debug("  %s:%s", gat, version)
+                artSpec = versionList[version]
+                for classifier in artSpec.classifiers:
+                    if classifier == "":
+                        logging.debug("  %s:%s", gat, version)
+                    else:
+                        logging.debug("  %s:%s:%s", gat, classifier, version)
 
     logging.info("Artifact list generation done")
     return artifactList
@@ -67,11 +77,11 @@ def generateArtifactList(options):
             for version in versionList:
                 artSpec = versionList[version]
                 url = artSpec.url
-                urlToMAList.setdefault(url, []).append(MavenArtifact.createFromGAV(gat + ":" + version))
-                if options.allclassifiers and artSpec.classifiers:
-                    for classifier in artSpec.classifiers:
-                        urlToMAList[url].append(MavenArtifact.createFromGAV(gat + ":" + classifier + ":" + version))
-
+                for classifier in artSpec.classifiers:
+                    if classifier == "" or options.allclassifiers:
+                        artifact = MavenArtifact.createFromGAV(gat + ((":" + classifier) if classifier else "") +
+                                                               ":" + version)
+                        urlToMAList.setdefault(url, []).append(artifact)
     return urlToMAList
 
 
@@ -102,7 +112,7 @@ def main():
 
     artifactList = _generateArtifactList(options)
 
-    maven_repo_util.printArtifactList(artifactList)
+    maven_repo_util.printArtifactList(artifactList, options.allclassifiers)
 
 
 if __name__ == '__main__':
