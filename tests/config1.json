@@ -1,0 +1,13 @@
+{
+  "result-repo-name": "maven-test-repo",
+  "generate-metadata": "false",
+  "single-version": "true",
+  "artifact-sources": [
+    {
+      "type": "repository",
+      "repo-url": "file://tests/testrepo/"
+    }
+  ],
+  "excluded-file-patterns": [ ],
+  "multi-version-ga-patterns": [ ]
+}
