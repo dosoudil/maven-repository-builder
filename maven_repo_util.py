@@ -155,56 +155,71 @@ def download(url, filePath=None, checksumMode=ChecksumMode.check):
         logging.error('ValueError: %s', e.message)
 
 
-def downloadFile(url, filePath, checksumMode=ChecksumMode.check, warnOnError=True, exitOnError=False):
+def _downloadFile(url, filePath, checksumMode=ChecksumMode.check, warnOnError=True):
     """Downloads file from the given URL to local path if the path does not exist yet."""
     fetched = False
-    if os.path.exists(filePath):
-        logging.debug("File already downloaded: %s", url)
-        fetched = True
-    else:
-        try:
-            returnCode = download(url, filePath, checksumMode)
-            if (returnCode == 404):
-                if warnOnError:
-                    logging.warning("Remote file not found: %s", url)
+    try:
+        returnCode = download(url, filePath, checksumMode)
+        if (returnCode == 404):
+            if warnOnError:
+                logging.warning("Remote file not found: %s", url)
             elif (returnCode >= 400):
                 if warnOnError:
                     logging.warning("Error code %d returned while downloading %s", returnCode, url)
-            fetched = (returnCode == 200)
-        except SystemExit:
-            fetched = False
-
-    if exitOnError and not fetched:
-        sys.exit(1)
-
+        fetched = (returnCode == 200)
+    except SystemExit:
+        fetched = False
     return fetched
 
 
-def copyFile(filePath, fileLocalPath, checksumMode=ChecksumMode.check):
+def _copyFile(filePath, fileLocalPath, checksumMode=ChecksumMode.check):
     """Copies file from the given path to local path if the path does not exist yet."""
-    logging.info('Copying file: %s', filePath)
+    logging.debug('Copying file: %s', filePath)
+    fetched = True
 
     dirname = os.path.dirname(fileLocalPath)
     if not os.path.exists(dirname):
         os.makedirs(dirname)
 
-    if os.path.exists(fileLocalPath):
-        logging.debug("File already copy: " + filePath)
-    else:
-        if os.path.exists(filePath):
-            shutil.copyfile(filePath, fileLocalPath)
-            if checksumMode in (ChecksumMode.download, ChecksumMode.check):
-                if os.path.exists(filePath + ".md5"):
-                    shutil.copyfile(filePath + ".md5", fileLocalPath + ".md5")
-                if os.path.exists(filePath + ".sha1"):
-                    shutil.copyfile(filePath + ".sha1", fileLocalPath + ".sha1")
+    if os.path.exists(filePath):
+        shutil.copyfile(filePath, fileLocalPath)
+        if checksumMode in (ChecksumMode.download, ChecksumMode.check):
+            if os.path.exists(filePath + ".md5"):
+                shutil.copyfile(filePath + ".md5", fileLocalPath + ".md5")
+            if os.path.exists(filePath + ".sha1"):
+                shutil.copyfile(filePath + ".sha1", fileLocalPath + ".sha1")
 
-            if checksumMode == ChecksumMode.check:
-                if not checkChecksum(filePath):
-                    logging.error('Checksum problem with copy of %s. Exiting', filePath)
-                    sys.exit(1)
+        if checksumMode == ChecksumMode.check:
+            if not checkChecksum(filePath):
+                logging.error('Checksum problem with copy of %s. Exiting', filePath)
+                sys.exit(1)
+    else:
+        logging.warning("Source file not found: %s", filePath)
+        fetched = False
+    return fetched
+
+
+def fetchFile(url, filePath, checksumMode=ChecksumMode.check, warnOnError=True, exitOnError=False):
+    """Fetch file from the given URL (remote or local), to local path if the path does not exist yet."""
+    fetched = False
+    if os.path.exists(filePath):
+        logging.debug("File already fetched: %s", url)
+        fetched = True
+    else:
+        protocol = urlProtocol(url)
+        if protocol == 'http' or protocol == 'https':
+            fetched = _downloadFile(url, filePath, checksumMode, warnOnError)
+        elif protocol == 'file':
+            fetched = _copyFile(url[7:], filePath, checksumMode)
+        elif protocol == '':
+            fetched = _copyFile(url, filePath, checksumMode)
         else:
-            logging.warning("Source file not found: %s", filePath)
+            logging.warning("Unknown protocol %s. URL: '%s'", protocol, url)
+            fetched = False
+
+    if exitOnError and not fetched:
+        sys.exit(1)
+    return fetched
 
 
 def setLogLevel(level, logfile=None):
@@ -296,7 +311,7 @@ def gavExists(repoUrl, artifact):
         if os.path.exists(metadataFilePath):
             fetched = True
         else:
-            fetched = downloadFile(metadataUrl, metadataFilePath, warnOnError=False)
+            fetched = fetchFile(metadataUrl, metadataFilePath, warnOnError=False)
         if fetched:
             metadataDoc = ElementTree(file=metadataFilePath)
             root = metadataDoc.getroot()
@@ -425,7 +440,7 @@ def updateSnapshotVersionSuffix(artifact, repoUrl):
     metadataUrl = slashAtTheEnd(repoUrl) + artifact.getDirPath() + 'maven-metadata.xml'
     gavPath = getTempDir(artifact.getDirPath())
     metadataFilePath = gavPath + 'maven-metadata.xml'
-    if not os.path.exists(metadataFilePath) and not downloadFile(metadataUrl, metadataFilePath):
+    if not os.path.exists(metadataFilePath) and not fetchFile(metadataUrl, metadataFilePath):
         logging.debug("Unable to read metadata from %s", metadataUrl)
         return
 
