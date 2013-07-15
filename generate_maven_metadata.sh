@@ -11,5 +11,5 @@ echo "Generating maven metadata files ..."
 cd $SEARCHDIR
 for d in $(find . -name \*.pom -print | sed -e "s:/[^/]*/[^/]*$::" | sort | uniq)
 do
-    python $WORKDIR/maven_metadata.py $d
+    python $WORKDIR/maven_metadata.py "$d"
 done

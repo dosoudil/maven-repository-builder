@@ -27,6 +27,8 @@ def ffilter(parent, dname, art_id):
 parser = OptionParser(usage='%prog [directories]')
 (opts, directories) = parser.parse_args()
 
+sorterdir = os.path.dirname(os.path.realpath(__file__)) + '/versionSorter/'
+
 for directory in directories:
     n_dir = os.path.normpath(directory)
 
@@ -36,7 +38,7 @@ for directory in directories:
     group_id = '.'.join(os.path.dirname(n_dir).split('/'))
     art_id = os.path.basename(n_dir)
     versions = [d for d in os.listdir(n_dir) if ffilter(n_dir, d, art_id)]
-    versionsReversed = maven_repo_util._sortVersionsWithAtlas(versions, "../versionSorter/")
+    versionsReversed = maven_repo_util._sortVersionsWithAtlas(versions, sorterdir)
     versions = copy.deepcopy(versionsReversed)
     versions.reverse()
 
