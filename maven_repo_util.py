@@ -155,21 +155,27 @@ def download(url, filePath=None, checksumMode=ChecksumMode.check):
         logging.error('ValueError: %s', e.message)
 
 
-def downloadFile(url, filePath, checksumMode=ChecksumMode.check, warnOnError=True):
+def downloadFile(url, filePath, checksumMode=ChecksumMode.check, warnOnError=True, exitOnError=False):
     """Downloads file from the given URL to local path if the path does not exist yet."""
     fetched = False
     if os.path.exists(filePath):
         logging.debug("File already downloaded: %s", url)
         fetched = True
     else:
-        returnCode = download(url, filePath, checksumMode)
-        if (returnCode == 404):
-            if warnOnError:
-                logging.warning("Remote file not found: %s", url)
-        elif (returnCode >= 400):
-            if warnOnError:
-                logging.warning("Error code %d returned while downloading %s", returnCode, url)
-        fetched = (returnCode == 200)
+        try:
+            returnCode = download(url, filePath, checksumMode)
+            if (returnCode == 404):
+                if warnOnError:
+                    logging.warning("Remote file not found: %s", url)
+            elif (returnCode >= 400):
+                if warnOnError:
+                    logging.warning("Error code %d returned while downloading %s", returnCode, url)
+            fetched = (returnCode == 200)
+        except SystemExit:
+            fetched = False
+
+    if exitOnError and not fetched:
+        sys.exit(1)
 
     return fetched
 
