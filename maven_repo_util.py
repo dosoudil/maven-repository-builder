@@ -51,8 +51,8 @@ def _downloadChecksum(url, filePath, checksumType, expectedSize, retries=3):
                 if csHttpResponse.code / 100 != 5:  # if other than 5xx error occurs do not try again
                     retries = 0
             elif os.path.getsize(csFilePath) != expectedSize:
-                logging.warning('Downloaded %s checksum have %d bytes instead of %s bytes', checksumType.upper(),
-                                os.path.getsize(csFilePath), expectedSize)
+                logging.warning('Downloaded %s checksum from %s have %d bytes instead of %s bytes',
+                                checksumType.upper(), csUrl, os.path.getsize(csFilePath), expectedSize)
                 os.remove(csFilePath)
             else:
                 csDownloaded = True
