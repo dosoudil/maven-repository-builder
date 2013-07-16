@@ -230,9 +230,9 @@ def setLogLevel(level, logfile=None):
         unknownLevel = True
         logLevel = logging.INFO
     if logfile:
-        logging.basicConfig(format='%(levelname)s: %(message)s', level=logLevel, filename=logfile, filemode='a')
+        logging.basicConfig(format='%(levelname)s (%(threadName)s): %(message)s', level=logLevel, filename=logfile, filemode='a')
     else:
-        logging.basicConfig(format='%(levelname)s: %(message)s', level=logLevel)
+        logging.basicConfig(format='%(levelname)s (%(threadName)s): %(message)s', level=logLevel)
 
     if unknownLevel:
         logging.warning('Unrecognized log level: %s  Log level set to info', level)

@@ -39,7 +39,7 @@ class Tests(unittest.TestCase):
           "1.0.2": "http://repo2.maven.org/maven2/"}}}
 
     def setUp(self):
-        logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.DEBUG)
+        logging.basicConfig(format="%(levelname)s (%(threadName)s): %(message)s", level=logging.DEBUG)
 
     def test_url_download(self):
         # make sure the shuffled sequence does not lose any elements
