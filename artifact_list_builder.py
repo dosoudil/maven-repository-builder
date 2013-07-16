@@ -120,7 +120,7 @@ class ArtifactListBuilder:
             fetched = False
             for repoUrl in repoUrls:
                 pomUrl = maven_repo_util.slashAtTheEnd(repoUrl) + artifact.getPomFilepath()
-                fetched = maven_repo_util.downloadFile(pomUrl, pomFilename)
+                fetched = maven_repo_util.fetchFile(pomUrl, pomFilename)
                 if fetched:
                     break
 
