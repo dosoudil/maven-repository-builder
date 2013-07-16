@@ -1,0 +1,9 @@
+{
+  "artifact-sources": [
+    {
+      "type": "repository",
+      "repo-url": "tests/testrepo/",
+      "included-gav-patterns-ref": "igpr5"
+    }
+  ]
+}

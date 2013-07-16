@@ -1,0 +1,8 @@
+{
+  "artifact-sources": [
+    {
+      "type": "repository",
+      "repo-url": "http://download.eng.brq.redhat.com/scratch/jbrazdil/maven-repo-builder/testing-repo/"
+    }
+  ]
+}

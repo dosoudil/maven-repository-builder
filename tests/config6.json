@@ -1,0 +1,6 @@
+{
+  "include-high-priority": "config1.json",
+  "excluded-gav-patterns-ref": [
+    "egpr6"
+  ]
+}
