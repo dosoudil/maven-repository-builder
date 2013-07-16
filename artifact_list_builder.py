@@ -385,7 +385,7 @@ class ArtifactListBuilder:
                     artifacts[artifact] = ArtifactSpec(url)
                     return
 
-            logging.warning('artifact %s not found in any url!', artifact)
+            logging.warning('Artifact %s not found in any url!', artifact)
 
         artifacts = {}
         pool = ThreadPool(maven_repo_util.MAX_THREADS)

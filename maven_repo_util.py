@@ -148,9 +148,9 @@ def download(url, filePath=None, checksumMode=ChecksumMode.check):
                     logging.debug('Unable to download, HTTP Response code = %s, giving up...', err.code)
                     return err.code
     except urllib2.URLError as e:
-        logging.error('Unable to download, URLError: %s', e.reason)
+        logging.error('Unable to download %s, URLError: %s', url, e.reason)
     except httplib.HTTPException as e:
-        logging.exception('Unable to download, HTTPException: %s', e.message)
+        logging.exception('Unable to download %s, HTTPException: %s', url, e.message)
     except ValueError as e:
         logging.error('ValueError: %s', e.message)
 
@@ -235,7 +235,7 @@ def setLogLevel(level, logfile=None):
         logging.basicConfig(format='%(levelname)s (%(threadName)s): %(message)s', level=logLevel)
 
     if unknownLevel:
-        logging.warning('Unrecognized log level: %s  Log level set to info', level)
+        logging.warning('Unrecognized log level: %s. Log level set to info', level)
 
 
 def getSha1Checksum(filepath):
