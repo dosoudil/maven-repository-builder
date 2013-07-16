@@ -112,6 +112,8 @@ maven_repo_builder.py or it can be used as a separate tool. Configuration struct
       -c CONFIG, --config CONFIG
                             Configuration file to use to generate an artifact list
                             for the repository builder
+      -a, --allclassifiers
+                            Find all available classifiers
       -l LOGLEVEL, --loglevel=LOGLEVEL
                             Set the level of log output.  Can be set to debug,
                             info, warning, error, or critical
