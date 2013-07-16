@@ -8,6 +8,8 @@ import tempfile
 import unittest
 import copy
 
+import artifact_list_builder
+import configuration
 import maven_repo_util
 from maven_repo_util import ChecksumMode
 from maven_artifact import MavenArtifact
@@ -275,6 +277,69 @@ class Tests(unittest.TestCase):
         self.assertTrue('1.0.1' in al['org.jboss:jboss-foo:jar']['1'])
         self.assertTrue('1.1.0' in al['org.jboss:jboss-foo:jar']['1'])
         self.assertTrue('2' in al['org.jboss:jboss-foo:jar'])
+
+    def test_listDependencies(self):
+        config = configuration.Configuration()
+        config.allClassifiers = True
+        repoUrls = ['http://repo.maven.apache.org/maven2/']
+        gavs = [
+            'com.sun.faces:jsf-api:2.0.11',
+            'org.apache.ant:ant:1.8.0'
+        ]
+        dependencies = {
+            'javax.servlet:javax.servlet-api:jar:3.0.1': set(['javadoc', 'sources']),
+            'javax.servlet.jsp.jstl:jstl-api:jar:1.2': set(['javadoc', 'sources']),
+            'com.sun.faces:jsf-api:jar:2.0.11': set(['javadoc', 'sources']),
+            'org.apache.ant:ant:jar:1.8.0': set([]),
+            'xml-apis:xml-apis:jar:1.3.04': set(['source', 'sources']),
+            'javax.servlet:servlet-api:jar:2.5': set(['sources']),
+            'javax.el:javax.el-api:jar:2.2.1': set(['javadoc', 'sources']),
+            'junit:junit:jar:3.8.2': set(['javadoc', 'sources']),
+            'xerces:xercesImpl:jar:2.9.0': set([]),
+            'javax.servlet.jsp:jsp-api:jar:2.1': set(['sources']),
+            'javax.servlet.jsp:javax.servlet.jsp-api:jar:2.2.1': set(['javadoc', 'sources']),
+            'org.apache.ant:ant-launcher:jar:1.8.0': set([])
+        }
+        builder = artifact_list_builder.ArtifactListBuilder(config)
+        artifactDict = builder._listDependencies(repoUrls, gavs)
+        artifacts = artifactDict.keys()
+
+        # Assert that dependency list has the same length as created artifact list
+        self.assertEqual(len(dependencies), len(artifacts))
+
+        # Assert that artifact list contains all dependencies with correct classifiers
+        for dep in dependencies:
+            depArt = MavenArtifact.createFromGAV(dep)
+
+            theArtifact = None
+            for artifact in artifacts:
+                if artifact.getGAV() == depArt.getGAV():
+                    theArtifact = artifact
+            self.assertTrue(theArtifact is not None)
+
+            theClassifiers = artifactDict[theArtifact].classifiers
+            for classifier in dependencies[dep]:
+                self.assertTrue(classifier in theClassifiers)
+
+    def test_listMeadTagArtifacts(self):
+        config = configuration.Configuration()
+        config.allClassifiers = True
+        kojiUrl = "http://brewhub.devel.redhat.com/brewhub/"
+        tagName = "mead-import-maven"
+        downloadRootUrl = "http://download.devel.redhat.com/brewroot/packages/"
+        gavPatterns = [
+            'org.apache.maven:maven-core:2.0.6'
+        ]
+
+        builder = artifact_list_builder.ArtifactListBuilder(config)
+        artifactDict = builder._listMeadTagArtifacts(kojiUrl, downloadRootUrl, tagName, gavPatterns)
+        artifacts = artifactDict.keys()
+
+        # Assert that number of artifacts is equal to 1
+        self.assertEqual(len(artifacts), 1)
+
+        # Assert that only maven core is included
+        self.assertTrue(artifacts[0].getGAV() == gavPatterns[0])
 
 
 if __name__ == '__main__':
