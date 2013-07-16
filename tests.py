@@ -13,7 +13,7 @@ import configuration
 import maven_repo_util
 from maven_repo_util import ChecksumMode
 from maven_artifact import MavenArtifact
-from artifact_list_builder import ArtifactListBuilder
+from artifact_list_builder import ArtifactListBuilder, ArtifactSpec
 from configuration import Configuration
 from filter import Filter
 
@@ -300,26 +300,15 @@ class Tests(unittest.TestCase):
             'javax.servlet.jsp:javax.servlet.jsp-api:jar:2.2.1': set(['javadoc', 'sources']),
             'org.apache.ant:ant-launcher:jar:1.8.0': set([])
         }
-        builder = artifact_list_builder.ArtifactListBuilder(config)
-        artifactDict = builder._listDependencies(repoUrls, gavs)
-        artifacts = artifactDict.keys()
-
-        # Assert that dependency list has the same length as created artifact list
-        self.assertEqual(len(dependencies), len(artifacts))
-
-        # Assert that artifact list contains all dependencies with correct classifiers
+        expectedArtifacts = {}
         for dep in dependencies:
-            depArt = MavenArtifact.createFromGAV(dep)
+            artifact = MavenArtifact.createFromGAV(dep)
+            expectedArtifacts[artifact] = ArtifactSpec(repoUrls[0], dependencies[dep])
 
-            theArtifact = None
-            for artifact in artifacts:
-                if artifact.getGAV() == depArt.getGAV():
-                    theArtifact = artifact
-            self.assertTrue(theArtifact is not None)
+        builder = artifact_list_builder.ArtifactListBuilder(config)
+        actualArtifacts = builder._listDependencies(repoUrls, gavs)
 
-            theClassifiers = artifactDict[theArtifact].classifiers
-            for classifier in dependencies[dep]:
-                self.assertTrue(classifier in theClassifiers)
+        self.assertEqualArtifactList(expectedArtifacts, actualArtifacts)
 
     def test_listMeadTagArtifacts(self):
         config = configuration.Configuration()
@@ -332,14 +321,48 @@ class Tests(unittest.TestCase):
         ]
 
         builder = artifact_list_builder.ArtifactListBuilder(config)
-        artifactDict = builder._listMeadTagArtifacts(kojiUrl, downloadRootUrl, tagName, gavPatterns)
-        artifacts = artifactDict.keys()
+        actualArtifacts = builder._listMeadTagArtifacts(kojiUrl, downloadRootUrl, tagName, gavPatterns)
+        expectedUrl = downloadRootUrl + "org.apache.maven-maven-core/2.0.6/1/maven/"
+        expectedArtifacts = {
+            MavenArtifact.createFromGAV(gavPatterns[0]): ArtifactSpec(expectedUrl, set(['javadoc', 'sources']))
+        }
 
-        # Assert that number of artifacts is equal to 1
-        self.assertEqual(len(artifacts), 1)
+        self.assertEqualArtifactList(expectedArtifacts, actualArtifacts)
 
-        # Assert that only maven core is included
-        self.assertTrue(artifacts[0].getGAV() == gavPatterns[0])
+    def test_listRepository_http(self):
+        config = configuration.Configuration()
+        config.allClassifiers = True
+        repoUrls = ['http://repo.maven.apache.org/maven2/']
+        gavPatterns = [
+            'com.sun.faces:jsf-api:2.0.11',
+            'org.apache.ant:ant:1.8.0'
+        ]
+
+        builder = artifact_list_builder.ArtifactListBuilder(config)
+        actualArtifacts = builder._listRepository(repoUrls, gavPatterns)
+        expectedArtifacts = {
+            MavenArtifact.createFromGAV(gavPatterns[0]): ArtifactSpec(repoUrls[0], set(['javadoc', 'sources'])),
+            MavenArtifact.createFromGAV(gavPatterns[1]): ArtifactSpec(repoUrls[0], set([]))
+        }
+
+        self.assertEqualArtifactList(expectedArtifacts, actualArtifacts)
+
+    def assertEqualArtifactList(self, expectedArtifacts, actualArtifacts):
+        # Assert that length of expectedArtifacts is the same as of actualArtifacts
+        self.assertEqual(len(expectedArtifacts), len(actualArtifacts))
+
+        # Assert that artifact list contains all dependencies with correct classifiers
+        for expectedArtifact in expectedArtifacts:
+            foundArtifact = None
+            for actualArtifact in actualArtifacts:
+                if actualArtifact.getGAV() == expectedArtifact.getGAV():
+                    foundArtifact = actualArtifact
+            self.assertTrue(foundArtifact is not None)
+
+            foundClassifiers = actualArtifacts[foundArtifact].classifiers
+            print str(foundClassifiers)
+            for classifier in expectedArtifacts[expectedArtifact].classifiers:
+                self.assertTrue(classifier in foundClassifiers)
 
 
 if __name__ == '__main__':
