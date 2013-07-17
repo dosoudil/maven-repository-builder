@@ -129,15 +129,21 @@ class ArtifactListBuilder:
                 continue
 
             # Build dependency:list
-            args = ['mvn', 'dependency:list', '-N', '-f', pomFilename]
+            tempDir = maven_repo_util.getTempDir("maven-deps-output")
+            outFile = tempDir + gav + ".out"
+            args = ['mvn', 'dependency:list', '-N', '-DoutputFile=' + outFile, '-f', pomFilename]
             mvn = Popen(args, stdout=PIPE)
-            out = mvn.communicate()[0]
+            mvnStdout = mvn.communicate()[0]
 
             if mvn.returncode != 0:
                 logging.warning("Maven failed to finish with success. Skipping artifact %s", gav)
+                logging.debug("Maven output:\n%s", mvnStdout)
                 continue
 
-            gavList = self._parseDepList(out.split('\n'))
+            with open(outFile, 'r') as out:
+                depLines = out.readlines()
+
+            gavList = self._parseDepList(depLines)
             newArtifacts = self._listArtifacts(repoUrls, gavList)
 
             if self.configuration.allClassifiers:
@@ -403,12 +409,9 @@ class ArtifactListBuilder:
         regexComment = re.compile('#.*$')
         # Match pattern groupId:artifactId:[type:][classifier:]version[:scope]
         regexGAV = re.compile('(([\w\-.]+:){2,3}([\w\-.]+:)?([\d][\w\-.]+))(:[\w]*\S)?')
-        # Match time
-        regexTime = re.compile("([ ]|^)([0-1][\d]|2[0-4]):[0-5][\d]:[0-5][\d]([ ]|$)")
         gavList = []
         for nextLine in depList:
             nextLine = regexComment.sub('', nextLine)
-            nextLine = regexTime.sub('', nextLine)
             nextLine = nextLine.strip()
             gav = regexGAV.search(nextLine)
             if gav:

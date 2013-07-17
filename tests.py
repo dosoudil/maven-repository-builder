@@ -289,8 +289,6 @@ class Tests(unittest.TestCase):
         dependencies = {
             'javax.servlet:javax.servlet-api:jar:3.0.1': set(['javadoc', 'sources']),
             'javax.servlet.jsp.jstl:jstl-api:jar:1.2': set(['javadoc', 'sources']),
-            'com.sun.faces:jsf-api:jar:2.0.11': set(['javadoc', 'sources']),
-            'org.apache.ant:ant:jar:1.8.0': set([]),
             'xml-apis:xml-apis:jar:1.3.04': set(['source', 'sources']),
             'javax.servlet:servlet-api:jar:2.5': set(['sources']),
             'javax.el:javax.el-api:jar:2.2.1': set(['javadoc', 'sources']),
@@ -360,7 +358,6 @@ class Tests(unittest.TestCase):
             self.assertTrue(foundArtifact is not None)
 
             foundClassifiers = actualArtifacts[foundArtifact].classifiers
-            print str(foundClassifiers)
             for classifier in expectedArtifacts[expectedArtifact].classifiers:
                 self.assertTrue(classifier in foundClassifiers)
 
