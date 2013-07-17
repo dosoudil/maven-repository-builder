@@ -158,12 +158,13 @@ class ArtifactListBuilder:
                                               '-DoutputFile=' + outFile,
                                               '-f', pomFilename,
                                               '-s', settingsFile]
+            logging.debug("Running Maven:\n  %s", " ".join(args))
             mvn = Popen(args, stdout=PIPE)
             mvnStdout = mvn.communicate()[0]
+            logging.debug("Maven output:\n%s", mvnStdout)
 
             if mvn.returncode != 0:
                 logging.warning("Maven failed to finish with success. Skipping artifact %s", gav)
-                logging.debug("Maven output:\n%s", mvnStdout)
                 continue
 
             with open(outFile, 'r') as out:
