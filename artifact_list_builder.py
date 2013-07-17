@@ -20,6 +20,17 @@ class ArtifactListBuilder:
             L artifact specification (repo url string and list of found classifiers)
     """
 
+    SETTINGS_TPL = """
+        <settings>
+           <mirrors>
+             <mirror>
+               <id>maven-repo-builder-override</id>
+               <mirrorOf>*</mirrorOf>
+               <url>$url</url>
+             </mirror>
+           </mirrors>
+         </settings>"""
+
     def __init__(self, configuration):
         self.configuration = configuration
 
@@ -117,21 +128,36 @@ class ArtifactListBuilder:
             artifact = MavenArtifact.createFromGAV(gav)
 
             pomFilename = 'poms/' + artifact.getPomFilename()
+            successPomUrl = None
             fetched = False
             for repoUrl in repoUrls:
                 pomUrl = maven_repo_util.slashAtTheEnd(repoUrl) + artifact.getPomFilepath()
                 fetched = maven_repo_util.fetchFile(pomUrl, pomFilename)
                 if fetched:
+                    successPomUrl = repoUrl
                     break
 
             if not fetched:
                 logging.warning("Failed to retrieve pom file for artifact %s", gav)
                 continue
 
+            tempDir = maven_repo_util.getTempDir()
+            if not os.path.exists(tempDir):
+                os.makedirs(tempDir)
+
+            # Create settings.xml
+            settingsFile = tempDir + "settings.xml"
+            with open(settingsFile, 'w') as settings:
+                settingsContent = re.sub('\$url', successPomUrl, self.SETTINGS_TPL)
+                settings.write(settingsContent)
+
             # Build dependency:list
-            tempDir = maven_repo_util.getTempDir("maven-deps-output")
-            outFile = tempDir + gav + ".out"
-            args = ['mvn', 'dependency:list', '-N', '-DoutputFile=' + outFile, '-f', pomFilename]
+            depsDir = tempDir + "maven-deps-output/"
+            outFile = depsDir + gav + ".out"
+            args = ['mvn', 'dependency:list', '-N',
+                                              '-DoutputFile=' + outFile,
+                                              '-f', pomFilename,
+                                              '-s', settingsFile]
             mvn = Popen(args, stdout=PIPE)
             mvnStdout = mvn.communicate()[0]
 
