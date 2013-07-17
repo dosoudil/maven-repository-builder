@@ -35,7 +35,7 @@ class MavenArtifact:
         groupId = gavParts[0]
         artifactId = gavParts[1]
 
-        scopes = ["compile", "test", "provided", "runtime", "system"]
+        scopes = ["compile", "test", "provided", "runtime", "system", "import"]
         if gavParts[-1] in scopes:
             effectiveParts = len(gavParts) - 1
         else:
