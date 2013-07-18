@@ -85,5 +85,4 @@ for directory in directories:
             continue
         checksum = maven_repo_util.getChecksum(md_file, sum_constr)
         with open(sumfile, 'w') as sumobj:
-            sumobj.write(checksum + '\n')
             sumobj.write(checksum)
