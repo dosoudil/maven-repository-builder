@@ -1,4 +1,5 @@
 import datetime
+import hashlib
 import copy
 import os
 import re
@@ -77,3 +78,12 @@ for directory in directories:
     f = open(md_file, "w")
     f.write(pretty_xml)
     f.close()
+
+    for ext, sum_constr in (('.md5', hashlib.md5()), ('.sha1', hashlib.sha1())):
+        sumfile = md_file + ext
+        if os.path.exists(sumfile):
+            continue
+        checksum = maven_repo_util.getChecksum(md_file, sum_constr)
+        with open(sumfile, 'w') as sumobj:
+            sumobj.write(checksum + '\n')
+            sumobj.write(checksum)
