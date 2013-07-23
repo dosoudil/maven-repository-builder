@@ -345,6 +345,24 @@ class Tests(unittest.TestCase):
 
         self.assertEqualArtifactList(expectedArtifacts, actualArtifacts)
 
+    def test_listRepository_file(self):
+        config = configuration.Configuration()
+        config.allClassifiers = True
+        repoUrls = ['file://./tests/testrepo']
+        gavPatterns = [
+            'bar:foo-bar:1.1',
+            'foo.baz:baz-core:1.0'
+        ]
+
+        builder = artifact_list_builder.ArtifactListBuilder(config)
+        actualArtifacts = builder._listRepository(repoUrls, gavPatterns)
+        expectedArtifacts = {
+            MavenArtifact.createFromGAV(gavPatterns[0]): ArtifactSpec(repoUrls[0], set([])),
+            MavenArtifact.createFromGAV(gavPatterns[1]): ArtifactSpec(repoUrls[0], set(['javadoc', 'sources']))
+        }
+
+        self.assertEqualArtifactList(expectedArtifacts, actualArtifacts)
+
     def assertEqualArtifactList(self, expectedArtifacts, actualArtifacts):
         # Assert that length of expectedArtifacts is the same as of actualArtifacts
         self.assertEqual(len(expectedArtifacts), len(actualArtifacts))
