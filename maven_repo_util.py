@@ -27,7 +27,7 @@ class ChecksumMode:
 
 def _downloadChecksum(url, filePath, checksumType, expectedSize, retries=3):
     """
-    Download specified checksum from given orl to filepath. Both these inputs include filename of the original file
+    Download specified checksum from given url to filepath. Both these inputs include filename of the original file
     to which the checksum belongs.
 
     :param url: url of the original file
@@ -50,9 +50,9 @@ def _downloadChecksum(url, filePath, checksumType, expectedSize, retries=3):
                 logging.warning('Unable to download checksum from %s, error code: %s', csUrl, csHttpResponse.code)
                 if csHttpResponse.code / 100 != 5:  # if other than 5xx error occurs do not try again
                     retries = 0
-            elif os.path.getsize(csFilePath) != expectedSize:
-                logging.warning('Downloaded %s checksum from %s have %d bytes instead of %s bytes',
-                                checksumType.upper(), csUrl, os.path.getsize(csFilePath), expectedSize)
+            elif readChecksumFromFile(csFilePath, expectedSize):
+                logging.warning('Downloaded %s checksum from %s is in invalid format',
+                                checksumType.upper(), csUrl)
                 os.remove(csFilePath)
             else:
                 csDownloaded = True
@@ -255,6 +255,27 @@ def getChecksum(filepath, sum_constr):
     return checksum.hexdigest()
 
 
+def readChecksumFromFile(checksumFilepath, expectedLength):
+    """Read checksum digest from checksum file
+    The content of the checksum file must be e.g. in the following format:
+
+        some text da39a3ee5e6b4b0d3255bfef95601890afd80709
+
+    There can also be CR, LF or both at the end of the line.
+
+    :param checksumFilepath: Location of the checksum file
+    :param expectedLength: Expected length of the checksum digest (e.g. 32, 40..)
+    :returns: Checksum digest if present in file, None otherwise
+    """
+    checksumRegex = re.compile("^(?:.*\s+)?([0-9a-f]{" + expectedLength + "})[\s]*$")
+
+    with open(checksumFilepath, "r") as checksumFile:
+        checksumContent = checksumFile.read()
+    checksum = checksumRegex.search(checksumContent)
+
+    return checksum.group(1) if checksum else None
+
+
 def checkChecksum(filepath):
     """Checks if SHA1 and MD5 checksums equals to the ones saved in corresponding files if they are available."""
     return _checkChecksum(filepath, hashlib.md5()) and _checkChecksum(filepath, hashlib.sha1())
@@ -266,8 +287,7 @@ def _checkChecksum(filepath, sum_constr):
     if os.path.exists(checksumFilepath):
         logging.debug("Checking %s checksum of %s", sum_constr.name.upper(), filepath)
         generatedChecksum = getChecksum(filepath, sum_constr)
-        with open(checksumFilepath, "r") as checksumFile:
-            downloadedChecksum = checksumFile.read()
+        downloadedChecksum = readChecksumFromFile(checksumFilepath, len(sum_constr.hexdigest()))
         if generatedChecksum != downloadedChecksum:
             return False
 
