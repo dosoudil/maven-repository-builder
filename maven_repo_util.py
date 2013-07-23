@@ -267,7 +267,7 @@ def readChecksumFromFile(checksumFilepath, expectedLength):
     :param expectedLength: Expected length of the checksum digest (e.g. 32, 40..)
     :returns: Checksum digest if present in file, None otherwise
     """
-    checksumRegex = re.compile("^(?:.*\s+)?([0-9a-f]{" + str(expectedLength) + "})[\s]*$")
+    checksumRegex = re.compile("^(?:.*\s+)?([0-9a-f]{%d})\s*$" % expectedLength)
 
     with open(checksumFilepath, "r") as checksumFile:
         checksumContent = checksumFile.read()
