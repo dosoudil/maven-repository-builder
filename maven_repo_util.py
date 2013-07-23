@@ -50,7 +50,7 @@ def _downloadChecksum(url, filePath, checksumType, expectedSize, retries=3):
                 logging.warning('Unable to download checksum from %s, error code: %s', csUrl, csHttpResponse.code)
                 if csHttpResponse.code / 100 != 5:  # if other than 5xx error occurs do not try again
                     retries = 0
-            elif readChecksumFromFile(csFilePath, expectedSize):
+            elif not readChecksumFromFile(csFilePath, expectedSize):
                 logging.warning('Downloaded %s checksum from %s is in invalid format',
                                 checksumType.upper(), csUrl)
                 os.remove(csFilePath)
