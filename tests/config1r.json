@@ -2,7 +2,8 @@
   "artifact-sources": [
     {
       "type": "repository",
-      "repo-url": "http://download.eng.brq.redhat.com/scratch/jbrazdil/maven-repo-builder/testing-repo/"
+      "repo-url": "http://repo.maven.apache.org/maven2/",
+      "included-gav-patterns-ref": "config1r-patterns.list"
     }
   ]
 }

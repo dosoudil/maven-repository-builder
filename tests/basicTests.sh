@@ -224,16 +224,13 @@ test_remote_defaults(){
    run 1r || return 1
 
 	RET=0
-   check_number_of_files 8 || RET=1
+   check_number_of_files 5 || RET=1
 
-   check_files_exists foo/baz/baz-more/0.1-beta/baz-more-0.1-beta.pom \
-                      foo/baz/baz-core/1.2/baz-core-1.2-sources.jar \
-                      foo/baz/baz-core/1.2/baz-core-1.2.pom \
-                      foo/baz/baz-core/1.2/baz-core-1.2.jar \
-                      foo/baz/baz-lore/2.2-SNAPSHOT/baz-lore-2.2-20130505.010020-5.pom \
-                      foo/baz/baz-lore/2.2-SNAPSHOT/baz-lore-2.2-20130505.010020-5.jar \
-                      foo/baz/baz-lore/2.2-SNAPSHOT/baz-lore-2.2-20130505.010020-5-sources.jar \
-                      bar/foo-bar/1.12/foo-bar-1.12.pom \
+   check_files_exists com/sun/faces/jsf-api/2.0.11/jsf-api-2.0.11.jar \
+                      com/sun/faces/jsf-api/2.0.11/jsf-api-2.0.11.pom \
+                      com/sun/faces/jsf-api/2.0.11/jsf-api-2.0.11-sources.jar \
+                      org/apache/ant/ant/1.8.0/ant-1.8.0.jar \
+                      org/apache/ant/ant/1.8.0/ant-1.8.0.pom \
                       || RET=1
 	return $RET
 }
