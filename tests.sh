@@ -5,17 +5,21 @@ run_tests(){
 	TESTS=0
 
 	for TESTNAME in $(declare -F | cut -c12- | grep "^test_"); do
+   		echo -n "Running ${TESTNAME}..." && sync
 		let TESTS++
 		PREVFAILS=$FAILS
 		OUT="`$TESTNAME`"
 		RET=$?
 		if [ $RET -ne 0 ]; then
+			echo "FAIL"
 			echo "======================================================================"
 			echo "FAIL: $TESTNAME"
 			echo "----------------------------------------------------------------------"
 			echo "$OUT"
 			echo
 			let FAILS++
+		else
+			echo "OK"
 		fi
 	done
 }
