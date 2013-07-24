@@ -52,10 +52,11 @@ def downloadArtifacts(remoteRepoUrl, localRepoDir, artifact, classifiers, checks
                 # Download additional classifiers (only for non-pom artifacts)
                 for classifier in classifiers:
                     artifactClassifierUrl = remoteRepoUrl + artifact.getClassifierFilepath(classifier)
-                    artifactClassifierLocalPath = os.path.join(
-                        localRepoDir, artifact.getClassifierFilepath(classifier))
-                    maven_repo_util.fetchFile(
-                        artifactClassifierUrl, artifactClassifierLocalPath, checksumMode, exitOnError=True)
+                    if maven_repo_util.urlExists(artifactClassifierUrl):
+                        artifactClassifierLocalPath = os.path.join(
+                            localRepoDir, artifact.getClassifierFilepath(classifier))
+                        maven_repo_util.fetchFile(
+                            artifactClassifierUrl, artifactClassifierLocalPath, checksumMode, exitOnError=True)
     except BaseException as ex:
         logging.error("Error while downloading artifact %s: %s", artifact, str(ex))
         errors.put(ex)
