@@ -304,9 +304,47 @@ class Tests(unittest.TestCase):
             expectedArtifacts[artifact] = ArtifactSpec(repoUrls[0], dependencies[dep])
 
         builder = artifact_list_builder.ArtifactListBuilder(config)
-        actualArtifacts = builder._listDependencies(repoUrls, gavs)
+        actualArtifacts = builder._listDependencies(repoUrls, gavs, False)
 
         self.assertEqualArtifactList(expectedArtifacts, actualArtifacts)
+
+    def test_listDependencies_recursive(self):
+        config = configuration.Configuration()
+        config.allClassifiers = True
+        repoUrls = ['http://repo.maven.apache.org/maven2/']
+        gavs = [
+            'com.sun.faces:jsf-api:2.0.11',
+            'org.apache.ant:ant:1.8.0'
+        ]
+        dependencies = {
+            'junit:junit:jar:3.8.2': set(['sources', 'javadoc']),
+            'junit:junit:pom:3.8.2': set(['sources', 'javadoc']),
+            'xerces:xercesImpl:jar:2.9.0': set([]),
+            'xml-apis:xml-apis:jar:1.3.04': set(['source', 'sources']),
+            'xml-apis:xml-apis:pom:1.3.04': set(['source', 'sources']),
+            'javax.el:javax.el-api:jar:2.2.1': set(['sources', 'javadoc']),
+            'javax.el:javax.el-api:pom:2.2.1': set(['sources', 'javadoc']),
+            'xml-resolver:xml-resolver:jar:1.2': set(['sources']),
+            'javax.servlet:servlet-api:jar:2.5': set(['sources']),
+            'javax.servlet:servlet-api:pom:2.5': set(['sources']),
+            'javax.servlet.jsp:jsp-api:jar:2.1': set(['sources']),
+            'javax.servlet.jsp:jsp-api:pom:2.1': set(['sources']),
+            'org.apache.ant:ant-launcher:jar:1.8.0': set([]),
+            'javax.servlet.jsp.jstl:jstl-api:jar:1.2': set(['sources', 'javadoc']),
+            'javax.servlet:javax.servlet-api:jar:3.0.1': set(['sources', 'javadoc']),
+            'javax.servlet:javax.servlet-api:pom:3.0.1': set(['sources', 'javadoc']),
+            'javax.servlet.jsp:javax.servlet.jsp-api:jar:2.2.1': set(['sources', 'javadoc'])
+        }
+        expectedArtifacts = {}
+        for dep in dependencies:
+            artifact = MavenArtifact.createFromGAV(dep)
+            expectedArtifacts[artifact] = ArtifactSpec(repoUrls[0], dependencies[dep])
+
+        builder = artifact_list_builder.ArtifactListBuilder(config)
+        actualArtifacts = builder._listDependencies(repoUrls, gavs, True)
+
+        self.assertEqualArtifactList(expectedArtifacts, actualArtifacts)
+
 
     def test_listMeadTagArtifacts(self):
         config = configuration.Configuration()

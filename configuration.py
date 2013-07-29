@@ -43,6 +43,10 @@ class Configuration:
     def _setDefaults(self):
         if self.singleVersion is None:
             self.singleVersion = True
+        for source in self.artifactSources:
+            if source['type'] == 'dependency-list':
+                if 'recursive' not in source:
+                    source['recursive'] = True
 
     def _validate(self):
         valid = True
@@ -109,8 +113,6 @@ class Configuration:
             elif source['type'] == 'dependency-list':
                 if 'recursive' in source:
                     source['recursive'] = maven_repo_util.str2bool(source['recursive'])
-                else:
-                    source['recursive'] = True
                 source['repo-url'] = self._getRepoUrl(source)
                 source['top-level-gavs'] = self._loadFlatFileBySourceParameter(source, 'top-level-gavs-ref',
                         filePath)

@@ -113,7 +113,7 @@ class ArtifactListBuilder:
 
         return self._filterArtifactsByPatterns(artifacts, gavPatterns)
 
-    def _listDependencies(self, repoUrls, gavs, recursive=True):
+    def _listDependencies(self, repoUrls, gavs, recursive):
         """
         Loads maven artifacts from mvn dependency:list.
 
@@ -127,10 +127,8 @@ class ArtifactListBuilder:
         checkedSet = set()
 
         while workingSet:
-            print "workingSet:", workingSet
             gav = workingSet.pop()
             checkedSet.add(gav)
-            print "checkedSet:", checkedSet
             logging.debug("Resolving dependencies for %s", gav)
             artifact = MavenArtifact.createFromGAV(gav)
 
@@ -163,8 +161,8 @@ class ArtifactListBuilder:
             outFile = depsDir + gav + ".out"
             args = ['mvn', 'dependency:list', '-N',
                                               '-DoutputFile=' + outFile,
-                                              '-f', pomFilename]#,
-#                                              '-s', settingsFile]
+                                              '-f', pomFilename,
+                                              '-s', settingsFile]
             logging.debug("Running Maven:\n  %s", " ".join(args))
             mvn = Popen(args, stdout=PIPE)
             mvnStdout = mvn.communicate()[0]
@@ -184,7 +182,6 @@ class ArtifactListBuilder:
                 for artifact in newArtifacts:
                     ngav = artifact.getGAV()
                     if ngav not in checkedSet:
-                        print "adding", ngav
                         workingSet.add(ngav)
 
             if self.configuration.allClassifiers:
