@@ -12,6 +12,7 @@
     },
     {
       "type": "dependency-list",
+      "recursive": "true",
       "repo-url": [
         "https://repository.jboss.org/nexus/content/repositories/public-jboss/"
       ],

@@ -107,6 +107,10 @@ class Configuration:
                 source['included-gav-patterns'] = self._loadFlatFileBySourceParameter(source,
                         'included-gav-patterns-ref', filePath)
             elif source['type'] == 'dependency-list':
+                if 'recursive' in source:
+                    source['recursive'] = maven_repo_util.str2bool(source['recursive'])
+                else:
+                    source['recursive'] = True
                 source['repo-url'] = self._getRepoUrl(source)
                 source['top-level-gavs'] = self._loadFlatFileBySourceParameter(source, 'top-level-gavs-ref',
                         filePath)
