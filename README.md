@@ -143,6 +143,8 @@ For an example config with full config structure see [Sample Config](https://git
             *   **repo-url** - one repository URL or a list of them which should be searched.
             *   **top-level-gavs-ref** - reference to a file with the list of top level GAVs, every GAV should be on
                 separate line.
+            *   **recursive** - flag to allow listing the listed dependencies recursively. Default is True.
+            *   **skip-missing** - flag to skip missing dependencies and only warn user instead of exiting. Default is True.
         *   "repository" - a local or remote repository to crawl and include found artifacts; additional artifact
             source config fields for this type are
             *   **repo-url** -one repository URL or a list of them, which should be crawled

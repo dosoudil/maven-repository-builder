@@ -55,7 +55,8 @@ class ArtifactListBuilder:
                 logging.info("Building artifact list from top level list of GAVs")
                 artifacts = self._listDependencies(source['repo-url'],
                                                    self._parseDepList(source['top-level-gavs']),
-                                                   source['recursive'])
+                                                   source['recursive'],
+                                                   source['skip-missing'])
             elif source['type'] == 'repository':
                 logging.info("Building artifact list from repository %s", source['repo-url'])
                 artifacts = self._listRepository(source['repo-url'],
@@ -113,7 +114,7 @@ class ArtifactListBuilder:
 
         return self._filterArtifactsByPatterns(artifacts, gavPatterns)
 
-    def _listDependencies(self, repoUrls, gavs, recursive):
+    def _listDependencies(self, repoUrls, gavs, recursive, skipmissing):
         """
         Loads maven artifacts from mvn dependency:list.
 
@@ -187,7 +188,15 @@ class ArtifactListBuilder:
             if self.configuration.allClassifiers:
                 for artifact in newArtifacts.keys():
                     spec = newArtifacts[artifact]
-                    out = self._lftpFind(spec.url + artifact.getDirPath())
+                    try:
+                        out = self._lftpFind(spec.url + artifact.getDirPath())
+                    except IOError as ex:
+                        if skipmissing:
+                            logging.warn("Error while listing files in %s: %s. Skipping...",
+                                         spec.url + artifact.getDirPath(), str(ex))
+                            continue
+                        else:
+                            raise ex
 
                     files = []
                     for line in out.split('\n'):
@@ -471,7 +480,11 @@ class ArtifactListBuilder:
     def _lftpFind(self, url):
         lftp = Popen(r'lftp -c "set ssl:verify-certificate no ; open ' + url
                      + ' ; find  ."', stdout=PIPE, shell=True)
-        return lftp.communicate()[0]
+        result = lftp.communicate()[0]
+        if lftp.returncode:
+            raise IOError("lftp execution ended by return code %d", lftp.returncode)
+        else:
+            return result
 
 
 class ArtifactSpec:

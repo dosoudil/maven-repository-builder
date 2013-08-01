@@ -47,6 +47,8 @@ class Configuration:
             if source['type'] == 'dependency-list':
                 if 'recursive' not in source:
                     source['recursive'] = True
+                if 'skip-missing' not in source:
+                    source['skip-missing'] = True
 
     def _validate(self):
         valid = True
@@ -113,6 +115,8 @@ class Configuration:
             elif source['type'] == 'dependency-list':
                 if 'recursive' in source:
                     source['recursive'] = maven_repo_util.str2bool(source['recursive'])
+                if 'skip-missing' in source:
+                    source['skip-missing'] = maven_repo_util.str2bool(source['skip-missing'])
                 source['repo-url'] = self._getRepoUrl(source)
                 source['top-level-gavs'] = self._loadFlatFileBySourceParameter(source, 'top-level-gavs-ref',
                         filePath)
