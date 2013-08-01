@@ -207,10 +207,18 @@ class ArtifactListBuilder:
                         artifact.artifactId, artifact.version, files)
                     if len(extsAndClass) > 1 and "pom" in extsAndClass:
                         del extsAndClass["pom"]
-                    spec.classifiers = extsAndClass[artifact.artifactType]
-                    del extsAndClass[artifact.artifactType]
-                    self._addArtifact(newArtifacts, artifact.groupId, artifact.artifactId,
-                                      artifact.version, extsAndClass, suffix, spec.url)
+                    if artifact.artifactType in extsAndClass:
+                        spec.classifiers = extsAndClass[artifact.artifactType]
+                        del extsAndClass[artifact.artifactType]
+                        self._addArtifact(newArtifacts, artifact.groupId, artifact.artifactId,
+                                          artifact.version, extsAndClass, suffix, spec.url)
+                    else:
+                        if files:
+                            logging.warn("Main artifact is missing in filelist listed from %s. Files were:\n%s",
+                                         spec.url + artifact.getDirPath(), "\n".join(files))
+                        else:
+                            logging.warn("An empty filelist was listed from %s. Skipping...",
+                                         spec.url + artifact.getDirPath())
 
             artifacts.update(newArtifacts)
 
