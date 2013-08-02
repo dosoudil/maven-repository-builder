@@ -304,7 +304,7 @@ class Tests(unittest.TestCase):
             expectedArtifacts[artifact] = ArtifactSpec(repoUrls[0], dependencies[dep])
 
         builder = artifact_list_builder.ArtifactListBuilder(config)
-        actualArtifacts = builder._listDependencies(repoUrls, gavs, False)
+        actualArtifacts = builder._listDependencies(repoUrls, gavs, False, False)
 
         self.assertEqualArtifactList(expectedArtifacts, actualArtifacts)
 
@@ -341,7 +341,7 @@ class Tests(unittest.TestCase):
             expectedArtifacts[artifact] = ArtifactSpec(repoUrls[0], dependencies[dep])
 
         builder = artifact_list_builder.ArtifactListBuilder(config)
-        actualArtifacts = builder._listDependencies(repoUrls, gavs, True)
+        actualArtifacts = builder._listDependencies(repoUrls, gavs, True, False)
 
         self.assertEqualArtifactList(expectedArtifacts, actualArtifacts)
 
