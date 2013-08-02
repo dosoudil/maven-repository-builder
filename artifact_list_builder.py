@@ -21,12 +21,13 @@ class ArtifactListBuilder:
     """
 
     SETTINGS_TPL = """
-        <settings>
+         <settings>
+           <localRepository>${temp}.m2/repository</localRepository>
            <mirrors>
              <mirror>
                <id>maven-repo-builder-override</id>
                <mirrorOf>*</mirrorOf>
-               <url>$url</url>
+               <url>${url}</url>
              </mirror>
            </mirrors>
          </settings>"""
@@ -153,8 +154,9 @@ class ArtifactListBuilder:
 
             # Create settings.xml
             settingsFile = tempDir + "settings.xml"
+            settingsContent = self.SETTINGS_TPL.replace('${url}', successPomUrl) \
+                                               .replace('${temp}', maven_repo_util.getTempDir())
             with open(settingsFile, 'w') as settings:
-                settingsContent = re.sub('\$url', successPomUrl, self.SETTINGS_TPL)
                 settings.write(settingsContent)
 
             # Build dependency:list
@@ -165,6 +167,7 @@ class ArtifactListBuilder:
                                               '-f', pomFilename,
                                               '-s', settingsFile]
             logging.debug("Running Maven:\n  %s", " ".join(args))
+            logging.debug("settings.xml contents: %s", settingsContent)
             mvn = Popen(args, stdout=PIPE)
             mvnStdout = mvn.communicate()[0]
             logging.debug("Maven output:\n%s", mvnStdout)
@@ -175,8 +178,9 @@ class ArtifactListBuilder:
 
             with open(outFile, 'r') as out:
                 depLines = out.readlines()
-
             gavList = self._parseDepList(depLines)
+            logging.debug("Resolved dependencies of %s: %s", gav, str(gavList))
+
             newArtifacts = self._listArtifacts(repoUrls, gavList)
 
             if recursive:
