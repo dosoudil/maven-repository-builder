@@ -145,6 +145,14 @@ For an example config with full config structure see [Sample Config](https://git
                 separate line.
             *   **recursive** - flag to allow listing the listed dependencies recursively. Default is True.
             *   **skip-missing** - flag to skip missing dependencies and only warn user instead of exiting. Default is True.
+        *   "dependency-graph" - a merged lists of maven dependency graph of selected GAVs provided by AProx; additional
+            artifact source config fields for this type are
+            *   **aprox-url** - AProx instance URL (without the API part)
+                (e.g. "http://aprox-dev.app.eng.bos.redhat.com:8080/aprox/").
+            *   **top-level-gavs-ref** - reference to a file with the list of top level GAVs, every GAV should be on
+                separate line.
+            *   **source-key** - flag to allow listing the listed dependencies recursively. Default is True.
+            *   **wsid** - AProx workspace ID. The field is not required.
         *   "repository" - a local or remote repository to crawl and include found artifacts; additional artifact
             source config fields for this type are
             *   **repo-url** -one repository URL or a list of them, which should be crawled

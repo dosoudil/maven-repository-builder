@@ -49,6 +49,9 @@ class Configuration:
                     source['recursive'] = True
                 if 'skip-missing' not in source:
                     source['skip-missing'] = True
+            elif source['type'] == 'dependency-graph':
+                if 'wsid' not in source:
+                    source['wsid'] = None
 
     def _validate(self):
         valid = True
@@ -58,6 +61,18 @@ class Configuration:
         if not self.artifactSources:
             logging.error("No artifact-sources set in configuration file.")
             valid = False
+        else:
+            for source in self.artifactSources:
+                if source['type'] == 'dependency-graph':
+                    if 'aprox-url' not in source:
+                        logging.error("No aprox-url specified for source with type dependency-graph.")
+                        valid = False
+                    if 'source-key' not in source:
+                        logging.error("No source-key specified for source with type dependency-graph.")
+                        valid = False
+                    if not len(source['top-level-gavs']):
+                        logging.error("No top-level GAV specified for source with type dependency-graph.")
+                        valid = False
         if not valid:
             sys.exit(1)
 
@@ -109,9 +124,11 @@ class Configuration:
             if not 'type' in source:
                 logging.error("Source doesn't have type.\n %s", str(source))
                 sys.exit(1)
+
             if source['type'] == 'mead-tag':
                 source['included-gav-patterns'] = self._loadFlatFileBySourceParameter(source,
                         'included-gav-patterns-ref', filePath)
+
             elif source['type'] == 'dependency-list':
                 if 'recursive' in source:
                     source['recursive'] = maven_repo_util.str2bool(source['recursive'])
@@ -120,10 +137,16 @@ class Configuration:
                 source['repo-url'] = self._getRepoUrl(source)
                 source['top-level-gavs'] = self._loadFlatFileBySourceParameter(source, 'top-level-gavs-ref',
                         filePath)
+
+            elif source['type'] == 'dependency-graph':
+                source['top-level-gavs'] = self._loadFlatFileBySourceParameter(source, 'top-level-gavs-ref',
+                        filePath)
+
             elif source['type'] == 'repository':
                 source['repo-url'] = self._getRepoUrl(source)
                 source['included-gav-patterns'] = self._loadFlatFileBySourceParameter(source,
                         'included-gav-patterns-ref', filePath)
+
             self.artifactSources.append(source)
 
     def _loadFlatFileBySourceParameter(self, source, parameter, filePath):

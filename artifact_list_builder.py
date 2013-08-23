@@ -1,6 +1,7 @@
 import os
 import re
 import logging
+from aprox_apis import AproxApi10
 from multiprocessing.pool import ThreadPool
 from subprocess import Popen
 from subprocess import PIPE
@@ -58,6 +59,12 @@ class ArtifactListBuilder:
                                                    self._parseDepList(source['top-level-gavs']),
                                                    source['recursive'],
                                                    source['skip-missing'])
+            elif source['type'] == 'dependency-graph':
+                logging.info("Building artifact list from dependency graph of top level GAVs")
+                artifacts = self._listDependencyGraph(source['aprox-url'],
+                                                      source['wsid'],
+                                                      source['source-key'],
+                                                      self._parseDepList(source['top-level-gavs']))
             elif source['type'] == 'repository':
                 logging.info("Building artifact list from repository %s", source['repo-url'])
                 artifacts = self._listRepository(source['repo-url'],
@@ -81,7 +88,8 @@ class ArtifactListBuilder:
         :param kojiUrl: Koji/Brew/Mead URL
         :param downloadRootUrl: Download root URL of the artifacts
         :param tagName: Koji/Brew/Mead tag name
-        :returns: Dictionary where index is MavenArtifact object and value is it's repo root URL.
+        :returns: Dictionary where index is MavenArtifact object and value is ArtifactSpec with its
+                  repo root URL.
         """
         import koji
 
@@ -122,7 +130,7 @@ class ArtifactListBuilder:
         :param repoUrls: URL of the repositories that contains the listed artifacts
         :param gavs: List of top level GAVs
         :returns: Dictionary where index is MavenArtifact object and value is
-                  it's repo root URL, or empty dictionary if something goes wrong.
+                  ArtifactSpec with its repo root URL
         """
         artifacts = {}
         workingSet = set(gavs)
@@ -228,6 +236,50 @@ class ArtifactListBuilder:
 
         return artifacts
 
+    def _listDependencyGraph(self, aproxUrl, wsid, sourceKey, gavs):
+        """
+        Loads maven artifacts from dependency graph.
+
+        :param aproxUrl: URL of the AProx instance
+        :param gavs: List of top level GAVs
+        :param wsid: workspace ID
+        :returns: Dictionary where index is MavenArtifact object and value is
+                  ArtifactSpec with its repo root URL
+        """
+        aprox = AproxApi10(aproxUrl)
+
+        deleteWS = False
+
+        if not wsid:
+            # Create workspace
+            ws = aprox.createWorkspace()
+            wsid = ws["id"]
+            deleteWS = True
+
+        # Resolve graph MANIFEST for GAVs
+        urlmap = aprox.urlmap(wsid, sourceKey, gavs, self.configuration.allClassifiers)
+
+        # parse returned map
+        artifacts = {}
+        for gav in urlmap:
+            artifact = MavenArtifact.createFromGAV(gav)
+            groupId = artifact.groupId
+            artifactId = artifact.artifactId
+            version = artifact.version
+
+            filenames = urlmap[gav].files
+            url = urlmap[gav].repoUrl
+
+            (extsAndClass, suffix) = self._getExtensionsAndClassifiers(artifactId, version, filenames)
+
+            self._addArtifact(artifacts, groupId, artifactId, version, extsAndClass, suffix, url)
+
+        # cleanup
+        if deleteWS:
+            aprox.deleteWorkspace(wsid)
+
+        return artifacts
+
     def _listRepository(self, repoUrls, gavPatterns):
         """
         Loads maven artifacts from a repository.
@@ -235,7 +287,8 @@ class ArtifactListBuilder:
         :param repoUrl: repository URL (local or remote, supported are [file://], http:// and
                         https:// urls)
         :param gavPatterns: list of patterns to filter by GAV
-        :returns: Dictionary where index is MavenArtifact object and value is it's repo root URL.
+        :returns: Dictionary where index is MavenArtifact object and value is ArtifactSpec with its
+                  repo root URL.
         """
 
         prefixes = self._getPrefixes(gavPatterns)
@@ -339,8 +392,8 @@ class ArtifactListBuilder:
         Loads maven artifacts from local directory.
 
         :param directoryPath: Path of the local directory.
-        :returns: Dictionary where index is MavenArtifact object and value is it's repo root URL
-                  starting with 'file://'.
+        :returns: Dictionary where index is MavenArtifact object and value is ArtifactSpec with its
+                  repo root URL starting with 'file://'.
         """
         logging.debug("Listing local repository %s prefix '%s'", directoryPath, prefix)
         artifacts = {}
