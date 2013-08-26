@@ -1,7 +1,6 @@
 import os
 import re
 import logging
-from aprox_apis import AproxApi10
 from multiprocessing.pool import ThreadPool
 from subprocess import Popen
 from subprocess import PIPE
@@ -246,6 +245,7 @@ class ArtifactListBuilder:
         :returns: Dictionary where index is MavenArtifact object and value is
                   ArtifactSpec with its repo root URL
         """
+        from aprox_apis import AproxApi10
         aprox = AproxApi10(aproxUrl)
 
         deleteWS = False
