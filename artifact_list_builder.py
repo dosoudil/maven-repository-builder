@@ -267,8 +267,8 @@ class ArtifactListBuilder:
             artifactId = artifact.artifactId
             version = artifact.version
 
-            filenames = urlmap[gav].files
-            url = urlmap[gav].repoUrl
+            filenames = urlmap[gav]["files"]
+            url = urlmap[gav]["repoUrl"]
 
             (extsAndClass, suffix) = self._getExtensionsAndClassifiers(artifactId, version, filenames)
 
