@@ -95,7 +95,7 @@ class AproxApi10(UrlRequester):
             logging.warning("An error occured while deleting AProx workspace with ID %s, status code %i.",
                             strWsid, response.status_code)
 
-    def urlmap(self, wsid, sourceKey, gavs, allclassifiers, preset="sob", resolve=True):
+    def urlmap(self, wsid, sourceKey, gavs, allclassifiers, preset="sob-build", resolve=True):
         """
         Requests creation of the urlmap. It creates the configfile, posts it to AProx server
         and process the result, which has following structure:
@@ -137,7 +137,8 @@ class AproxApi10(UrlRequester):
 
         request = {}
         request["roots"] = gavs
-        # TODO: handle extras for allclassifiers = True
+        if allclassifiers:
+            request["extras"] = [{"classifier": "*", "type": "*"}]
         request["workspaceId"] = wsid
         request["source"] = sourceKey
         request["preset"] = preset

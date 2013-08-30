@@ -345,6 +345,32 @@ class Tests(unittest.TestCase):
 
         self.assertEqualArtifactList(expectedArtifacts, actualArtifacts)
 
+    def test_listDependencyGraph(self):
+        config = configuration.Configuration()
+        config.allClassifiers = True
+        aproxUrl = 'http://aprox-dev.app.eng.bos.redhat.com:8080/aprox/'
+        sourceKey = "repository:central"
+        topGavs = [
+            'org.apache.ant:ant:1.8.0'
+        ]
+        dependencies = {
+            'org.apache.ant:ant-launcher:jar:1.8.0': set(['']),
+            'org.apache.ant:ant-parent:pom:1.8.0': set(['']),
+            'org.apache:apache:pom:3': set(['']),
+            'org.apache:apache:pom:4': set(['']),
+            'xerces:xercesImpl:jar:2.9.0': set(['']),
+            'xml-apis:xml-apis:jar:1.3.04': set(['source', 'sources']),
+            'xml-resolver:xml-resolver:jar:1.2': set(['sources'])
+        }
+        expectedArtifacts = {}
+        for dep in dependencies:
+            artifact = MavenArtifact.createFromGAV(dep)
+            expectedArtifacts[artifact] = ArtifactSpec(aproxUrl, dependencies[dep])
+
+        builder = artifact_list_builder.ArtifactListBuilder(config)
+        actualArtifacts = builder._listDependencyGraph(aproxUrl, None, sourceKey, topGavs)
+
+        self.assertEqualArtifactList(expectedArtifacts, actualArtifacts)
 
     def test_listMeadTagArtifacts(self):
         config = configuration.Configuration()
@@ -402,6 +428,18 @@ class Tests(unittest.TestCase):
         self.assertEqualArtifactList(expectedArtifacts, actualArtifacts)
 
     def assertEqualArtifactList(self, expectedArtifacts, actualArtifacts):
+        strExpList = []
+        for artifact in expectedArtifacts:
+            strExpList.append(str(artifact))
+        strExp = ", ".join(strExpList)
+
+        strActList = []
+        for artifact in actualArtifacts:
+            strActList.append(str(artifact))
+        strAct = ", ".join(strActList)
+
+        logging.debug("Comparing artifact lists:\n  expected: %s\n  actual: %s", strExp, strAct)
+
         # Assert that length of expectedArtifacts is the same as of actualArtifacts
         self.assertEqual(len(expectedArtifacts), len(actualArtifacts))
 
@@ -414,6 +452,7 @@ class Tests(unittest.TestCase):
             self.assertTrue(foundArtifact is not None)
 
             foundClassifiers = actualArtifacts[foundArtifact].classifiers
+            logging.debug("Checking found classifiers (%s) of %s", foundClassifiers, str(foundArtifact))
             for classifier in expectedArtifacts[expectedArtifact].classifiers:
                 self.assertTrue(classifier in foundClassifiers)
 
