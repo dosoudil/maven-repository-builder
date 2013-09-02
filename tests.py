@@ -11,9 +11,10 @@ import copy
 import artifact_list_builder
 import configuration
 import maven_repo_util
+from aprox_apis import AproxApi10
+from artifact_list_builder import ArtifactListBuilder, ArtifactSpec
 from maven_repo_util import ChecksumMode
 from maven_artifact import MavenArtifact
-from artifact_list_builder import ArtifactListBuilder, ArtifactSpec
 from configuration import Configuration
 from filter import Filter
 
@@ -287,16 +288,16 @@ class Tests(unittest.TestCase):
             'org.apache.ant:ant:1.8.0'
         ]
         dependencies = {
-            'javax.servlet:javax.servlet-api:jar:3.0.1': set(['javadoc', 'sources']),
-            'javax.servlet.jsp.jstl:jstl-api:jar:1.2': set(['javadoc', 'sources']),
-            'xml-apis:xml-apis:jar:1.3.04': set(['source', 'sources']),
-            'javax.servlet:servlet-api:jar:2.5': set(['sources']),
-            'javax.el:javax.el-api:jar:2.2.1': set(['javadoc', 'sources']),
-            'junit:junit:jar:3.8.2': set(['javadoc', 'sources']),
-            'xerces:xercesImpl:jar:2.9.0': set([]),
-            'javax.servlet.jsp:jsp-api:jar:2.1': set(['sources']),
-            'javax.servlet.jsp:javax.servlet.jsp-api:jar:2.2.1': set(['javadoc', 'sources']),
-            'org.apache.ant:ant-launcher:jar:1.8.0': set([])
+            'javax.servlet:javax.servlet-api:jar:3.0.1': set(['', 'javadoc', 'sources']),
+            'javax.servlet.jsp.jstl:jstl-api:jar:1.2': set(['', 'javadoc', 'sources']),
+            'xml-apis:xml-apis:jar:1.3.04': set(['', 'source', 'sources']),
+            'javax.servlet:servlet-api:jar:2.5': set(['', 'sources']),
+            'javax.el:javax.el-api:jar:2.2.1': set(['', 'javadoc', 'sources']),
+            'junit:junit:jar:3.8.2': set(['', 'javadoc', 'sources']),
+            'xerces:xercesImpl:jar:2.9.0': set(['']),
+            'javax.servlet.jsp:jsp-api:jar:2.1': set(['', 'sources']),
+            'javax.servlet.jsp:javax.servlet.jsp-api:jar:2.2.1': set(['', 'javadoc', 'sources']),
+            'org.apache.ant:ant-launcher:jar:1.8.0': set([''])
         }
         expectedArtifacts = {}
         for dep in dependencies:
@@ -317,23 +318,23 @@ class Tests(unittest.TestCase):
             'org.apache.ant:ant:1.8.0'
         ]
         dependencies = {
-            'junit:junit:jar:3.8.2': set(['sources', 'javadoc']),
-            'junit:junit:pom:3.8.2': set(['sources', 'javadoc']),
-            'xerces:xercesImpl:jar:2.9.0': set([]),
-            'xml-apis:xml-apis:jar:1.3.04': set(['source', 'sources']),
-            'xml-apis:xml-apis:pom:1.3.04': set(['source', 'sources']),
-            'javax.el:javax.el-api:jar:2.2.1': set(['sources', 'javadoc']),
-            'javax.el:javax.el-api:pom:2.2.1': set(['sources', 'javadoc']),
-            'xml-resolver:xml-resolver:jar:1.2': set(['sources']),
-            'javax.servlet:servlet-api:jar:2.5': set(['sources']),
-            'javax.servlet:servlet-api:pom:2.5': set(['sources']),
-            'javax.servlet.jsp:jsp-api:jar:2.1': set(['sources']),
-            'javax.servlet.jsp:jsp-api:pom:2.1': set(['sources']),
-            'org.apache.ant:ant-launcher:jar:1.8.0': set([]),
-            'javax.servlet.jsp.jstl:jstl-api:jar:1.2': set(['sources', 'javadoc']),
-            'javax.servlet:javax.servlet-api:jar:3.0.1': set(['sources', 'javadoc']),
-            'javax.servlet:javax.servlet-api:pom:3.0.1': set(['sources', 'javadoc']),
-            'javax.servlet.jsp:javax.servlet.jsp-api:jar:2.2.1': set(['sources', 'javadoc'])
+            'junit:junit:jar:3.8.2': set(['', 'sources', 'javadoc']),
+            'junit:junit:pom:3.8.2': set(['', 'sources', 'javadoc']),
+            'xerces:xercesImpl:jar:2.9.0': set(['']),
+            'xml-apis:xml-apis:jar:1.3.04': set(['', 'source', 'sources']),
+            'xml-apis:xml-apis:pom:1.3.04': set(['', 'source', 'sources']),
+            'javax.el:javax.el-api:jar:2.2.1': set(['', 'sources', 'javadoc']),
+            'javax.el:javax.el-api:pom:2.2.1': set(['', 'sources', 'javadoc']),
+            'xml-resolver:xml-resolver:jar:1.2': set(['', 'sources']),
+            'javax.servlet:servlet-api:jar:2.5': set(['', 'sources']),
+            'javax.servlet:servlet-api:pom:2.5': set(['', 'sources']),
+            'javax.servlet.jsp:jsp-api:jar:2.1': set(['', 'sources']),
+            'javax.servlet.jsp:jsp-api:pom:2.1': set(['', 'sources']),
+            'org.apache.ant:ant-launcher:jar:1.8.0': set(['']),
+            'javax.servlet.jsp.jstl:jstl-api:jar:1.2': set(['', 'sources', 'javadoc']),
+            'javax.servlet:javax.servlet-api:jar:3.0.1': set(['', 'sources', 'javadoc']),
+            'javax.servlet:javax.servlet-api:pom:3.0.1': set(['', 'sources', 'javadoc']),
+            'javax.servlet.jsp:javax.servlet.jsp-api:jar:2.2.1': set(['', 'sources', 'javadoc'])
         }
         expectedArtifacts = {}
         for dep in dependencies:
@@ -345,7 +346,7 @@ class Tests(unittest.TestCase):
 
         self.assertEqualArtifactList(expectedArtifacts, actualArtifacts)
 
-    def test_listDependencyGraph(self):
+    def test_listDependencyGraph_allclassifiers(self):
         config = configuration.Configuration()
         config.allClassifiers = True
         aproxUrl = 'http://aprox-dev.app.eng.bos.redhat.com:8080/aprox/'
@@ -359,8 +360,8 @@ class Tests(unittest.TestCase):
             'org.apache:apache:pom:3': set(['']),
             'org.apache:apache:pom:4': set(['']),
             'xerces:xercesImpl:jar:2.9.0': set(['']),
-            'xml-apis:xml-apis:jar:1.3.04': set(['source', 'sources']),
-            'xml-resolver:xml-resolver:jar:1.2': set(['sources'])
+            'xml-apis:xml-apis:jar:1.3.04': set(['', 'source', 'sources']),
+            'xml-resolver:xml-resolver:jar:1.2': set(['', 'sources'])
         }
         expectedArtifacts = {}
         for dep in dependencies:
@@ -372,21 +373,59 @@ class Tests(unittest.TestCase):
 
         self.assertEqualArtifactList(expectedArtifacts, actualArtifacts)
 
+    def test_listDependencyGraph(self):
+        config = configuration.Configuration()
+        config.allClassifiers = False
+        aproxUrl = 'http://aprox-dev.app.eng.bos.redhat.com:8080/aprox/'
+        sourceKey = "repository:central"
+        topGavs = [
+            'org.apache.ant:ant:1.8.0'
+        ]
+        dependencies = {
+            'org.apache.ant:ant-launcher:jar:1.8.0': set(['']),
+            'org.apache.ant:ant-parent:pom:1.8.0': set(['']),
+            'org.apache:apache:pom:3': set(['']),
+            'org.apache:apache:pom:4': set(['']),
+            'xerces:xercesImpl:jar:2.9.0': set(['']),
+            'xml-apis:xml-apis:jar:1.3.04': set(['']),
+            'xml-resolver:xml-resolver:jar:1.2': set([''])
+        }
+        expectedArtifacts = {}
+        for dep in dependencies:
+            artifact = MavenArtifact.createFromGAV(dep)
+            expectedArtifacts[artifact] = ArtifactSpec(aproxUrl, dependencies[dep])
+
+        builder = artifact_list_builder.ArtifactListBuilder(config)
+        actualArtifacts = builder._listDependencyGraph(aproxUrl, None, sourceKey, topGavs)
+
+        self.assertEqualArtifactList(expectedArtifacts, actualArtifacts)
+
+    def test_aproxCreateDeleteWorkspace(self):
+        aproxUrl = 'http://aprox-dev.app.eng.bos.redhat.com:8080/aprox/'
+        aproxApi = AproxApi10(aproxUrl)
+
+        ws = aproxApi.createWorkspace()
+        wsid = ws["id"]
+
+        delResult = aproxApi.deleteWorkspace(wsid)
+
+        self.assertTrue(delResult)
+
     def test_listMeadTagArtifacts(self):
         config = configuration.Configuration()
         config.allClassifiers = True
         kojiUrl = "http://brewhub.devel.redhat.com/brewhub/"
         tagName = "mead-import-maven"
         downloadRootUrl = "http://download.devel.redhat.com/brewroot/packages/"
-        gavPatterns = [
+        gavPatts = [
             'org.apache.maven:maven-core:2.0.6'
         ]
 
         builder = artifact_list_builder.ArtifactListBuilder(config)
-        actualArtifacts = builder._listMeadTagArtifacts(kojiUrl, downloadRootUrl, tagName, gavPatterns)
+        actualArtifacts = builder._listMeadTagArtifacts(kojiUrl, downloadRootUrl, tagName, gavPatts)
         expectedUrl = downloadRootUrl + "org.apache.maven-maven-core/2.0.6/1/maven/"
         expectedArtifacts = {
-            MavenArtifact.createFromGAV(gavPatterns[0]): ArtifactSpec(expectedUrl, set(['javadoc', 'sources']))
+            MavenArtifact.createFromGAV(gavPatts[0]): ArtifactSpec(expectedUrl, set(['', 'javadoc', 'sources']))
         }
 
         self.assertEqualArtifactList(expectedArtifacts, actualArtifacts)
@@ -395,16 +434,16 @@ class Tests(unittest.TestCase):
         config = configuration.Configuration()
         config.allClassifiers = True
         repoUrls = ['http://repo.maven.apache.org/maven2/']
-        gavPatterns = [
+        gavPatts = [
             'com.sun.faces:jsf-api:2.0.11',
             'org.apache.ant:ant:1.8.0'
         ]
 
         builder = artifact_list_builder.ArtifactListBuilder(config)
-        actualArtifacts = builder._listRepository(repoUrls, gavPatterns)
+        actualArtifacts = builder._listRepository(repoUrls, gavPatts)
         expectedArtifacts = {
-            MavenArtifact.createFromGAV(gavPatterns[0]): ArtifactSpec(repoUrls[0], set(['javadoc', 'sources'])),
-            MavenArtifact.createFromGAV(gavPatterns[1]): ArtifactSpec(repoUrls[0], set([]))
+            MavenArtifact.createFromGAV(gavPatts[0]): ArtifactSpec(repoUrls[0], set(['', 'javadoc', 'sources'])),
+            MavenArtifact.createFromGAV(gavPatts[1]): ArtifactSpec(repoUrls[0], set(['']))
         }
 
         self.assertEqualArtifactList(expectedArtifacts, actualArtifacts)
@@ -413,16 +452,16 @@ class Tests(unittest.TestCase):
         config = configuration.Configuration()
         config.allClassifiers = True
         repoUrls = ['file://./tests/testrepo']
-        gavPatterns = [
+        gavPatts = [
             'bar:foo-bar:1.1',
             'foo.baz:baz-core:1.0'
         ]
 
         builder = artifact_list_builder.ArtifactListBuilder(config)
-        actualArtifacts = builder._listRepository(repoUrls, gavPatterns)
+        actualArtifacts = builder._listRepository(repoUrls, gavPatts)
         expectedArtifacts = {
-            MavenArtifact.createFromGAV(gavPatterns[0]): ArtifactSpec(repoUrls[0], set([])),
-            MavenArtifact.createFromGAV(gavPatterns[1]): ArtifactSpec(repoUrls[0], set(['javadoc', 'sources']))
+            MavenArtifact.createFromGAV(gavPatts[0]): ArtifactSpec(repoUrls[0], set([''])),
+            MavenArtifact.createFromGAV(gavPatts[1]): ArtifactSpec(repoUrls[0], set(['', 'javadoc', 'sources']))
         }
 
         self.assertEqualArtifactList(expectedArtifacts, actualArtifacts)
@@ -453,8 +492,11 @@ class Tests(unittest.TestCase):
 
             foundClassifiers = actualArtifacts[foundArtifact].classifiers
             logging.debug("Checking found classifiers (%s) of %s", foundClassifiers, str(foundArtifact))
-            for classifier in expectedArtifacts[expectedArtifact].classifiers:
+            expectedClassifiers = expectedArtifacts[expectedArtifact].classifiers
+            for classifier in expectedClassifiers:
                 self.assertTrue(classifier in foundClassifiers)
+            for classifier in foundClassifiers:
+                self.assertTrue(classifier in expectedClassifiers)
 
 
 if __name__ == '__main__':

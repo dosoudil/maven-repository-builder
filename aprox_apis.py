@@ -1,45 +1,62 @@
 from maven_repo_util import slashAtTheEnd
 
+import httplib
 import json
 import logging
-import requests
+import urllib
+import urlparse
 
 
 class UrlRequester:
 
-    def _getRequestDict(self, params, data, headers):
-        requestKwargs = {}
+    def _request(self, method, url, params, data, headers):
+        """
+        Makes request defined by input params.
 
+        :returns: instance of httplib.HTTPResponse
+        """
+        parsedUrl = urlparse.urlparse(url)
+        protocol = parsedUrl[0]
         if params:
-            assert isinstance(
-                params, dict), 'Params must be a dict, got %s' % repr(params)
-            requestKwargs['params'] = params
-
-        if headers:
-            assert isinstance(
-                headers, dict), 'headers must be a dict, got %s' % repr(headers)
-            requestKwargs['headers'] = headers
-
-        if data:
-            requestKwargs['data'] = data
-
-        return requestKwargs
+            encParams = urllib.urlencode(params)
+        else:
+            encParams = ""
+        if protocol == 'http':
+            connection = httplib.HTTPConnection(parsedUrl[1])
+        else:
+            connection = httplib.HTTPSConnection(parsedUrl[1])
+        if not headers:
+            headers = {}
+        connection.request(method, parsedUrl[2] + "?" + encParams, data, headers)
+        return connection.getresponse()
 
     def _getUrl(self, url, params=None, headers=None):
-        requestKwargs = self._getRequestDict(params, None, headers)
-        return requests.get(url, **requestKwargs)
+        return self._request("GET", url, params, None, headers)
 
     def _postUrl(self, url, params=None, data=None, headers=None):
-        requestKwargs = self._getRequestDict(params, data, headers)
-        return requests.post(url, **requestKwargs)
+        """
+        Calls POST http request to the given URL.
+
+        :returns: instance of httplib.HTTPResponse
+        """
+        return self._request("POST", url, params, data, headers)
 
     def _putUrl(self, url, params=None, data=None, headers=None):
-        requestKwargs = self._getRequestDict(params, data, headers)
-        return requests.put(url, **requestKwargs)
+        """
+        Calls PUT http request to the given URL.
 
-    def _deleteUrl(self, url, params=None, headers=None):
-        requestKwargs = self._getRequestDict(params, None, headers)
-        return requests.delete(url, **requestKwargs)
+        :returns: instance of httplib.HTTPResponse
+        """
+        return self._request("PUT", url, params, data, headers)
+
+    def _deleteUrl(self, url, headers=None):
+        """
+        Calls DELETE http request of the given URL.
+
+        :returns: response status code
+        """
+        response = self._request("DELETE", url, None, None, headers)
+        return response.status
 
 
 class AproxApi10(UrlRequester):
@@ -71,29 +88,31 @@ class AproxApi10(UrlRequester):
         url = self._aprox_url + self.API_PATH + "depgraph/ws/new"
         logging.info("Creating new AProx workspace")
         response = self._postUrl(url)
-        if response.status_code == 201:
-            responseJson = response.json()
+        if response.status == 201:
+            responseJson = json.loads(response.read())
             logging.info("Created AProx workspace with ID %s", responseJson["id"])
             return responseJson
         else:
             raise Exception("Failed to create new AProx workspace, status code %i, content: %s"
-                            % (response.status_code, response.content))
+                            % (response.status, response.read()))
 
     def deleteWorkspace(self, wsid):
         """
         Deletes a specified workspace.
 
         :param wsid: workspace ID
+        :returns: True if the workspace was deleted, False otherwise
         """
         strWsid = str(wsid)
         url = (self._aprox_url + self.API_PATH + "depgraph/ws/%s") % strWsid
         logging.info("Deleting AProx workspace with ID %s", strWsid)
-        response = self._deleteUrl(url)
-        if response.status_code == 200:
+        status = self._deleteUrl(url)
+        if status == 200:
             logging.info("AProx workspace with ID %s was deleted", strWsid)
         else:
             logging.warning("An error occured while deleting AProx workspace with ID %s, status code %i.",
-                            strWsid, response.status_code)
+                            strWsid, status)
+        return status == 200
 
     def urlmap(self, wsid, sourceKey, gavs, allclassifiers, preset="sob-build", resolve=True):
         """
@@ -149,10 +168,10 @@ class AproxApi10(UrlRequester):
 
         response = self._postUrl(url, data=data)
 
-        if response.status_code == 200:
+        if response.status == 200:
             logging.debug("AProx urlmap created")
-            return response.json()
+            return json.loads(response.read())
         else:
             logging.warning("An error occured while creating AProx urlmap, status code %i, content '%s'.",
-                            response.status_code, response.content)
+                            response.status, response.read())
             return {}
