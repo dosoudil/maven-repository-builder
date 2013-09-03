@@ -252,6 +252,9 @@ class ArtifactListBuilder:
 
         deleteWS = False
 
+        if not preset:
+            preset = "sob-build"  # only runtime dependencies
+
         if not wsid:
             # Create workspace
             ws = aprox.createWorkspace()
