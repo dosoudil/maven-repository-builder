@@ -128,7 +128,7 @@ For an example config with full config structure see [Sample Config](https://git
 #### Basic configuration
 *   **artifact-sources** - list of sources of artifacts which should be included in the produced repository
     *   **type** - one of the artifact source types:
-        *   "mead-tag" - a MEAD tag which should be included; additional artifact source config fields for this type are:
+        *   "mead-tag" - a MEAD tag which should be included. Additional artifact source config fields for this type are:
             *   **tag-name** - the tag name.
             *   **koji-url** - URL of koji (Brew/MEAD) instance, usually
                 ["http://brewhub.devel.redhat.com/brewhub/"](http://brewhub.devel.redhat.com/brewhub/).
@@ -138,22 +138,27 @@ For an example config with full config structure see [Sample Config](https://git
                 should be single pattern. Stars are allowed to represent any string. To use regular expressions prefix
                 the expression with "r" and enclose it in slashes ("r/regular-expression/"). The field is not required,
                 if ommited, all found artifacts will be included.
-        *   "dependency-list" - a merged lists of maven dependencies of selected GAVs; additional artifact source
+        *   "dependency-list" - a merged lists of maven dependencies of selected GAVs. Additional artifact source
             config fields for this type are
             *   **repo-url** - one repository URL or a list of them which should be searched.
             *   **top-level-gavs-ref** - reference to a file with the list of top level GAVs, every GAV should be on
                 separate line.
             *   **recursive** - flag to allow listing the listed dependencies recursively. Default is True.
-            *   **skip-missing** - flag to skip missing dependencies and only warn user instead of exiting. Default is True.
-        *   "dependency-graph" - a merged lists of maven dependency graph of selected GAVs provided by AProx; additional
+            *   **skip-missing** - flag to skip missing dependencies and only warn user instead of exiting. Default is
+                True.
+        *   "dependency-graph" - a merged lists of maven dependency graph of selected GAVs provided by AProx. Additional
             artifact source config fields for this type are
             *   **aprox-url** - AProx instance URL (without the API part)
                 (e.g. "http://aprox-dev.app.eng.bos.redhat.com:8080/aprox/").
             *   **top-level-gavs-ref** - reference to a file with the list of top level GAVs, every GAV should be on
                 separate line.
-            *   **source-key** - flag to allow listing the listed dependencies recursively. Default is True.
-            *   **wsid** - AProx workspace ID. The field is not required.
-        *   "repository" - a local or remote repository to crawl and include found artifacts; additional artifact
+            *   **source-key** - AProx source key in form of <type>:<name>, e.g. "repository:central".
+            *   **wsid** - AProx workspace ID. The field is not required. If ommited, a new workspace will be created
+                and deleted after all work finished.
+            *   **preset** - AProx preset. The field is not required.
+            *   **excluded-sources** - list of AProx source keys to be excluded directly in the result of depgrapher.
+                The field is not required.
+        *   "repository" - a local or remote repository to crawl and include found artifacts. Additional artifact
             source config fields for this type are
             *   **repo-url** -one repository URL or a list of them, which should be crawled
             *   **included-gav-patterns-ref** - the same as the corresponding MEAD tag's field (see above)

@@ -52,6 +52,10 @@ class Configuration:
             elif source['type'] == 'dependency-graph':
                 if 'wsid' not in source:
                     source['wsid'] = None
+                if 'excluded-sources' not in source:
+                    source['excluded-sources'] = []
+                if 'preset' not in source:
+                    source['preset'] = None
 
     def _validate(self):
         valid = True

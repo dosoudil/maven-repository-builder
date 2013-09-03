@@ -64,7 +64,9 @@ class ArtifactListBuilder:
                 artifacts = self._listDependencyGraph(source['aprox-url'],
                                                       source['wsid'],
                                                       source['source-key'],
-                                                      self._parseDepList(source['top-level-gavs']))
+                                                      self._parseDepList(source['top-level-gavs']),
+                                                      source['excluded-sources'],
+                                                      source['preset'])
             elif source['type'] == 'repository':
                 logging.info("Building artifact list from repository %s", source['repo-url'])
                 artifacts = self._listRepository(source['repo-url'],
@@ -236,7 +238,7 @@ class ArtifactListBuilder:
 
         return artifacts
 
-    def _listDependencyGraph(self, aproxUrl, wsid, sourceKey, gavs):
+    def _listDependencyGraph(self, aproxUrl, wsid, sourceKey, gavs, excludedSources=[], preset="sob-build"):
         """
         Loads maven artifacts from dependency graph.
 
@@ -257,7 +259,7 @@ class ArtifactListBuilder:
             deleteWS = True
 
         # Resolve graph MANIFEST for GAVs
-        urlmap = aprox.urlmap(wsid, sourceKey, gavs, self.configuration.allClassifiers)
+        urlmap = aprox.urlmap(wsid, sourceKey, gavs, self.configuration.allClassifiers, excludedSources, preset)
 
         # parse returned map
         artifacts = {}

@@ -114,7 +114,7 @@ class AproxApi10(UrlRequester):
                             strWsid, status)
         return status == 200
 
-    def urlmap(self, wsid, sourceKey, gavs, allclassifiers, preset="sob-build", resolve=True):
+    def urlmap(self, wsid, sourceKey, gavs, allclassifiers, excludedSources, preset, resolve=True):
         """
         Requests creation of the urlmap. It creates the configfile, posts it to AProx server
         and process the result, which has following structure:
@@ -148,8 +148,9 @@ class AproxApi10(UrlRequester):
         :param gavs: list of GAV as strings
         :param sourceKey: the AProx artifact source key, consisting of the source type and
                           its name of the form <{repository|deploy|group}:<name>>
+        :param excludedSources: list of excluded sources' keys
         :param preset: preset used while creating the urlmap
-        :param resolve: TODO
+        :param resolve: flag to tell AProx to run resolve for given roots
         :returns: the requested urlmap
         """
         url = self._aprox_url + self.API_PATH + "depgraph/repo/urlmap"
@@ -160,6 +161,8 @@ class AproxApi10(UrlRequester):
             request["extras"] = [{"classifier": "*", "type": "*"}]
         request["workspaceId"] = wsid
         request["source"] = sourceKey
+        if len(excludedSources):
+            request["excludedSources"] = excludedSources
         request["preset"] = preset
         request["resolve"] = resolve
         data = json.dumps(request)
