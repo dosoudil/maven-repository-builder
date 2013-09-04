@@ -135,7 +135,8 @@ def fetchArtifacts(remoteRepoUrl, localRepoDir, artifactList, classifiers, exclu
 
         # If one of the workers threw error, exit with 1
         if not errors.empty():
-            sys.exit(1)
+            logging.error("During fetching files from repository %s occured %i error(s).", remoteRepoUrl,
+                          len(errors))
 
     elif protocol == 'file':
         repoPath = remoteRepoUrl.replace('file://', '')
