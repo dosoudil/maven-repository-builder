@@ -110,7 +110,7 @@ class AproxApi10(UrlRequester):
         if status == 200:
             logging.info("AProx workspace with ID %s was deleted", strWsid)
         else:
-            logging.warning("An error occured while deleting AProx workspace with ID %s, status code %i.",
+            logging.warning("An error occurred while deleting AProx workspace with ID %s, status code %i.",
                             strWsid, status)
         return status == 200
 
@@ -175,6 +175,6 @@ class AproxApi10(UrlRequester):
             logging.debug("AProx urlmap created")
             return json.loads(response.read())
         else:
-            logging.warning("An error occured while creating AProx urlmap, status code %i, content '%s'.",
+            logging.warning("An error occurred while creating AProx urlmap, status code %i, content '%s'.",
                             response.status, response.read())
             return {}
