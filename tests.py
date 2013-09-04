@@ -355,6 +355,7 @@ class Tests(unittest.TestCase):
             'org.apache.ant:ant:1.8.0'
         ]
         dependencies = {
+            'org.apache.ant:ant:jar:1.8.0': set(['']),
             'org.apache.ant:ant-launcher:jar:1.8.0': set(['']),
             'org.apache.ant:ant-parent:pom:1.8.0': set(['']),
             'org.apache:apache:pom:3': set(['']),
@@ -382,6 +383,7 @@ class Tests(unittest.TestCase):
             'org.apache.ant:ant:1.8.0'
         ]
         dependencies = {
+            'org.apache.ant:ant:jar:1.8.0': set(['']),
             'org.apache.ant:ant-launcher:jar:1.8.0': set(['']),
             'org.apache.ant:ant-parent:pom:1.8.0': set(['']),
             'org.apache:apache:pom:3': set(['']),
@@ -467,17 +469,10 @@ class Tests(unittest.TestCase):
         self.assertEqualArtifactList(expectedArtifacts, actualArtifacts)
 
     def assertEqualArtifactList(self, expectedArtifacts, actualArtifacts):
-        strExpList = []
-        for artifact in expectedArtifacts:
-            strExpList.append(str(artifact))
-        strExp = ", ".join(strExpList)
+        strExp = self._artifactListToString(expectedArtifacts, "  expected", "\n    ")
+        strAct = self._artifactListToString(actualArtifacts, "  actual", "\n    ")
 
-        strActList = []
-        for artifact in actualArtifacts:
-            strActList.append(str(artifact))
-        strAct = ", ".join(strActList)
-
-        logging.debug("Comparing artifact lists:\n  expected: %s\n  actual: %s", strExp, strAct)
+        logging.debug("Comparing artifact lists:\n%s\n%s", strExp, strAct)
 
         # Assert that length of expectedArtifacts is the same as of actualArtifacts
         self.assertEqual(len(expectedArtifacts), len(actualArtifacts))
@@ -497,6 +492,14 @@ class Tests(unittest.TestCase):
                 self.assertTrue(classifier in foundClassifiers)
             for classifier in foundClassifiers:
                 self.assertTrue(classifier in expectedClassifiers)
+
+    def _artifactListToString(self, artifactList, listName, separator):
+        strList = []
+        for artifact in artifactList:
+            strList.append(str(artifact))
+        strList.sort()
+        strList.insert(0, listName + ":")
+        return separator.join(strList)
 
 
 if __name__ == '__main__':
