@@ -133,7 +133,7 @@ def fetchArtifacts(remoteRepoUrl, localRepoDir, artifactList, classifiers, exclu
         pool.close()
         pool.join()
 
-        # If one of the workers threw error, exit with 1
+        # If one of the workers threw an error, log it
         if not errors.empty():
             logging.error("During fetching files from repository %s %i error(s) occured.", remoteRepoUrl,
                           errors.qsize())

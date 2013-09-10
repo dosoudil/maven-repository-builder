@@ -109,10 +109,11 @@ class AproxApi10(UrlRequester):
         status = self._deleteUrl(url)
         if status == 200:
             logging.info("AProx workspace with ID %s was deleted", strWsid)
+            return True
         else:
             logging.warning("An error occurred while deleting AProx workspace with ID %s, status code %i.",
                             strWsid, status)
-        return status == 200
+            return False
 
     def urlmap(self, wsid, sourceKey, gavs, allclassifiers, excludedSources, preset, resolve=True):
         """
