@@ -173,8 +173,9 @@ class AproxApi10(UrlRequester):
         response = self._postUrl(url, data=data)
 
         if response.status == 200:
-            logging.debug("AProx urlmap created")
-            return json.loads(response.read())
+            responseContent = response.read()
+            logging.debug("AProx urlmap created. Response content:\n%s", responseContent)
+            return json.loads(responseContent)
         else:
             logging.warning("An error occurred while creating AProx urlmap, status code %i, content '%s'.",
                             response.status, response.read())
