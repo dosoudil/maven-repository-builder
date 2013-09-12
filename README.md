@@ -158,6 +158,7 @@ For an example config with full config structure see [Sample Config](https://git
             *   **preset** - AProx preset. The field is not required.
             *   **excluded-sources** - list of AProx source keys to be excluded directly in the result of depgrapher.
                 The field is not required.
+            *   **patcher-ids** - list of patcher ID strings for AProx.
         *   "repository" - a local or remote repository to crawl and include found artifacts. Additional artifact
             source config fields for this type are
             *   **repo-url** -one repository URL or a list of them, which should be crawled

@@ -66,7 +66,8 @@ class ArtifactListBuilder:
                                                       source['source-key'],
                                                       self._parseDepList(source['top-level-gavs']),
                                                       source['excluded-sources'],
-                                                      source['preset'])
+                                                      source['preset'],
+                                                      source['patcher-ids'])
             elif source['type'] == 'repository':
                 logging.info("Building artifact list from repository %s", source['repo-url'])
                 artifacts = self._listRepository(source['repo-url'],
@@ -238,13 +239,19 @@ class ArtifactListBuilder:
 
         return artifacts
 
-    def _listDependencyGraph(self, aproxUrl, wsid, sourceKey, gavs, excludedSources=[], preset="sob-build"):
+    def _listDependencyGraph(self, aproxUrl, wsid, sourceKey, gavs, excludedSources=[], preset="sob-build",
+                             patcherIds=[]):
         """
         Loads maven artifacts from dependency graph.
 
         :param aproxUrl: URL of the AProx instance
-        :param gavs: List of top level GAVs
         :param wsid: workspace ID
+        :param sourceKey: the AProx artifact source key, consisting of the source type and
+                          its name of the form <{repository|deploy|group}:<name>>
+        :param gavs: List of top level GAVs
+        :param excludedSources: list of excluded sources' keys
+        :param preset: preset used while creating the urlmap
+        :param patcherIds: list of patcher ID strings for AProx
         :returns: Dictionary where index is MavenArtifact object and value is
                   ArtifactSpec with its repo root URL
         """
@@ -262,7 +269,8 @@ class ArtifactListBuilder:
             deleteWS = True
 
         # Resolve graph MANIFEST for GAVs
-        urlmap = aprox.urlmap(wsid, sourceKey, gavs, self.configuration.allClassifiers, excludedSources, preset)
+        urlmap = aprox.urlmap(wsid, sourceKey, gavs, self.configuration.allClassifiers, excludedSources, preset,
+                              patcherIds)
 
         # parse returned map
         artifacts = {}

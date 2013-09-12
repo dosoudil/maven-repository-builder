@@ -56,6 +56,8 @@ class Configuration:
                     source['excluded-sources'] = []
                 if 'preset' not in source:
                     source['preset'] = None
+                if 'patcher-ids' not in source:
+                    source['patcher-ids'] = []
 
     def _validate(self):
         valid = True

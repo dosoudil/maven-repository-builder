@@ -115,7 +115,7 @@ class AproxApi10(UrlRequester):
                             strWsid, status)
             return False
 
-    def urlmap(self, wsid, sourceKey, gavs, allclassifiers, excludedSources, preset, resolve=True):
+    def urlmap(self, wsid, sourceKey, gavs, allclassifiers, excludedSources, preset, patcherIds, resolve=True):
         """
         Requests creation of the urlmap. It creates the configfile, posts it to AProx server
         and process the result, which has following structure:
@@ -151,6 +151,7 @@ class AproxApi10(UrlRequester):
                           its name of the form <{repository|deploy|group}:<name>>
         :param excludedSources: list of excluded sources' keys
         :param preset: preset used while creating the urlmap
+        :param patcherIds: list of patcher ID strings for AProx
         :param resolve: flag to tell AProx to run resolve for given roots
         :returns: the requested urlmap
         """
@@ -166,6 +167,8 @@ class AproxApi10(UrlRequester):
             request["excludedSources"] = excludedSources
         request["preset"] = preset
         request["resolve"] = resolve
+        if len(patcherIds):
+            request["patcherIds"] = patcherIds
         data = json.dumps(request)
 
         logging.debug("Requesting urlmap with config '%s'", data)
