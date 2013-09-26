@@ -199,23 +199,49 @@ def _copyFile(filePath, fileLocalPath, checksumMode=ChecksumMode.check):
     return fetched
 
 
-def fetchFile(url, filePath, checksumMode=ChecksumMode.check, warnOnError=True, exitOnError=False):
-    """Fetch file from the given URL (remote or local), to local path if the path does not exist yet."""
+def fetchFile(url, filePath, checksumMode=ChecksumMode.check, warnOnError=True, exitOnError=False,
+              filesetLock=None, fileset=None):
+    """
+    Fetch file from the given URL (remote or local), to local path if the path does not exist yet. When using this
+    method in multiple threads, it is needed to pass filesetLock and fileset arguments to ensure it is thread-safe.
+    filesetLock is a threading.Lock instance, which should be shared in all fetchFile calls. fileset is a set in which
+    is stored set of files which are actually downloaded. It has to be shared too.
+    """
     fetched = False
+    if filesetLock is not None:
+        filesetLock.acquire()
+
     if os.path.exists(filePath):
         logging.debug("File already fetched: %s", url)
+        if filesetLock is not None:
+            filesetLock.release()
         fetched = True
     else:
-        protocol = urlProtocol(url)
-        if protocol == 'http' or protocol == 'https':
-            fetched = _downloadFile(url, filePath, checksumMode, warnOnError)
-        elif protocol == 'file':
-            fetched = _copyFile(url[7:], filePath, checksumMode)
-        elif protocol == '':
-            fetched = _copyFile(url, filePath, checksumMode)
-        else:
-            logging.warning("Unknown protocol %s. URL: '%s'", protocol, url)
-            fetched = False
+        if filesetLock is not None:
+            if filePath in fileset:
+                logging.debug("File is already being downloaded by another thread: %s", url)
+                filesetLock.release()
+                fetched = True
+            else:
+                fileset.add(filePath)
+                filesetLock.release()
+
+        if not fetched:
+            protocol = urlProtocol(url)
+            if protocol == 'http' or protocol == 'https':
+                fetched = _downloadFile(url, filePath, checksumMode, warnOnError)
+            elif protocol == 'file':
+                fetched = _copyFile(url[7:], filePath, checksumMode)
+            elif protocol == '':
+                fetched = _copyFile(url, filePath, checksumMode)
+            else:
+                logging.warning("Unknown protocol %s. URL: '%s'", protocol, url)
+                fetched = False
+
+            if filesetLock is not None:
+                filesetLock.acquire()
+                fileset.remove(filePath)
+                filesetLock.release()
 
     if exitOnError and not fetched:
         sys.exit(1)
@@ -230,7 +256,8 @@ def setLogLevel(level, logfile=None):
         unknownLevel = True
         logLevel = logging.INFO
     if logfile:
-        logging.basicConfig(format='%(levelname)s (%(threadName)s): %(message)s', level=logLevel, filename=logfile, filemode='a')
+        logging.basicConfig(format='%(levelname)s (%(threadName)s): %(message)s', level=logLevel, filename=logfile,
+                            filemode='a')
     else:
         logging.basicConfig(format='%(levelname)s (%(threadName)s): %(message)s', level=logLevel)
 

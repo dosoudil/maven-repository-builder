@@ -22,7 +22,8 @@ from maven_repo_util import ChecksumMode
 from maven_artifact import MavenArtifact
 
 
-def downloadArtifacts(remoteRepoUrl, localRepoDir, artifact, classifiers, checksumMode, mkdirLock, errors):
+def downloadArtifacts(remoteRepoUrl, localRepoDir, artifact, classifiers, checksumMode, mkdirLock, filesetLock,
+                      fileset, errors):
     """Download artifact from a remote repository along with pom and additional classifiers' jar"""
     logging.debug("Starting download of %s", str(artifact))
 
@@ -40,14 +41,15 @@ def downloadArtifacts(remoteRepoUrl, localRepoDir, artifact, classifiers, checks
         # Download main artifact
         artifactUrl = remoteRepoUrl + artifact.getArtifactFilepath()
         artifactLocalPath = os.path.join(localRepoDir, artifact.getArtifactFilepath())
-        maven_repo_util.fetchFile(artifactUrl, artifactLocalPath, checksumMode, exitOnError=True)
+        maven_repo_util.fetchFile(artifactUrl, artifactLocalPath, checksumMode, True, True, filesetLock, fileset)
 
         if not artifact.getClassifier():
             # Download pom if the main type is not pom
             if artifact.getArtifactFilename() != artifact.getPomFilename():
                 artifactPomUrl = remoteRepoUrl + artifact.getPomFilepath()
                 artifactPomLocalPath = os.path.join(localRepoDir, artifact.getPomFilepath())
-                maven_repo_util.fetchFile(artifactPomUrl, artifactPomLocalPath, checksumMode, exitOnError=True)
+                maven_repo_util.fetchFile(artifactPomUrl, artifactPomLocalPath, checksumMode, True, True, filesetLock,
+                                          fileset)
 
                 # Download additional classifiers (only for non-pom artifacts)
                 for classifier in classifiers:
@@ -55,8 +57,8 @@ def downloadArtifacts(remoteRepoUrl, localRepoDir, artifact, classifiers, checks
                     if maven_repo_util.urlExists(artifactClassifierUrl):
                         artifactClassifierLocalPath = os.path.join(
                             localRepoDir, artifact.getClassifierFilepath(classifier))
-                        maven_repo_util.fetchFile(
-                            artifactClassifierUrl, artifactClassifierLocalPath, checksumMode, exitOnError=True)
+                        maven_repo_util.fetchFile(artifactClassifierUrl, artifactClassifierLocalPath, checksumMode,
+                                                  True, True, filesetLock, fileset)
     except BaseException as ex:
         logging.error("Error while downloading artifact %s: %s", artifact, str(ex))
         errors.put(ex)
@@ -116,6 +118,8 @@ def fetchArtifacts(remoteRepoUrl, localRepoDir, artifactList, classifiers, exclu
         pool = ThreadPool(maven_repo_util.MAX_THREADS)
         errors = Queue.Queue()
         mkdirLock = threading.Lock()
+        filesetLock = threading.Lock()
+        fileset = set([])
 
         for artifact in artifactList:
             if artifact.artifactType in excludedTypes:
@@ -126,7 +130,8 @@ def fetchArtifacts(remoteRepoUrl, localRepoDir, artifactList, classifiers, exclu
                 maven_repo_util.updateSnapshotVersionSuffix(artifact, remoteRepoUrl)
             pool.apply_async(
                 downloadArtifacts,
-                [remoteRepoUrl, localRepoDir, artifact, classifiers, checksumMode, mkdirLock, errors]
+                [remoteRepoUrl, localRepoDir, artifact, classifiers, checksumMode, mkdirLock, filesetLock, fileset,
+                    errors]
             )
 
         # Close pool and wait till all workers are finnished
