@@ -560,7 +560,7 @@ class ArtifactListBuilder:
                      + ' ; find  ."', stdout=PIPE, shell=True)
         result = lftp.communicate()[0]
         if lftp.returncode:
-            raise IOError("lftp execution ended by return code %d", lftp.returncode)
+            raise IOError("lftp find in %s ended by return code %d" % (url, lftp.returncode))
         else:
             return result
 
