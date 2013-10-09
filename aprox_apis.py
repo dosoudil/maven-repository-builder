@@ -158,15 +158,14 @@ class AproxApi10(UrlRequester):
         url = self._aprox_url + self.API_PATH + "depgraph/repo/urlmap"
 
         request = {}
-        request["roots"] = gavs
         if allclassifiers:
             request["extras"] = [{"classifier": "*", "type": "*"}]
         request["workspaceId"] = wsid
         request["source"] = sourceKey
         if len(excludedSources):
             request["excludedSources"] = excludedSources
-        request["preset"] = preset
         request["resolve"] = resolve
+        request["graphComposition"] = {"graphs": [{"roots": gavs, "preset": preset}]}
         if len(patcherIds):
             request["patcherIds"] = patcherIds
         data = json.dumps(request)
