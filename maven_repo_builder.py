@@ -72,14 +72,14 @@ def copyArtifact(remoteRepoPath, localRepoDir, artifact, classifiers, checksumMo
     if os.path.exists(artifactPath) and not os.path.exists(artifactLocalPath):
         maven_repo_util.fetchFile(artifactPath, artifactLocalPath, checksumMode)
 
-    if not artifact.getClassifier():
-        # Copy pom if the main type is not pom
-        if artifact.getArtifactFilename() != artifact.getPomFilename():
-            artifactPomPath = os.path.join(remoteRepoPath, artifact.getPomFilepath())
-            artifactPomLocalPath = os.path.join(localRepoDir, artifact.getPomFilepath())
-            if os.path.exists(artifactPomPath) and not os.path.exists(artifactPomLocalPath):
-                maven_repo_util.fetchFile(artifactPomPath, artifactPomLocalPath, checksumMode)
+    # Copy pom if the main type is not pom
+    if artifact.getArtifactFilename() != artifact.getPomFilename():
+        artifactPomPath = os.path.join(remoteRepoPath, artifact.getPomFilepath())
+        artifactPomLocalPath = os.path.join(localRepoDir, artifact.getPomFilepath())
+        if os.path.exists(artifactPomPath) and not os.path.exists(artifactPomLocalPath):
+            maven_repo_util.fetchFile(artifactPomPath, artifactPomLocalPath, checksumMode)
 
+        if not artifact.getClassifier():
             # Copy additional classifiers (only for non-pom artifacts)
             for classifier in classifiers:
                 artifactClassifierPath = os.path.join(remoteRepoPath, artifact.getClassifierFilepath(classifier))
