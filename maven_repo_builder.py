@@ -43,14 +43,14 @@ def downloadArtifacts(remoteRepoUrl, localRepoDir, artifact, classifiers, checks
         artifactLocalPath = os.path.join(localRepoDir, artifact.getArtifactFilepath())
         maven_repo_util.fetchFile(artifactUrl, artifactLocalPath, checksumMode, True, True, filesetLock, fileset)
 
-        if not artifact.getClassifier():
-            # Download pom if the main type is not pom
-            if artifact.getArtifactFilename() != artifact.getPomFilename():
-                artifactPomUrl = remoteRepoUrl + artifact.getPomFilepath()
-                artifactPomLocalPath = os.path.join(localRepoDir, artifact.getPomFilepath())
-                maven_repo_util.fetchFile(artifactPomUrl, artifactPomLocalPath, checksumMode, True, True, filesetLock,
-                                          fileset)
+        # Download pom if the main type is not pom
+        if artifact.getArtifactFilename() != artifact.getPomFilename():
+            artifactPomUrl = remoteRepoUrl + artifact.getPomFilepath()
+            artifactPomLocalPath = os.path.join(localRepoDir, artifact.getPomFilepath())
+            maven_repo_util.fetchFile(artifactPomUrl, artifactPomLocalPath, checksumMode, True, True, filesetLock,
+                                      fileset)
 
+            if not artifact.getClassifier():
                 # Download additional classifiers (only for non-pom artifacts)
                 for classifier in classifiers:
                     artifactClassifierUrl = remoteRepoUrl + artifact.getClassifierFilepath(classifier)
