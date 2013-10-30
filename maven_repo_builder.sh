@@ -21,7 +21,7 @@ help ()
     echo '  -a CLASSIFIERS'
     echo '                        Colon-separated list of additional classifiers to download.'
     echo '                        By default "sources" will be used. There can be a type specified '
-    echo '                        with each classifiers separated by colon, e.g. sources:jar.'
+    echo '                        with each classifiers separated by colon, e.g. jar:sources.'
     echo '                        The old way of separation of classifiers by colon is deprecated.'
     echo '  -r REPO_FILENAME'
     echo '                        Zip the created repository in a file with provided name'

@@ -48,8 +48,8 @@ Maven Repository Builder Usage
                             By default "sources" will be used. It is possible to use
                             "__all__" to request all available classifiers (works only when
                             artifact list is generated from config). There can be a type
-                            specified with each classifiers separated by colon, e.g. sources:jar.
-                            The old way of separation of classifiers by colon is deprecated.
+                            specified with each classifiers separated by colon, e.g. jar:sources.
+                            The old way of separation of classifiers by colon is deprecated since.
       -r REPO_FILENAME
                             Zip teh created repository in a file with provided name
       -s CHECKSUM_MODE

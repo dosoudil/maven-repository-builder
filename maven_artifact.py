@@ -86,6 +86,7 @@ class MavenArtifact:
         return self.groupId + ":" + self.artifactId + ":" + self.version
 
     def getGATCV(self):
+        """Get the groupId, artifactId, optional type, optional classifier and version using a colon separated form."""
         result = self.groupId + ':' + self.artifactId
         if self.artifactType:
             result += ':' + self.artifactType

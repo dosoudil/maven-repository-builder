@@ -134,8 +134,7 @@ def fetchArtifacts(remoteRepoUrl, localRepoDir, artifactList, classifiers, exclu
 
         for artifact in artifactList:
             if artifact.artifactType in excludedTypes:
-                logging.info("Skipping download of %s:%s:%s:%s because of excluded type", artifact.groupId,
-                             artifact.artifactId, artifact.artifactType, artifact.version)
+                logging.info("Skipping download of %s because of excluded type", artifact.getGATCV())
                 continue
             if artifact.isSnapshot():
                 maven_repo_util.updateSnapshotVersionSuffix(artifact, remoteRepoUrl)
@@ -196,8 +195,8 @@ def parseClassifiers(classifiersString):
     contains classifier value under "classifier" key and optionally type under "type" key. If no type is specified, then
     the key "type" is missing in the dictionary
 
-    :param classifiersString: comma-separated list of classifiers with an optional type separated by colon, if no type
-                              specified, then the default type ("jar") is used
+    :param classifiersString: comma-separated list of classifiers with an optional prepended type separated by colon,
+                              if no type specified, then the default type ("jar") is used
     :returns: list of dictionaries with structure e.g. {"classifiers": "sources", "type": "jar"}
     """
     if not classifiersString or classifiersString == '__all__':
@@ -214,7 +213,7 @@ def parseClassifiers(classifiersString):
                     result.append({"classifier": classifier})
                 elif colonCount == 1:
                     parts = classifier.split(":")
-                    result.append({"classifier": parts[0], "type": parts[1]})
+                    result.append({"classifier": parts[1], "type": parts[0]})
                 else:
                     raise ValueError("Requested classifier value %s contains more than one colon." % classifier)
 

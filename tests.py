@@ -474,11 +474,11 @@ class Tests(unittest.TestCase):
         expectedClassifiers = [{"classifier": "sources"}]
         self.assertEquals(expectedClassifiers, classifiers)
 
-        classifiers = maven_repo_builder.parseClassifiers("sources:jar")
+        classifiers = maven_repo_builder.parseClassifiers("jar:sources")
         expectedClassifiers = [{"classifier": "sources", "type": "jar"}]
         self.assertEquals(expectedClassifiers, classifiers)
 
-        classifiers = maven_repo_builder.parseClassifiers("sources,javadoc,scm-sources:zip")
+        classifiers = maven_repo_builder.parseClassifiers("sources,javadoc,zip:scm-sources")
         expectedClassifiers = [{"classifier": "sources"}, {"classifier": "javadoc"},
                                {"classifier": "scm-sources", "type": "zip"}]
         self.assertEquals(expectedClassifiers, classifiers)
