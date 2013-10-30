@@ -10,6 +10,7 @@ import copy
 
 import artifact_list_builder
 import configuration
+import maven_repo_builder
 import maven_repo_util
 from aprox_apis import AproxApi10
 from artifact_list_builder import ArtifactListBuilder, ArtifactSpec
@@ -467,6 +468,20 @@ class Tests(unittest.TestCase):
         }
 
         self.assertEqualArtifactList(expectedArtifacts, actualArtifacts)
+
+    def test_parseClassifiers(self):
+        classifiers = maven_repo_builder.parseClassifiers("sources")
+        expectedClassifiers = [{"classifier": "sources"}]
+        self.assertEquals(expectedClassifiers, classifiers)
+
+        classifiers = maven_repo_builder.parseClassifiers("sources:jar")
+        expectedClassifiers = [{"classifier": "sources", "type": "jar"}]
+        self.assertEquals(expectedClassifiers, classifiers)
+
+        classifiers = maven_repo_builder.parseClassifiers("sources,javadoc,scm-sources:zip")
+        expectedClassifiers = [{"classifier": "sources"}, {"classifier": "javadoc"},
+                               {"classifier": "scm-sources", "type": "zip"}]
+        self.assertEquals(expectedClassifiers, classifiers)
 
     def assertEqualArtifactList(self, expectedArtifacts, actualArtifacts):
         strExp = self._artifactListToString(expectedArtifacts, "  expected", "\n    ")

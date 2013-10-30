@@ -85,6 +85,15 @@ class MavenArtifact:
         """Get the groupId, artifactId and version using a colon separated form."""
         return self.groupId + ":" + self.artifactId + ":" + self.version
 
+    def getGATCV(self):
+        result = self.groupId + ':' + self.artifactId
+        if self.artifactType:
+            result += ':' + self.artifactType
+        if self.classifier:
+            result += ':' + self.classifier
+        result += ':' + self.version
+        return result
+
     def getBaseFilename(self):
         """Returns the filename without the file extension"""
         if self.snapshotVersionSuffix:
@@ -121,23 +130,17 @@ class MavenArtifact:
         """Return the path to the artifact file"""
         return self.getDirPath() + self.getSourcesFilename()
 
-    def getClassifierFilename(self, classifier):
+    def getClassifierFilename(self, classifier, artifactType="jar"):
         """Return the filename to the artifact's classifier file"""
-        return self.getBaseFilename() + '-' + classifier + '.jar'
+        return self.getBaseFilename() + '-' + classifier + '.' + artifactType
 
-    def getClassifierFilepath(self, classifier):
+    def getClassifierFilepath(self, classifier, artifactType="jar"):
         """Return teh path to the artifact's classifier file"""
-        return self.getDirPath() + self.getClassifierFilename(classifier)
+        return self.getDirPath() + self.getClassifierFilename(classifier, artifactType)
 
     def isSnapshot(self):
         """Determines if the version of this artifact is a snapshot version."""
         return self.version.endswith("-SNAPSHOT")
 
     def __str__(self):
-        result = self.groupId + ':' + self.artifactId
-        if self.artifactType:
-            result += ':' + self.artifactType
-        if self.classifier:
-            result += ':' + self.classifier
-        result += ':' + self.version
-        return result
+        return self.getGATCV()

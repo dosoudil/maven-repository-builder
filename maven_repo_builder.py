@@ -52,11 +52,16 @@ def downloadArtifacts(remoteRepoUrl, localRepoDir, artifact, classifiers, checks
 
             if not artifact.getClassifier():
                 # Download additional classifiers (only for non-pom artifacts)
-                for classifier in classifiers:
-                    artifactClassifierUrl = remoteRepoUrl + artifact.getClassifierFilepath(classifier)
+                for ct in classifiers:
+                    classifier = ct["classifier"]
+                    if "type" in ct:
+                        artifactType = ct["type"]
+                        classifierFilepath = artifact.getClassifierFilepath(classifier, artifactType)
+                    else:
+                        classifierFilepath = artifact.getClassifierFilepath(classifier)
+                    artifactClassifierUrl = remoteRepoUrl + classifierFilepath
                     if maven_repo_util.urlExists(artifactClassifierUrl):
-                        artifactClassifierLocalPath = os.path.join(
-                            localRepoDir, artifact.getClassifierFilepath(classifier))
+                        artifactClassifierLocalPath = os.path.join(localRepoDir, classifierFilepath)
                         maven_repo_util.fetchFile(artifactClassifierUrl, artifactClassifierLocalPath, checksumMode,
                                                   True, True, filesetLock, fileset)
     except BaseException as ex:
@@ -81,9 +86,15 @@ def copyArtifact(remoteRepoPath, localRepoDir, artifact, classifiers, checksumMo
 
         if not artifact.getClassifier():
             # Copy additional classifiers (only for non-pom artifacts)
-            for classifier in classifiers:
-                artifactClassifierPath = os.path.join(remoteRepoPath, artifact.getClassifierFilepath(classifier))
-                artifactClassifierLocalPath = os.path.join(localRepoDir, artifact.getClassifierFilepath(classifier))
+            for ct in classifiers:
+                classifier = ct["classifier"]
+                if "type" in ct:
+                    artifactType = ct["type"]
+                    classifierFilepath = artifact.getClassifierFilepath(classifier, artifactType)
+                else:
+                    classifierFilepath = artifact.getClassifierFilepath(classifier)
+                artifactClassifierPath = os.path.join(remoteRepoPath, classifierFilepath)
+                artifactClassifierLocalPath = os.path.join(localRepoDir, classifierFilepath)
                 if os.path.exists(artifactClassifierPath) and not os.path.exists(artifactClassifierLocalPath):
                     maven_repo_util.fetchFile(artifactClassifierPath, artifactClassifierLocalPath, checksumMode)
 
@@ -179,6 +190,37 @@ def generateChecksumFiles(filepath):
             sumobj.write(checksum)
 
 
+def parseClassifiers(classifiersString):
+    """
+    Parses classifiers and types from command-line argument value. The result  is list of dictionaries. Each dictionary
+    contains classifier value under "classifier" key and optionally type under "type" key. If no type is specified, then
+    the key "type" is missing in the dictionary
+
+    :param classifiersString: comma-separated list of classifiers with an optional type separated by colon, if no type
+                              specified, then the default type ("jar") is used
+    :returns: list of dictionaries with structure e.g. {"classifiers": "sources", "type": "jar"}
+    """
+    if not classifiersString or classifiersString == '__all__':
+        result = []
+    else:
+        classifiers = classifiersString.split(",")
+        if len(classifiers) == 1 and classifiers.count(":") > 1:
+            result = classifiersString.split(":")
+        else:
+            result = []
+            for classifier in classifiers:
+                colonCount = classifier.count(":")
+                if colonCount == 0:
+                    result.append({"classifier": classifier})
+                elif colonCount == 1:
+                    parts = classifier.split(":")
+                    result.append({"classifier": parts[0], "type": parts[1]})
+                else:
+                    raise ValueError("Requested classifier value %s contains more than one colon." % classifier)
+
+    return result
+
+
 def main():
     usage = "Usage: %prog [-c CONFIG] [-a CLASSIFIERS] [-u URL] [-o OUTPUT_DIRECTORY] [FILE...]"
     description = ("Generate a Maven repository based on a file (or files) containing "
@@ -208,9 +250,10 @@ def main():
     cliOptParser.add_option(
         '-a', '--classifiers',
         default='sources',
-        help='Colon-separated list of additional classifiers to download. It is '
-             'possible to use "__all__" to request all available classifiers '
-             '(works only when artifact list is generated from config).'
+        help='Comma-separated list of additional classifiers to download. It is possible to use "__all__" to '
+             'request all available classifiers (works only when artifact list is generated from config). There '
+             'can be a type specified with each classifiers separated by colon, e.g. sources:jar. The old way '
+             'of separation of classifiers by colon is deprecated'
     )
     cliOptParser.add_option(
         '-s', '--checksummode',
@@ -242,10 +285,7 @@ def main():
     # Set the log level
     maven_repo_util.setLogLevel(options.loglevel, options.logfile)
 
-    if not options.classifiers or options.classifiers == '__all__':
-        classifiers = []
-    else:
-        classifiers = options.classifiers.split(":")
+    classifiers = parseClassifiers(options.classifiers)
 
     if not options.excludedtypes:
         excludedtypes = []
