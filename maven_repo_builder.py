@@ -115,7 +115,8 @@ def depListToArtifactList(depList):
     return artifactList
 
 
-def fetchArtifacts(remoteRepoUrl, localRepoDir, artifactList, classifiers, excludedTypes, checksumMode):
+def fetchArtifacts(remoteRepoUrl, localRepoDir, artifactList, classifiers, excludedTypes, whitelistedGATCVs,
+                   checksumMode):
     """Create a Maven repository based on a remote repository url and a list of artifacts"""
     logging.info('Retrieving artifacts from repository: %s', remoteRepoUrl)
     if not os.path.exists(localRepoDir):
@@ -134,8 +135,12 @@ def fetchArtifacts(remoteRepoUrl, localRepoDir, artifactList, classifiers, exclu
 
         for artifact in artifactList:
             if artifact.artifactType in excludedTypes:
-                logging.info("Skipping download of %s because of excluded type", artifact.getGATCV())
-                continue
+                if maven_repo_util.somethingMatch(whitelistedGATCVs, artifact.getGATCV()):
+                    logging.debug("Artifact %s not skipped, because its GATCV matches one of the whitelist patterns.",
+                                  artifact.getGATCV())
+                else:
+                    logging.info("Skipping download of %s because of excluded type", artifact.getGATCV())
+                    continue
             if artifact.isSnapshot():
                 maven_repo_util.updateSnapshotVersionSuffix(artifact, remoteRepoUrl)
             pool.apply_async(
@@ -157,9 +162,12 @@ def fetchArtifacts(remoteRepoUrl, localRepoDir, artifactList, classifiers, exclu
         repoPath = remoteRepoUrl.replace('file://', '')
         for artifact in artifactList:
             if artifact.artifactType in excludedTypes:
-                logging.info("Skipping copy of %s:%s:%s:%s because of excluded type", artifact.groupId,
-                             artifact.artifactId, artifact.artifactType, artifact.version)
-                continue
+                if maven_repo_util.somethingMatch(whitelistedGATCVs, artifact.getGATCV()):
+                    logging.debug("Artifact %s not skipped, because its GATCV matches one of the whitelist patterns.",
+                                  artifact.getGATCV())
+                else:
+                    logging.info("Skipping copy of %s because of excluded type", artifact.getGATCV())
+                    continue
             if artifact.isSnapshot():
                 maven_repo_util.updateSnapshotVersionSuffix(artifact, remoteRepoUrl)
             copyArtifact(repoPath, localRepoDir, artifact, classifiers, checksumMode)
@@ -270,6 +278,11 @@ def main():
              'zip:ear:war:tar:gz:tar.gz:bz2:tar.bz2:7z:tar.7z.'
     )
     cliOptParser.add_option(
+        '-w', '--whitelist',
+        help='Name of a file containing GATCV patterns allowing usage of stars or regular expressions when enclosed '
+             'in "r/pattern/". It can force inclusion of artifacts with excluded types.'
+    )
+    cliOptParser.add_option(
         '-l', '--loglevel',
         default='info',
         help='Set the level of log output.  Can be set to debug, info, warning, error, or critical'
@@ -286,10 +299,16 @@ def main():
 
     classifiers = parseClassifiers(options.classifiers)
 
-    if not options.excludedtypes:
-        excludedtypes = []
-    else:
+    if options.excludedtypes:
         excludedtypes = options.excludedtypes.split(":")
+    else:
+        excludedtypes = []
+
+    if options.whitelist:
+        lineList = maven_repo_util.loadFlatFile(options.whitelist)
+        whitelistedGATCVs = maven_repo_util.getRegExpsFromStrings(lineList)
+    else:
+        whitelistedGATCVs = []
 
     if options.config is None:
         if len(args) < 1:
@@ -314,13 +333,15 @@ def main():
             finally:
                 depListFile.close()
 
-        fetchArtifacts(options.url, options.output, artifacts, classifiers, excludedtypes, options.checksummode)
+        fetchArtifacts(options.url, options.output, artifacts, classifiers, excludedtypes, whitelistedGATCVs,
+                       options.checksummode)
     else:
         # generate lists of artifacts from configuration and the fetch them each list from it's repo
         artifactList = artifact_list_generator.generateArtifactList(options)
         for repoUrl in artifactList.keys():
             artifacts = artifactList[repoUrl]
-            fetchArtifacts(repoUrl, options.output, artifacts, classifiers, excludedtypes, options.checksummode)
+            fetchArtifacts(repoUrl, options.output, artifacts, classifiers, excludedtypes, whitelistedGATCVs,
+                           options.checksummode)
 
     logging.info('Generating missing checksums...')
     generateChecksums(options.output)

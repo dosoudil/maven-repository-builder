@@ -498,9 +498,7 @@ def updateSnapshotVersionSuffix(artifact, repoUrl):
 
     if timestamp and buildNumber:
         artifact.snapshotVersionSuffix = '-' + timestamp + '-' + buildNumber
-        logging.debug("Version suffix for %s:%s:%s:%s set to %s", artifact.groupId,
-                      artifact.artifactId, artifact.artifactType, artifact.version,
-                      artifact.snapshotVersionSuffix)
+        logging.debug("Version suffix for %s set to %s", artifact.getGATCV(), artifact.snapshotVersionSuffix)
 
 
 def somethingMatch(regexs, string):
@@ -532,3 +530,15 @@ def _sortVersionsWithAtlas(versions, versionSorterDir="versionSorter/"):
     ret = Popen(args, stdout=PIPE).communicate()[0].split('\n')[::-1]
     ret.remove("")
     return ret
+
+
+def loadFlatFile(filename):
+    if filename:
+        with open(filename, "r") as openedfile:
+            lines = openedfile.readlines()
+        result = []
+        for line in lines:
+            resultLine = line.strip()
+            if resultLine:
+                result.append(resultLine)
+        return result

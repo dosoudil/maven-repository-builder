@@ -108,7 +108,7 @@ class Configuration:
         if 'excluded-gav-patterns-ref' in data:
             for filename in data['excluded-gav-patterns-ref']:
                 relFilename = self._getRelativeFilename(filename, filePath)
-                self.excludedGAVs.extend(self._loadFlatFile(relFilename))
+                self.excludedGAVs.extend(maven_repo_util.loadFlatFile(relFilename))
 
         if 'excluded-repositories' in data:
             self.excludedRepositories.extend(data['excluded-repositories'])
@@ -116,7 +116,7 @@ class Configuration:
         if 'multi-version-ga-patterns-ref' in data:
             for filename in data['multi-version-ga-patterns-ref']:
                 relFilename = self._getRelativeFilename(filename, filePath)
-                self.multiVersionGAs.extend(self._loadFlatFile(relFilename))
+                self.multiVersionGAs.extend(maven_repo_util.loadFlatFile(relFilename))
 
         if 'multi-version-ga-patterns' in data:
             self.multiVersionGAs.extend(data['multi-version-ga-patterns'])
@@ -158,20 +158,9 @@ class Configuration:
     def _loadFlatFileBySourceParameter(self, source, parameter, filePath):
         if parameter in source:
             relFilename = self._getRelativeFilename(source[parameter], filePath)
-            return self._loadFlatFile(relFilename)
+            return maven_repo_util.loadFlatFile(relFilename)
         else:
             return []
-
-    def _loadFlatFile(self, filename):
-        if filename:
-            with open(filename, "r") as openedfile:
-                lines = openedfile.readlines()
-            result = []
-            for line in lines:
-                resultLine = line.strip()
-                if resultLine:
-                    result.append(resultLine)
-            return result
 
     def _getRelativeFilename(self, filename, path):
         """Checks, if the given filename has absolute path, and if not, it preppends to it given path."""

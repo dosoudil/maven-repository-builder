@@ -97,6 +97,7 @@ class ArtifactListBuilder:
         import koji
 
         kojiSession = koji.ClientSession(kojiUrl)
+        logging.debug("Getting latest maven artifacts from tag %s.", tagName)
         kojiArtifacts = kojiSession.getLatestMavenArchives(tagName)
 
         gavuExtClass = {}  # { (g,a,v,url): {ext: set([class])} }
@@ -124,6 +125,8 @@ class ArtifactListBuilder:
         for gavu in gavuExtClass:
             self._addArtifact(artifacts, gavu[0], gavu[1], gavu[2], gavuExtClass[gavu], suffixes.get(gavu), gavu[3])
 
+        if gavPatterns:
+            logging.debug("Filtering artifacts contained in the tag by GAV patterns list.")
         return self._filterArtifactsByPatterns(artifacts, gavPatterns)
 
     def _listDependencies(self, repoUrls, gavs, recursive, skipmissing):
