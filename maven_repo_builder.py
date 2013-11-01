@@ -50,20 +50,19 @@ def downloadArtifacts(remoteRepoUrl, localRepoDir, artifact, classifiers, checks
             maven_repo_util.fetchFile(artifactPomUrl, artifactPomLocalPath, checksumMode, True, True, filesetLock,
                                       fileset)
 
-            if not artifact.getClassifier():
-                # Download additional classifiers (only for non-pom artifacts)
-                for ct in classifiers:
-                    classifier = ct["classifier"]
-                    if "type" in ct:
-                        artifactType = ct["type"]
-                        classifierFilepath = artifact.getClassifierFilepath(classifier, artifactType)
-                    else:
-                        classifierFilepath = artifact.getClassifierFilepath(classifier)
-                    artifactClassifierUrl = remoteRepoUrl + classifierFilepath
-                    if maven_repo_util.urlExists(artifactClassifierUrl):
-                        artifactClassifierLocalPath = os.path.join(localRepoDir, classifierFilepath)
-                        maven_repo_util.fetchFile(artifactClassifierUrl, artifactClassifierLocalPath, checksumMode,
-                                                  True, True, filesetLock, fileset)
+            # Download additional classifiers (only for non-pom artifacts)
+            for ct in classifiers:
+                classifier = ct["classifier"]
+                if "type" in ct:
+                    artifactType = ct["type"]
+                    classifierFilepath = artifact.getClassifierFilepath(classifier, artifactType)
+                else:
+                    classifierFilepath = artifact.getClassifierFilepath(classifier)
+                artifactClassifierUrl = remoteRepoUrl + classifierFilepath
+                if maven_repo_util.urlExists(artifactClassifierUrl):
+                    artifactClassifierLocalPath = os.path.join(localRepoDir, classifierFilepath)
+                    maven_repo_util.fetchFile(artifactClassifierUrl, artifactClassifierLocalPath, checksumMode,
+                                              True, True, filesetLock, fileset)
     except BaseException as ex:
         logging.error("Error while downloading artifact %s: %s", artifact, str(ex))
         errors.put(ex)
@@ -84,19 +83,18 @@ def copyArtifact(remoteRepoPath, localRepoDir, artifact, classifiers, checksumMo
         if os.path.exists(artifactPomPath) and not os.path.exists(artifactPomLocalPath):
             maven_repo_util.fetchFile(artifactPomPath, artifactPomLocalPath, checksumMode)
 
-        if not artifact.getClassifier():
-            # Copy additional classifiers (only for non-pom artifacts)
-            for ct in classifiers:
-                classifier = ct["classifier"]
-                if "type" in ct:
-                    artifactType = ct["type"]
-                    classifierFilepath = artifact.getClassifierFilepath(classifier, artifactType)
-                else:
-                    classifierFilepath = artifact.getClassifierFilepath(classifier)
-                artifactClassifierPath = os.path.join(remoteRepoPath, classifierFilepath)
-                artifactClassifierLocalPath = os.path.join(localRepoDir, classifierFilepath)
-                if os.path.exists(artifactClassifierPath) and not os.path.exists(artifactClassifierLocalPath):
-                    maven_repo_util.fetchFile(artifactClassifierPath, artifactClassifierLocalPath, checksumMode)
+        # Copy additional classifiers (only for non-pom artifacts)
+        for ct in classifiers:
+            classifier = ct["classifier"]
+            if "type" in ct:
+                artifactType = ct["type"]
+                classifierFilepath = artifact.getClassifierFilepath(classifier, artifactType)
+            else:
+                classifierFilepath = artifact.getClassifierFilepath(classifier)
+            artifactClassifierPath = os.path.join(remoteRepoPath, classifierFilepath)
+            artifactClassifierLocalPath = os.path.join(localRepoDir, classifierFilepath)
+            if os.path.exists(artifactClassifierPath) and not os.path.exists(artifactClassifierLocalPath):
+                maven_repo_util.fetchFile(artifactClassifierPath, artifactClassifierLocalPath, checksumMode)
 
 
 def depListToArtifactList(depList):
