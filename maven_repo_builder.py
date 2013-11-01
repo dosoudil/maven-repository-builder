@@ -7,13 +7,14 @@ a list of artifacts and a remote repository URL.
 
 import hashlib
 import logging
-import optparse
 import os
 import re
 import sys
 import threading
 import urlparse
 import Queue
+from argparse import ArgumentParser
+from argparse import RawTextHelpFormatter
 from multiprocessing.pool import ThreadPool
 
 import artifact_list_generator
@@ -227,95 +228,113 @@ def parseClassifiers(classifiersString):
 
 
 def main():
-    usage = "Usage: %prog [-c CONFIG] [-a CLASSIFIERS] [-u URL] [-o OUTPUT_DIRECTORY] [FILE...]"
-    description = ("Generate a Maven repository based on a file (or files) containing "
-                   "a list of artifacts.  Each list file must contain a single artifact "
-                   "per line in the format groupId:artifactId:fileType:<classifier>:version "
-                   "The example artifact list contains more information. Another usage is "
-                   "to provide Artifact List Generator configuration file. There is also "
-                   "sample configuration file in examples.")
+    description = (
+        'Generate a Maven repository based on a file (or files) containing a list of\n'
+        'artifacts.  Each list file must contain a single artifact per line in the\n'
+        'format groupId:artifactId:fileType:<classifier>:version. The example artifact\n'
+        'list contains more information. Another usage is to provide Artifact List\n'
+        'Generator configuration file. There is also sample configuration file in\n'
+        'examples.')
 
-    # TODO: pkocandr - use argparse instead of optparse, which is deprecated since python 2.7
-    cliOptParser = optparse.OptionParser(usage=usage, description=description)
-    cliOptParser.add_option(
-        '-c', '--config', dest='config',
-        help='Configuration file to use for generation of an artifact list for the repository builder'
+    cliOptParser = ArgumentParser(description=description, formatter_class=RawTextHelpFormatter)
+    cliOptParser.add_argument(
+        "artifact_list",
+        nargs='*',
+        help='File (or files) containing a list of artifacts. Used\n'
+             'when no artifact list generator configuration is\n'
+             'passed.'
     )
-    cliOptParser.add_option(
+    cliOptParser.add_argument(
+        '-c', '--config', dest='config',
+        help='Configuration file to use for generation of an\n'
+             'artifact list for the repository builder.'
+    )
+    cliOptParser.add_argument(
         '-u', '--url',
         default='http://repo1.maven.org/maven2/',
-        help='URL of the remote repository from which artifacts are downloaded. '
-             'It is used along with artifact list files when no config file is specified.'
+        help='URL of the remote repository from which artifacts are\n'
+             'downloaded. It is used along with artifact list files\n'
+             'when no config file is specified.'
     )
-    cliOptParser.add_option(
+    cliOptParser.add_argument(
         '-o', '--output',
         default='local-maven-repository',
-        help='Local output directory for the new repository'
+        help='Local output directory for the new repository.'
     )
-    cliOptParser.add_option(
+    cliOptParser.add_argument(
         '-a', '--classifiers',
         default='sources',
-        help='Comma-separated list of additional classifiers to download. It is possible to use "__all__" to '
-             'request all available classifiers (works only when artifact list is generated from config). There '
-             'can be a type specified with each classifiers separated by colon, e.g. sources:jar. The old way '
-             'of separation of classifiers by colon is deprecated'
+        help='Comma-separated list of additional classifiers to\n'
+             'download. It is possible to use "__all__" to request\n'
+             'all available classifiers (works only when artifact\n'
+             'list is generated from config). There can be a type\n'
+             'specified with each classifiers separated by colon,\n'
+             'e.g. sources:jar. The old way of separation of\n'
+             'classifiers by colon is deprecated.'
     )
-    cliOptParser.add_option(
+    cliOptParser.add_argument(
         '-s', '--checksummode',
         default=ChecksumMode.generate,
         choices=(ChecksumMode.generate, ChecksumMode.download, ChecksumMode.check),
-        help='Mode of dealing with MD5 and SHA1 checksums. Possible choices are:                                   '
-             'generate - generate the checksums (default)                   '
-             'download - download the checksums if available, if not, generate them                              '
-             'check - check if downloaded and generated checksums are equal'
+        help='Mode of dealing with MD5 and SHA1 checksums. Possible\n'
+             'choices are:\n'
+             '  generate - generate the checksums (default)\n'
+             '  download - download the checksums if available, if\n'
+             '             not, generate them\n'
+             '  check    - check if downloaded and generated\n'
+             '             checksums are equal'
     )
-    cliOptParser.add_option(
+    cliOptParser.add_argument(
         '-x', '--excludedtypes',
         default='zip:ear:war:tar:gz:tar.gz:bz2:tar.bz2:7z:tar.7z',
-        help='Colon-separated list of filetypes to exclude. Defaults to '
-             'zip:ear:war:tar:gz:tar.gz:bz2:tar.bz2:7z:tar.7z.'
+        help='Colon-separated list of filetypes to exclude. Defaults\n'
+             'to zip:ear:war:tar:gz:tar.gz:bz2:tar.bz2:7z:tar.7z.'
     )
-    cliOptParser.add_option(
+    cliOptParser.add_argument(
         '-w', '--whitelist',
-        help='Name of a file containing GATCV patterns allowing usage of stars or regular expressions when enclosed '
-             'in "r/pattern/". It can force inclusion of artifacts with excluded types.'
+        help='Name of a file containing GATCV patterns allowing\n'
+             'usage of stars or regular expressions when enclosed in\n'
+             '"r/pattern/". It can force inclusion of artifacts with\n'
+             'excluded types.'
     )
-    cliOptParser.add_option(
+    cliOptParser.add_argument(
         '-l', '--loglevel',
         default='info',
-        help='Set the level of log output.  Can be set to debug, info, warning, error, or critical'
+        help='Set the level of log output. Can be set to debug,\n'
+             'info, warning, error, or critical.'
     )
-    cliOptParser.add_option(
+    cliOptParser.add_argument(
         '-L', '--logfile',
-        help='Set the file in which the log output should be written.'
+        help='Set the file in which the log output should be\n'
+             'written.'
     )
 
-    (options, args) = cliOptParser.parse_args()
+    args = cliOptParser.parse_args()
 
     # Set the log level
-    maven_repo_util.setLogLevel(options.loglevel, options.logfile)
+    maven_repo_util.setLogLevel(args.loglevel, args.logfile)
 
-    classifiers = parseClassifiers(options.classifiers)
+    classifiers = parseClassifiers(args.classifiers)
 
-    if options.excludedtypes:
-        excludedtypes = options.excludedtypes.split(":")
+    if args.excludedtypes:
+        excludedtypes = args.excludedtypes.split(":")
     else:
         excludedtypes = []
 
-    if options.whitelist:
-        lineList = maven_repo_util.loadFlatFile(options.whitelist)
+    if args.whitelist:
+        lineList = maven_repo_util.loadFlatFile(args.whitelist)
         whitelistedGATCVs = maven_repo_util.getRegExpsFromStrings(lineList)
     else:
         whitelistedGATCVs = []
 
-    if options.config is None:
-        if len(args) < 1:
+    if args.config is None:
+        if len(args.artifact_list) < 1:
             logging.error('Missing required command line argument: path to artifact list file')
-            sys.exit(usage)
+            sys.exit(cliOptParser.format_usage())
 
         # Read the list(s) of dependencies from the specified files
         artifacts = []
-        for filename in args:
+        for filename in args.artifact_list:
             if not os.path.isfile(filename):
                 logging.warning('Dependency list file does not exist, skipping: %s', filename)
                 continue
@@ -331,19 +350,19 @@ def main():
             finally:
                 depListFile.close()
 
-        fetchArtifacts(options.url, options.output, artifacts, classifiers, excludedtypes, whitelistedGATCVs,
-                       options.checksummode)
+        fetchArtifacts(args.url, args.output, artifacts, classifiers, excludedtypes, whitelistedGATCVs,
+                       args.checksummode)
     else:
         # generate lists of artifacts from configuration and the fetch them each list from it's repo
-        artifactList = artifact_list_generator.generateArtifactList(options)
+        artifactList = artifact_list_generator.generateArtifactList(args)
         for repoUrl in artifactList.keys():
             artifacts = artifactList[repoUrl]
-            fetchArtifacts(repoUrl, options.output, artifacts, classifiers, excludedtypes, whitelistedGATCVs,
-                           options.checksummode)
+            fetchArtifacts(repoUrl, args.output, artifacts, classifiers, excludedtypes, whitelistedGATCVs,
+                           args.checksummode)
 
     logging.info('Generating missing checksums...')
-    generateChecksums(options.output)
-    logging.info('Repository created in directory: %s', options.output)
+    generateChecksums(args.output)
+    logging.info('Repository created in directory: %s', args.output)
 
     #cleanup
     maven_repo_util.cleanTempDir()
