@@ -372,7 +372,14 @@ class ArtifactListBuilder:
 
     def _listRemoteRepository(self, repoUrl, prefix=""):
         logging.debug("Listing remote repository %s prefix '%s'", repoUrl, prefix)
-        out = self._lftpFind(repoUrl + prefix)
+        try:
+            out = self._lftpFind(repoUrl + prefix)
+        except IOError as err:
+            if prefix:
+                logging.warning(str(err))
+                out = ""
+            else:
+                raise err
 
         # ^./(groupId)/(artifactId)/(version)/(filename)$
         regexGAVF = re.compile(r'\./(.+)/([^/]+)/([^/]+)/([^/]+\.[^/.]+)$')
