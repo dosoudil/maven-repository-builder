@@ -50,6 +50,12 @@ help ()
     echo ''
 }
 
+isvarset()
+{
+    local v="$1"
+    [[ ! ${!v} && ${!v-unset} ]] && return 1 || return 0
+}
+
 if [ $# -lt 1 ]; then
     help $0
     exit 1
@@ -97,42 +103,15 @@ fi
 
 # creation of list of parameters passed to the python script
 MRB_PARAMS=()
-if [[ ! -z ${CONFIG} ]]; then
-    MRB_PARAMS+=("-c")
-    MRB_PARAMS+=(${CONFIG})
-fi
-if [[ ! -z ${URL} ]]; then
-    MRB_PARAMS+=("-u")
-    MRB_PARAMS+=(${URL})
-fi
-if [[ ! -z ${CLASSIFIERS} ]]; then
-    MRB_PARAMS+=("-a")
-    MRB_PARAMS+=(${CLASSIFIERS})
-fi
-if [[ ! -z ${OUTPUT_DIR} ]]; then
-    MRB_PARAMS+=("-o")
-    MRB_PARAMS+=(${OUTPUT_DIR})
-fi
-if [[ ! -z ${CHECKSUM_MODE} ]]; then
-    MRB_PARAMS+=("-s")
-    MRB_PARAMS+=(${CHECKSUM_MODE})
-fi
-if [[ ! -z ${EXCLUDED_TYPES} ]]; then
-    MRB_PARAMS+=("-x")
-    MRB_PARAMS+=(${EXCLUDED_TYPES})
-fi
-if [[ ! -z ${GATCV_WHITELIST} ]]; then
-    MRB_PARAMS+=("-w")
-    MRB_PARAMS+=(${GATCV_WHITELIST})
-fi
-if [[ ! -z ${LOGLEVEL} ]]; then
-    MRB_PARAMS+=("-l")
-    MRB_PARAMS+=(${LOGLEVEL})
-fi
-if [[ ! -z ${LOGFILE} ]]; then
-    MRB_PARAMS+=("-L")
-    MRB_PARAMS+=(${LOGFILE})
-fi
+isvarset CONFIG && MRB_PARAMS+=("-c") && MRB_PARAMS+=("${CONFIG}")
+isvarset URL && MRB_PARAMS+=("-u") && MRB_PARAMS+=("${URL}")
+isvarset CLASSIFIERS && MRB_PARAMS+=("-a") && MRB_PARAMS+=("${CLASSIFIERS}")
+isvarset OUTPUT_DIR && MRB_PARAMS+=("-o") && MRB_PARAMS+=("${OUTPUT_DIR}")
+isvarset CHECKSUM_MODE && MRB_PARAMS+=("-s") && MRB_PARAMS+=("${CHECKSUM_MODE}")
+isvarset EXCLUDED_TYPES && MRB_PARAMS+=("-x") && MRB_PARAMS+=("${EXCLUDED_TYPES}")
+isvarset GATCV_WHITELIST && MRB_PARAMS+=("-w") && MRB_PARAMS+=("${GATCV_WHITELIST}")
+isvarset LOGLEVEL && MRB_PARAMS+=("-l") && MRB_PARAMS+=("${LOGLEVEL}")
+isvarset LOGFILE && MRB_PARAMS+=("-L") && MRB_PARAMS+=("${LOGFILE}")
 
 # skip all named parameters and leave just unnamed ones (filenames)
 if [ $# -gt 0 ]; then
