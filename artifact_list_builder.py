@@ -18,7 +18,7 @@ class ArtifactListBuilder:
     "<groupId>:<artifactId>" (string)
       L <artifact source priority> (int)
          L <version> (string)
-            L artifact specification (repo url string and list of found classifiers)
+            L artifact specification (repo url string and list of types with found classifiers)
     """
 
     SETTINGS_TPL = """
@@ -40,7 +40,7 @@ class ArtifactListBuilder:
         """
         Build the artifact "list" from sources defined in the given configuration.
 
-        :returns: Dictionary descirebed above.
+        :returns: Dictionary described above.
         """
         artifactList = {}
         priority = 0
@@ -78,9 +78,14 @@ class ArtifactListBuilder:
 
             logging.debug("Placing %d artifacts in the result list", len(artifacts))
             for artifact in artifacts:
-                gat = artifact.getGAT()
-                artifactList.setdefault(gat, {}).setdefault(priority, {})[artifact.version] = artifacts[artifact]
-            logging.debug("The result contains %d GATs so far", len(artifactList))
+                ga = artifact.getGA()
+                artSpec = artifacts[artifact]
+                artifactList.setdefault(ga, {}).setdefault(priority, {})
+                if artifact.version in artifactList[ga][priority]:
+                    artifactList[ga][priority][artifact.version].merge(artSpec)
+                else:
+                    artifactList[ga][priority][artifact.version] = artSpec
+            logging.debug("The result contains %d GAs so far", len(artifactList))
 
         return artifactList
 
@@ -100,25 +105,31 @@ class ArtifactListBuilder:
         logging.debug("Getting latest maven artifacts from tag %s.", tagName)
         kojiArtifacts = kojiSession.getLatestMavenArchives(tagName)
 
-        gavuExtClass = {}  # { (g,a,v,url): {ext: set([class])} }
-        suffixes = {}      # { (g,a,v,url): suffix }
+        filenameDict = {}
         for artifact in kojiArtifacts:
             groupId = artifact['group_id']
             artifactId = artifact['artifact_id']
             version = artifact['version']
+            gavUrl = "%s%s/%s/%s/maven/" % (maven_repo_util.slashAtTheEnd(downloadRootUrl), artifact['build_name'],
+                                            artifact['build_version'], artifact['build_release'])
+            gavu = (groupId, artifactId, version, gavUrl)
             filename = artifact['filename']
+            filenameDict.setdefault(gavu, []).append(filename)
 
-            (extsAndClass, suffix) = self._getExtensionsAndClassifiers(artifactId, version, [filename])
+        gavuExtClass = {}  # { (g,a,v,url): {ext: set([class])} }
+        suffixes = {}      # { (g,a,v,url): suffix }
+
+        for gavu in filenameDict:
+            artifactId = gavu[1]
+            version = gavu[2]
+            filenames = filenameDict[gavu]
+            (extsAndClass, suffix) = self._getExtensionsAndClassifiers(artifactId, version, filenames)
 
             if extsAndClass:
-                gavUrl = maven_repo_util.slashAtTheEnd(downloadRootUrl) + artifact['build_name'] + '/'\
-                    + artifact['build_version'] + '/' + artifact['build_release'] + '/maven/'
-                gavu = (groupId, artifactId, version, gavUrl)
-
-                gavuExtClass.setdefault(gavu, {})
+                gavuExtClass[gavu] = {}
                 self._updateExtensionsAndClassifiers(gavuExtClass[gavu], extsAndClass)
 
-                if suffix is not None and (gavu not in suffixes or suffixes[gavu] < suffix):
+                if suffix is not None:
                     suffixes[gavu] = suffix
 
         artifacts = {}
@@ -203,7 +214,8 @@ class ArtifactListBuilder:
                     if ngav not in checkedSet:
                         workingSet.add(ngav)
 
-            if self.configuration.allClassifiers:
+            if self.configuration.isAllClassifiers():
+                resultingArtifacts = {}
                 for artifact in newArtifacts.keys():
                     spec = newArtifacts[artifact]
                     try:
@@ -223,20 +235,17 @@ class ArtifactListBuilder:
 
                     (extsAndClass, suffix) = self._getExtensionsAndClassifiers(
                         artifact.artifactId, artifact.version, files)
-                    if len(extsAndClass) > 1 and "pom" in extsAndClass:
-                        del extsAndClass["pom"]
                     if artifact.artifactType in extsAndClass:
-                        spec.classifiers = extsAndClass[artifact.artifactType]
-                        del extsAndClass[artifact.artifactType]
-                        self._addArtifact(newArtifacts, artifact.groupId, artifact.artifactId,
+                        self._addArtifact(resultingArtifacts, artifact.groupId, artifact.artifactId,
                                           artifact.version, extsAndClass, suffix, spec.url)
                     else:
                         if files:
-                            logging.warn("Main artifact is missing in filelist listed from %s. Files were:\n%s",
-                                         spec.url + artifact.getDirPath(), "\n".join(files))
+                            logging.warn("Main artifact (%s) is missing in filelist listed from %s. Files were:\n%s",
+                                         artifact.artifactType, spec.url + artifact.getDirPath(), "\n".join(files))
                         else:
                             logging.warn("An empty filelist was listed from %s. Skipping...",
                                          spec.url + artifact.getDirPath())
+                newArtifacts = resultingArtifacts
 
             artifacts.update(newArtifacts)
 
@@ -272,7 +281,7 @@ class ArtifactListBuilder:
             deleteWS = True
 
         # Resolve graph MANIFEST for GAVs
-        urlmap = aprox.urlmap(wsid, sourceKey, gavs, self.configuration.allClassifiers, excludedSources, preset,
+        urlmap = aprox.urlmap(wsid, sourceKey, gavs, self.configuration.addClassifiers, excludedSources, preset,
                               patcherIds)
 
         # parse returned map
@@ -471,14 +480,23 @@ class ArtifactListBuilder:
         return (extensions, suffix)
 
     def _addArtifact(self, artifacts, groupId, artifactId, version, extsAndClass, suffix, url):
+        pomMain = True
         if len(extsAndClass) > 1 and self._containsNonPomWithoutClassifier(extsAndClass) and "pom" in extsAndClass:
-            del extsAndClass["pom"]
-        for ext in extsAndClass:
-            mavenArtifact = MavenArtifact(groupId, artifactId, ext, version)
-            if suffix is not None:
-                mavenArtifact.snapshotVersionSuffix = suffix
+            pomMain = False
+
+        artTypes = []
+        for ext, classifiers in extsAndClass.iteritems():
+            main = ext != "pom" or pomMain
+            artTypes.append(ArtifactType(ext, main, classifiers))
+
+        mavenArtifact = MavenArtifact(groupId, artifactId, None, version)
+        if suffix is not None:
+            mavenArtifact.snapshotVersionSuffix = suffix
+        if mavenArtifact in artifacts:
+            artifacts[mavenArtifact].merge(ArtifactSpec(url, artTypes))
+        else:
             logging.debug("Adding artifact %s", str(mavenArtifact))
-            artifacts[mavenArtifact] = ArtifactSpec(url, extsAndClass[ext])
+            artifacts[mavenArtifact] = ArtifactSpec(url, artTypes)
 
     def _containsNonPomWithoutClassifier(self, extsAndClass):
         """
@@ -496,8 +514,20 @@ class ArtifactListBuilder:
         return result
 
     def _updateExtensionsAndClassifiers(self, d, u):
+        allClassifiers = self.configuration.isAllClassifiers()
         for extension, classifiers in u.iteritems():
-            d.setdefault(extension, set()).update(classifiers)
+            if allClassifiers:
+                d.setdefault(extension, set()).update(classifiers)
+            else:
+                for classifier in classifiers:
+                    if not classifier:
+                        d.setdefault(extension, set()).add(classifier)
+                    else:
+                        for extClass in self.configuration.addClassifiers:
+                            addExtension = extClass["type"]
+                            addClass = extClass["classifier"]
+                            if extension == addExtension and classifier == addClass:
+                                d.setdefault(extension, set()).add(classifier)
 
     def _getArtifactVersionREString(self, artifactId, version):
         if version.endswith("-SNAPSHOT"):
@@ -523,7 +553,7 @@ class ArtifactListBuilder:
             for url in urls:
                 if maven_repo_util.gavExists(url, artifact):
                     #Critical section?
-                    artifacts[artifact] = ArtifactSpec(url)
+                    artifacts[artifact] = ArtifactSpec(url, [ArtifactType(artifact.artifactType, True, set(['']))])
                     return
 
             logging.warning('Artifact %s not found in any url!', artifact)
@@ -578,12 +608,69 @@ class ArtifactListBuilder:
             raise IOError("Cannot list URL %s. The URL does not exist." % url)
 
 
-class ArtifactSpec:
-    """Specification of artifact location and contents."""
+class ArtifactSpec():
+    """
+    Specification of artifact location and contents. The artTypes is a dictionary with type as a key and an
+    ArtifactType instance as a value. It is automatically created if the provided value is a list.
+    """
 
-    def __init__(self, url, classifiers=[]):
+    def __init__(self, url, artTypes):
+        """
+        Constructor.
+
+        :param url: repository URL in which the artifact was found
+        :param artTypes: dict or list of ArtifactType instances
+        """
         self.url = url
+        if type(artTypes) is dict:
+            self.artTypes = artTypes
+        else:
+            self.artTypes = {}
+            for artType in artTypes:
+                self.artTypes[artType.artType] = artType
+
+    def merge(self, other):
+        if other.url and self.url != other.url:
+            raise ValueError("Cannot merge artifact specs with different URLs (%s != %s)." % (self.url, other.url))
+
+        for artType in other.artTypes.keys():
+            if artType in self.artTypes:
+                raise ValueError("Cannot merge artifact specs with overlapping types (%s vs %s)."
+                                 % (str(self.artTypes.keys()), str(other.artTypes.keys())))
+
+        self.artTypes.update(other.artTypes)
+
+    def __str__(self):
+        return "%s %s" % (self.url, str(self.artTypes))
+
+    def __repr__(self):
+        return "ArtifactSpec(%s, %s)" % (repr(self.url), repr(self.artTypes))
+
+
+class ArtifactType():
+    """
+    Artifact type with classifiers and information, if it is considered as a main type. A type is considered main when
+    it is different from pom and has an empty classifier or it is requested by user in GATCV filter. I.e. when such
+    artifacts exist:
+        artifact-1.0.pom
+        artifact-1.0-sources.jar
+        artifact-1.0.war
+    the "war" type is considered as main. If there is also artifact-1.0.jar file, there are 2 main types "jar" and
+    "war". Also if there is a group:artifact:jar:sources:1.0 filter item the "jar" is considered main too. If there is
+    nothing else than pom, then it is considered the main type.
+    """
+
+    def __init__(self, artType, mainType, classifiers):
+        self.artType = artType
+        self.mainType = mainType
         self.classifiers = classifiers
 
     def __str__(self):
-        return self.url + " " + str(self.classifiers)
+        if self.mainType:
+            main = " (main)"
+        else:
+            main = ""
+        return "%s%s: %s" % (self.artType, main, str(self.classifiers))
+
+    def __repr__(self):
+        return "ArtifactType(%s, %s, %s)" % (repr(self.artType), repr(self.mainType), repr(self.classifiers))

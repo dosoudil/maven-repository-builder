@@ -12,17 +12,21 @@ class Configuration:
     from a json configuration file.
     """
 
+    ALL_CLASSIFIERS_VALUE = "__all__"
+
     singleVersion = None
     artifactSources = []
     excludedGAVs = []
     excludedRepositories = []
+    excludedTypes = []
     multiVersionGAs = []
     _configFiles = set()
-    allClassifiers = False
+    addClassifiers = set()
+    gatcvWhitelist = []
 
     def load(self, opts):
         """
-        Load confiugration from command line arguments
+        Load configuration from command line arguments using requested config file.
 
         :param opts: options parsed by an OptionParser
         """
@@ -31,14 +35,48 @@ class Configuration:
             logging.error('You must specify a config file')
             sys.exit(1)
 
-        self.allClassifiers = opts.allclassifiers
+        self.addClassifiers = self._parseClassifiers(opts.classifiers)
+        self.excludedTypes = opts.excludedtypes.split(':')
+        if opts.whitelist:
+            self.gatcvWhitelist = maven_repo_util.loadArtifactFile(opts.whitelist)
 
         self.loadFromFile(opts.config)
+
+    def create(self, opts, args):
+        """
+        Creates configuration from command line parameters like url, artifact list files etc.
+
+        :param opts: options parsed by an OptionParser
+        """
+        self.singleVersion = False
+        includedGatcvs = []
+        for filename in args:
+            includedGatcvs.extend(maven_repo_util.loadArtifactFile(filename))
+        self.artifactSources = [{
+            "type": "repository",
+            "repo-url": opts.url,
+            "included-gatcvs": includedGatcvs
+        }]
+
+        self._setDefaults()
+        self._validate()
+
+        self.addClassifiers = self._parseClassifiers(opts.classifiers)
+        self.excludedTypes = opts.excludedtypes.split(':')
+        if opts.whitelist:
+            # TODO read the file properly (skip comments, enable regexps, ...)
+            self.gatcvWhitelist = maven_repo_util.loadArtifactFile(opts.whitelist)
 
     def loadFromFile(self, filename):
         self._loadFromFile(filename)
         self._setDefaults()
         self._validate()
+
+    def isAllClassifiers(self):
+        """
+        Checks if all available classifiers should be downloaded.
+        """
+        return self.addClassifiers == self.ALL_CLASSIFIERS_VALUE
 
     def _setDefaults(self):
         if self.singleVersion is None:
@@ -83,7 +121,7 @@ class Configuration:
             sys.exit(1)
 
     def _loadFromFile(self, filename, rewrite=True):
-        """ Load confiugration from json config file. """
+        """ Load configuration from json config file. """
         logging.debug("Loading configuration file %s", filename)
         if filename in self._configFiles:
             raise Exception("Config file '%s' is already included." % filename +
@@ -152,6 +190,8 @@ class Configuration:
                 source['repo-url'] = self._getRepoUrl(source)
                 source['included-gav-patterns'] = self._loadFlatFileBySourceParameter(source,
                         'included-gav-patterns-ref', filePath)
+                source['included-gatcvs'] = self._loadArtifactFileBySourceParameter(source, 'included-gatcvs-ref',
+                        filePath)
 
             self.artifactSources.append(source)
 
@@ -159,6 +199,13 @@ class Configuration:
         if parameter in source:
             relFilename = self._getRelativeFilename(source[parameter], filePath)
             return maven_repo_util.loadFlatFile(relFilename)
+        else:
+            return []
+
+    def _loadArtifactFileBySourceParameter(self, source, parameter, filePath):
+        if parameter in source:
+            relFilename = self._getRelativeFilename(source[parameter], filePath)
+            return maven_repo_util.loadArtifactFile(relFilename)
         else:
             return []
 
@@ -177,3 +224,34 @@ class Configuration:
             return [source['repo-url']]
         else:
             return source['repo-url']
+
+    def _parseClassifiers(self, classifiersString):
+        """
+        Parses classifiers and types from command-line argument value. The result  is list of dictionaries. Each dictionary
+        contains classifier value under "classifier" key and optionally type under "type" key. If no type is specified, then
+        the key "type" is missing in the dictionary
+    
+        :param classifiersString: comma-separated list of classifiers with an optional prepended type separated by colon,
+                                  if no type specified, then the default type ("jar") is used
+        :returns: list of dictionaries with structure e.g. {"classifiers": "sources", "type": "jar"}
+        """
+        if not classifiersString:
+            result = []
+        elif classifiersString == self.ALL_CLASSIFIERS_VALUE:
+            result = self.ALL_CLASSIFIERS_VALUE
+        else:
+            classifiers = classifiersString.split(",")
+            result = []
+            if len(classifiers) == 1 and classifiers.count(":") > 1:
+                for classifier in classifiersString.split(":"):
+                    result.append({"classifier": classifier, "type": "jar"})
+            else:
+                for classifier in classifiers:
+                    colonCount = classifier.count(":")
+                    if colonCount == 0:
+                        result.append({"classifier": classifier, "type": "jar"})
+                    elif colonCount == 1:
+                        parts = classifier.split(":")
+                        result.append({"classifier": parts[1], "type": parts[0]})
+
+        return result

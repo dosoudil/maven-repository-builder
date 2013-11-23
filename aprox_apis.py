@@ -5,6 +5,7 @@ import json
 import logging
 import urllib
 import urlparse
+from configuration import Configuration
 
 
 class UrlRequester:
@@ -115,7 +116,7 @@ class AproxApi10(UrlRequester):
                             strWsid, status)
             return False
 
-    def urlmap(self, wsid, sourceKey, gavs, allclassifiers, excludedSources, preset, patcherIds, resolve=True):
+    def urlmap(self, wsid, sourceKey, gavs, addclassifiers, excludedSources, preset, patcherIds, resolve=True):
         """
         Requests creation of the urlmap. It creates the configfile, posts it to AProx server
         and process the result, which has following structure:
@@ -146,9 +147,11 @@ class AproxApi10(UrlRequester):
             }
 
         :param wsid: AProx workspace ID
-        :param gavs: list of GAV as strings
         :param sourceKey: the AProx artifact source key, consisting of the source type and
                           its name of the form <{repository|deploy|group}:<name>>
+        :param gavs: list of GAV as strings
+        :param addclassifiers: list of dictionaries with structure {"type": "<type>", "classifier": "<classifier>"}, any
+                               value can be replaced by a star to include all types/classifiers
         :param excludedSources: list of excluded sources' keys
         :param preset: preset used while creating the urlmap
         :param patcherIds: list of patcher ID strings for AProx
@@ -158,8 +161,11 @@ class AproxApi10(UrlRequester):
         url = self._aprox_url + self.API_PATH + "depgraph/repo/urlmap"
 
         request = {}
-        if allclassifiers:
-            request["extras"] = [{"classifier": "*", "type": "*"}]
+        if addclassifiers:
+            if addclassifiers == Configuration.ALL_CLASSIFIERS_VALUE:
+                request["extras"] = [{"classifier": "*", "type": "*"}]
+            else:
+                request["extras"] = addclassifiers
         request["workspaceId"] = wsid
         request["source"] = sourceKey
         if len(excludedSources):

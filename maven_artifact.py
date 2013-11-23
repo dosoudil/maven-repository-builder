@@ -145,3 +145,13 @@ class MavenArtifact:
 
     def __str__(self):
         return self.getGATCV()
+
+    def __repr__(self):
+        return "MavenArtifact(%s, %s, %s, %s, %s)" % (repr(self.groupId), repr(self.artifactId),
+                repr(self.artifactType), repr(self.version), repr(self.classifier))
+
+    def __eq__(self, other):
+        return other is not None and repr(self) == repr(other)
+
+    def __hash__(self):
+        return hash(repr(self))

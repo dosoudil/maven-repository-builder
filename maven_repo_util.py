@@ -18,6 +18,8 @@ from xml.etree.ElementTree import ElementTree
 # Constants
 MAX_THREADS = 10
 
+_regexGATCVS = None
+
 
 class ChecksumMode:
     generate = 'generate'
@@ -433,29 +435,9 @@ def getRegExpsFromStrings(strings, exact=True):
     return regExps
 
 
-def printArtifactList(artifactList, printClassifiers):
-    """
-    Prints each artifact from given artifact list with its url on each line. When print
-    classifiers is True, then all classifiers are printed. When false, only artifacts with
-    empty classifier are printed. The format of each line is:
-        <url>\t<groupId>:<artifactId>:<type>[:<classifier>]:<version>
-
-    :param artifactList: artifact structure to print
-    :param printClassifiers: if False only artifacts with empty classifier are printed, if
-                             True then it prints all given artifacts with classifiers
-    """
-    for gat in artifactList:
-        for priority in artifactList[gat]:
-            for version in artifactList[gat][priority]:
-                for classifier in artifactList[gat][priority][version].classifiers:
-                    if classifier == "" or printClassifiers:
-                        print artifactList[gat][priority][version].url + "\t" + gat\
-                            + ((":" + classifier) if classifier else "") + ":" + version
-
-
 def getTempDir(relativePath=""):
     """Gets temporary directory for this running instance of Maven Repository Builder."""
-    return '/tmp/maven-repo-builder/' + str(os.getpid()) + "/" + relativePath
+    return '/tmp/maven-repo-builder/' + str(3232) + "/" + relativePath
 
 
 def cleanTempDir():
@@ -542,3 +524,34 @@ def loadFlatFile(filename):
             if resultLine:
                 result.append(resultLine)
         return result
+
+
+def loadArtifactFile(filename):
+    """
+    Loads lines from the given file in a list trimming them while loading to contain only GA(TC)V. Can be used to read
+    dependency:list output.
+    """
+    if filename:
+        regexComment = re.compile('#.*$')
+        with open(filename, "r") as openedfile:
+            lines = openedfile.readlines()
+
+        result = []
+
+        for line in lines:
+            line = regexComment.sub('', line).strip()
+            gatcv = parseGATCVS(line)
+            if gatcv:
+                result.append(gatcv)
+        return result
+
+
+def parseGATCVS(string):
+    global _regexGATCVS
+    if not _regexGATCVS:
+        # Match pattern (((groupId):)(artifactId:)(type:)(classifier:)?(version))(:scope)?
+        _regexGATCVS = re.compile('(([\w\-.]+:){3}([\w\-.]+:)?([\d][\w\-.]+))(:[\w]*\S)?')
+
+    match = _regexGATCVS.search(string)
+    if match:
+        return match.group(1)
