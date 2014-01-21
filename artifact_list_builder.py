@@ -71,7 +71,8 @@ class ArtifactListBuilder:
             elif source['type'] == 'repository':
                 logging.info("Building artifact list from repository %s", source['repo-url'])
                 artifacts = self._listRepository(source['repo-url'],
-                                                 source['included-gav-patterns'])
+                                                 source['included-gav-patterns'],
+                                                 source['included-gatcvs'])
             else:
                 logging.warning("Unsupported source type: %s", source['type'])
                 continue
@@ -305,7 +306,7 @@ class ArtifactListBuilder:
 
         return artifacts
 
-    def _listRepository(self, repoUrls, gavPatterns):
+    def _listRepository(self, repoUrls, gavPatterns, gatcvs):
         """
         Loads maven artifacts from a repository.
 
@@ -316,7 +317,12 @@ class ArtifactListBuilder:
                   repo root URL.
         """
 
-        prefixes = self._getPrefixes(gavPatterns)
+        if gatcvs:
+            prefixes = self._getPrefixesGatcvs(gatcvs)
+            classifiersFilter = self._getClassifiersFilter(gatcvs)
+        else:
+            prefixes = self._getPrefixes(gavPatterns)
+            classifiersFilter = {}
         artifacts = {}
         for repoUrl in reversed(repoUrls):
             urlWithSlash = maven_repo_util.slashAtTheEnd(repoUrl)
@@ -329,14 +335,40 @@ class ArtifactListBuilder:
                     artifacts.update(self._listLocalRepository(urlWithSlash, prefix))
             elif protocol == 'http' or protocol == 'https':
                 for prefix in prefixes:
-                    artifacts.update(self._listRemoteRepository(urlWithSlash, prefix))
+                    artifacts.update(self._listRemoteRepository(urlWithSlash, classifiersFilter, prefix))
             else:
                 raise "Invalid protocol!", protocol
 
-        artifacts = self._filterArtifactsByPatterns(artifacts, gavPatterns)
+        if gatcvs:
+            artifacts = self._filterArtifactsByPatterns(artifacts, None, gatcvs)
+        else:
+            artifacts = self._filterArtifactsByPatterns(artifacts, gavPatterns, None)
         logging.debug("Found %d artifacts", len(artifacts))
 
         return artifacts
+
+    def _getPrefixesGatcvs(self, gatcvsList):
+        # Match pattern ((?:groupId:)(?:artifactId:))(?:type:)?(?:classifier:)?(version)(?::scope)?
+        _regexGATCVS = re.compile('((?:[\w\-.]+:){2})(?:[\w\-.]+:){0,2}([\d][\w\-.]+)(?::(?:compile|provided|runtime|test'
+                                  '|system|import))?')
+        gavList = []
+        for gatcvs in gatcvsList:
+            match = _regexGATCVS.search(gatcvs)
+            if match:
+                gavList.append("%s%s" % (match.group(1), match.group(2)))
+        return self._getPrefixes(gavList)
+
+    def _getClassifiersFilter(self, gatcvsList):
+        # Match pattern (groupId):(artifactId):(type):(classifier):(version)(?::scope)?
+        _regexGATCVS = re.compile('([\w\-.]+):([\w\-.]+):([\w\-.]+):([\w\-.]+):([\d][\w\-.]+)'
+                                  '(?::(?:compile|provided|runtime|test|system|import))?')
+        classifiersFilter = {}
+        for gatcvs in gatcvsList:
+            match = _regexGATCVS.search(gatcvs)
+            if match:
+                gav = match.group(1, 2, 5)
+                classifiersFilter.setdefault(gav, {}).setdefault(match.group(3), set()).add(match.group(4))
+        return classifiersFilter
 
     def _getPrefixes(self, gavPatterns):
         if not gavPatterns:
@@ -345,7 +377,7 @@ class ArtifactListBuilder:
         prefixrepat = re.compile("^(([a-zA-Z0-9-]+|\\\.|:)+)")
         patterns = set()
         for pattern in gavPatterns:
-            if repat.match(pattern):  # if pattern is regular expresion pattern "r/expr/"
+            if repat.match(pattern):  # if pattern is regular expression pattern "r/expr/"
                 kp = prefixrepat.match(pattern[2:-1])
                 if kp:
                     # if the expr starts with readable part (eg. "r/org\.jboss:core-.*:.*/")
@@ -379,7 +411,7 @@ class ArtifactListBuilder:
                 prefixes.add(pattern)
         return prefixes
 
-    def _listRemoteRepository(self, repoUrl, prefix=""):
+    def _listRemoteRepository(self, repoUrl, classifiersFilter, prefix=""):
         logging.debug("Listing remote repository %s prefix '%s'", repoUrl, prefix)
         try:
             out = self._lftpFind(repoUrl + prefix)
@@ -409,7 +441,7 @@ class ArtifactListBuilder:
                     gav = (groupId, artifactId, version)
 
                     gavExtClass.setdefault(gav, {})
-                    self._updateExtensionsAndClassifiers(gavExtClass[gav], extsAndClass)
+                    self._updateExtensionsAndClassifiers(gavExtClass[gav], extsAndClass, classifiersFilter.get(gav))
 
                     if suffix is not None and (gav not in suffixes or suffixes[gav] < suffix):
                         suffixes[gav] = suffix
@@ -513,7 +545,7 @@ class ArtifactListBuilder:
                 break
         return result
 
-    def _updateExtensionsAndClassifiers(self, d, u):
+    def _updateExtensionsAndClassifiers(self, d, u, classifiersFilter):
         allClassifiers = self.configuration.isAllClassifiers()
         for extension, classifiers in u.iteritems():
             if allClassifiers:
@@ -528,6 +560,19 @@ class ArtifactListBuilder:
                             addClass = extClass["classifier"]
                             if extension == addExtension and classifier == addClass:
                                 d.setdefault(extension, set()).add(classifier)
+                                break
+                        else:
+                            if classifiersFilter:
+                                broken = False
+                                for addExtension in classifiersFilter.keys():
+                                    for addClass in classifiersFilter[addExtension]:
+                                        if extension == addExtension and classifier == addClass:
+                                            d.setdefault(extension, set()).add(classifier)
+                                            broken = True
+                                            break
+                                    if broken:
+                                        break
+                                    
 
     def _getArtifactVersionREString(self, artifactId, version):
         if version.endswith("-SNAPSHOT"):
@@ -584,16 +629,68 @@ class ArtifactListBuilder:
 
         return gavList
 
-    def _filterArtifactsByPatterns(self, artifacts, gavPatterns):
-        if not gavPatterns:
+    def _filterArtifactsByPatterns(self, artifacts, gavPatterns, gatcvs):
+        if not gavPatterns and not gatcvs:
             return artifacts
 
-        regExps = maven_repo_util.getRegExpsFromStrings(gavPatterns)
         includedArtifacts = {}
-        for artifact in artifacts:
-            if maven_repo_util.somethingMatch(regExps, artifact.getGAV()):
-                includedArtifacts[artifact] = artifacts[artifact]
+        if gatcvs:
+            for artifact in artifacts.keys():
+                artSpec = artifacts[artifact]
+                artTypes = {}
+                extContainsMain = False
+                for ext in artSpec.artTypes.keys():
+                    if ext == "pom":
+                        main = len(artSpec.artTypes.keys()) == 1
+                        if not main:
+                            gatcv = "%s:%s:%s" % (artifact.getGA(), ext, artifact.version)
+                            if gatcv in gatcvs:
+                                main = True
+                        extContainsMain = extContainsMain or main
+
+                        pomType = ArtifactType(ext, main, set(['']))
+                        artTypes[ext] = pomType
+                    else:
+                        main = False
+                        classifiers = set()
+                        for classifier in artSpec.artTypes[ext].classifiers:
+                            if classifier:
+                                gatcv = "%s:%s:%s:%s" % (artifact.getGA(), ext, classifier, artifact.version)
+                            else:
+                                gatcv = "%s:%s:%s" % (artifact.getGA(), ext, artifact.version)
+
+                            if gatcv in gatcvs:
+                                classifiers.add(classifier)
+                                main = True
+                            else:
+                                if self._containedInAddClassifiers(ext, classifier):
+                                    classifiers.add(classifier)
+
+                        extContainsMain = extContainsMain or main
+
+                        artType = ArtifactType(ext, main, classifiers)
+                        artTypes[ext] = artType
+                if extContainsMain:
+                    artSpecToAdd = ArtifactSpec(artSpec.url, artTypes)
+                    includedArtifacts[artifact] = artSpecToAdd
+        else:
+            regExps = maven_repo_util.getRegExpsFromStrings(gavPatterns)
+            for artifact in artifacts.keys():
+                if maven_repo_util.somethingMatch(regExps, artifact.getGAV()):
+                    includedArtifacts[artifact] = artifacts[artifact]
         return includedArtifacts
+
+    def _containedInAddClassifiers(self, extension, classifier):
+        result = False
+
+        for extClass in self.configuration.addClassifiers:
+            addExtension = extClass["type"]
+            addClass = extClass["classifier"]
+            if extension == addExtension and classifier == addClass:
+                result = True
+                break
+
+        return result
 
     def _lftpFind(self, url):
         if maven_repo_util.urlExists(url):

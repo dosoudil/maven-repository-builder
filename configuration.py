@@ -54,7 +54,7 @@ class Configuration:
             includedGatcvs.extend(maven_repo_util.loadArtifactFile(filename))
         self.artifactSources = [{
             "type": "repository",
-            "repo-url": opts.url,
+            "repo-url": [opts.url],
             "included-gatcvs": includedGatcvs
         }]
 
@@ -96,6 +96,9 @@ class Configuration:
                     source['preset'] = None
                 if 'patcher-ids' not in source:
                     source['patcher-ids'] = []
+            elif source['type'] == 'repository':
+                if 'included-gav-patterns' not in source:
+                    source['included-gav-patterns'] = []
 
     def _validate(self):
         valid = True
@@ -227,10 +230,10 @@ class Configuration:
 
     def _parseClassifiers(self, classifiersString):
         """
-        Parses classifiers and types from command-line argument value. The result  is list of dictionaries. Each dictionary
-        contains classifier value under "classifier" key and optionally type under "type" key. If no type is specified, then
-        the key "type" is missing in the dictionary
-    
+        Parses classifiers and types from command-line argument value. The result  is list of dictionaries. Each
+        dictionary contains classifier value under "classifier" key and type under "type" key. If no type is specified,
+        then the value "jar" is used for key "type".
+
         :param classifiersString: comma-separated list of classifiers with an optional prepended type separated by colon,
                                   if no type specified, then the default type ("jar") is used
         :returns: list of dictionaries with structure e.g. {"classifiers": "sources", "type": "jar"}
