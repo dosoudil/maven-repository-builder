@@ -543,7 +543,7 @@ class Tests(unittest.TestCase):
         ]
 
         builder = artifact_list_builder.ArtifactListBuilder(config)
-        actualArtifacts = builder._listRepository(repoUrls, gavPatts)
+        actualArtifacts = builder._listRepository(repoUrls, gavPatts, None)
         expectedArtifacts = {
             MavenArtifact.createFromGAV(gavPatts[0]): ArtifactSpec(repoUrls[0], [ArtifactType("pom", True, set([''])),
                                         ArtifactType("jar", True, set(['', 'javadoc', 'sources']))]),
@@ -563,10 +563,29 @@ class Tests(unittest.TestCase):
         ]
 
         builder = artifact_list_builder.ArtifactListBuilder(config)
-        actualArtifacts = builder._listRepository(repoUrls, gavPatts)
+        actualArtifacts = builder._listRepository(repoUrls, gavPatts, None)
         expectedArtifacts = {
             MavenArtifact.createFromGAV(gavPatts[0]): ArtifactSpec(repoUrls[0], [ArtifactType("pom", True, set(['']))]),
             MavenArtifact.createFromGAV(gavPatts[1]): ArtifactSpec(repoUrls[0], [ArtifactType("pom", True, set([''])),
+                                        ArtifactType("jar", True, set(['', 'javadoc', 'sources']))])
+        }
+
+        self.assertEqualArtifactList(expectedArtifacts, actualArtifacts)
+
+    def test_listRepository_file_gatcvs(self):
+        config = configuration.Configuration()
+        config.addClassifiers = "__all__"
+        repoUrls = ['file://./tests/testrepo']
+        gatcvs = [
+            'bar:foo-bar:pom:1.1',
+            'foo.baz:baz-core:jar:1.0'
+        ]
+
+        builder = artifact_list_builder.ArtifactListBuilder(config)
+        actualArtifacts = builder._listRepository(repoUrls, None, gatcvs)
+        expectedArtifacts = {
+            MavenArtifact.createFromGAV(gatcvs[0]): ArtifactSpec(repoUrls[0], [ArtifactType("pom", True, set(['']))]),
+            MavenArtifact.createFromGAV(gatcvs[1]): ArtifactSpec(repoUrls[0], [ArtifactType("pom", True, set([''])),
                                         ArtifactType("jar", True, set(['', 'javadoc', 'sources']))])
         }
 

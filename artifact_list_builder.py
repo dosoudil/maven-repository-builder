@@ -139,7 +139,7 @@ class ArtifactListBuilder:
 
         if gavPatterns:
             logging.debug("Filtering artifacts contained in the tag by GAV patterns list.")
-        return self._filterArtifactsByPatterns(artifacts, gavPatterns)
+        return self._filterArtifactsByPatterns(artifacts, gavPatterns, None)
 
     def _listDependencies(self, repoUrls, gavs, recursive, skipmissing):
         """
@@ -545,7 +545,7 @@ class ArtifactListBuilder:
                 break
         return result
 
-    def _updateExtensionsAndClassifiers(self, d, u, classifiersFilter):
+    def _updateExtensionsAndClassifiers(self, d, u, classifiersFilter=None):
         allClassifiers = self.configuration.isAllClassifiers()
         for extension, classifiers in u.iteritems():
             if allClassifiers:
@@ -683,12 +683,15 @@ class ArtifactListBuilder:
     def _containedInAddClassifiers(self, extension, classifier):
         result = False
 
-        for extClass in self.configuration.addClassifiers:
-            addExtension = extClass["type"]
-            addClass = extClass["classifier"]
-            if extension == addExtension and classifier == addClass:
-                result = True
-                break
+        if self.configuration.isAllClassifiers():
+            result = True
+        else:
+            for extClass in self.configuration.addClassifiers:
+                addExtension = extClass["type"]
+                addClass = extClass["classifier"]
+                if extension == addExtension and classifier == addClass:
+                    result = True
+                    break
 
         return result
 
