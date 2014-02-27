@@ -55,8 +55,9 @@ def main():
     cliOptParser.add_option(
         '-u', '--url',
         default='http://repo1.maven.org/maven2/',
-        help='URL of the remote repository from which artifacts are downloaded. '
-             'It is used along with artifact list files when no config file is specified.'
+        help='Comma-separated list of URLs of the remote repositories from which artifacts '
+             'are downloaded. It is used along with artifact list files when no config file '
+             'is specified.'
     )
     cliOptParser.add_option(
         '-o', '--output',

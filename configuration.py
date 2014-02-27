@@ -54,7 +54,7 @@ class Configuration:
             includedGatcvs.extend(maven_repo_util.loadArtifactFile(filename))
         self.artifactSources = [{
             "type": "repository",
-            "repo-url": [opts.url],
+            "repo-url": opts.url.split(","),
             "included-gatcvs": includedGatcvs
         }]
 

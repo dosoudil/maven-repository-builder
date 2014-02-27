@@ -37,9 +37,9 @@ Maven Repository Builder Usage
                             Configuration file to use to generate an artifact list
                             for the repository builder
       -u URL
-                            URL of the remote repository from which artifacts are
-                            downloaded. It is used along with artifact list files
-                            when no config file is specified.
+                            Comma-separated list of URLs of the remote repositories from
+                            which artifacts are downloaded. It is used along with artifact
+                            list files when no config file is specified.
       -o OUTPUT
                             Local output directory for the new repository. By default
                             "local-maven-repository" will be used.
