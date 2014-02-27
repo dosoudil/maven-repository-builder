@@ -23,9 +23,9 @@ Maven Repository Builder Usage
 ------------------------------
 
     Usage:
-        maven_repo_builder.sh -u URL [-r REPO_FILENAME] [-m] [-o OUTPUT] [-a CLASSIFIERS] [-s CHECKSUM_MODE] [-x EXCLUDED_TYPES] [-d ADDITION] FILE...
+        maven_repo_builder.sh -u URL [-r REPO_FILENAME] [-m] [-o OUTPUT] [-b OUTPUT_REPO] [-a CLASSIFIERS] [-s CHECKSUM_MODE] [-x EXCLUDED_TYPES] [-d ADDITION] FILE...
         or
-        maven_repo_builder.sh -c CONFIG [-r REPO_FILENAME] [-m] [-o OUTPUT] [-a CLASSIFIERS] [-s CHECKSUM_MODE] [-x EXCLUDED_TYPES] [-d ADDITION]
+        maven_repo_builder.sh -c CONFIG [-r REPO_FILENAME] [-m] [-o OUTPUT] [-b OUTPUT_REPO] [-a CLASSIFIERS] [-s CHECKSUM_MODE] [-x EXCLUDED_TYPES] [-d ADDITION]
 
     Generate a Maven repository based on a file (or files) containing a list of artifacts.  Each list file must contain
     a single artifact per line in the format groupId:artifactId:fileType:<classifier>:version The example artifact list
@@ -43,6 +43,10 @@ Maven Repository Builder Usage
       -o OUTPUT
                             Local output directory for the new repository. By default
                             "local-maven-repository" will be used.
+      -b OUTPUT_REPO
+                            Name of directory in which will be the artifracts contained in the
+                            output direcotry. It can be empty or multi-level path,
+                            e.g. path/to/repo. Defaults to "maven-repository".
       -a CLASSIFIERS
                             Colon-separated list of additional classifiers to download.
                             By default "sources" will be used. It is possible to use

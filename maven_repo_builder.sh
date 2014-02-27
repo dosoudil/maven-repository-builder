@@ -2,8 +2,8 @@
 
 help ()
 {
-    echo 'Usage: '"$1"' -u URL [-r REPO_FILENAME] [-o OUTPUT_DIR] [-m] [-l LOGLEVEL] [-d ADDITION] FILE...'
-    echo 'Usage: '"$1"' -c CONFIG [-r REPO_FILENAME] [-o OUTPUT_DIR] [-m] [-l LOGLEVEL] [-d ADDITION]'
+    echo 'Usage: '"$1"' -u URL [-r REPO_FILENAME] [-o OUTPUT] [-b OUTPUT_REPO] [-m] [-l LOGLEVEL] [-d ADDITION] FILE...'
+    echo 'Usage: '"$1"' -c CONFIG [-r REPO_FILENAME] [-o OUTPUT] [-b OUTPUT_REPO] [-m] [-l LOGLEVEL] [-d ADDITION]'
     echo 'Usage: '"$1"' -h'
     echo ''
     echo 'Options:'
@@ -18,6 +18,11 @@ help ()
     echo '  -o OUTPUT'
     echo '                        Local output directory for the new repository. By default'
     echo '                        "local-maven-repository" will be used.'
+    echo '  -b OUTPUT_REPO'
+    echo '                        Name of directory in which will be the artifracts'
+    echo '                        contained in the output direcotry. It can be empty or'
+    echo '                        multi-level path, e.g. path/to/repo. Defaults to'
+    echo '                        "maven-repository".'
     echo '  -a CLASSIFIERS'
     echo '                        Colon-separated list of additional classifiers to download.'
     echo '                        By default "sources" will be used. There can be a type specified '
@@ -67,11 +72,12 @@ WORKDIR=$(cd $(dirname $0) && pwd)
 HELP=false
 METADATA=false
 OUTPUT_DIR="local-maven-repository"
+OUTPUT_REPO="maven-repository"
 
 # =======================================
 # ====== reading command arguments ======
 # =======================================
-while getopts hc:u:r:a:o:l:L:s:x:w:md: OPTION
+while getopts hc:u:r:a:o:b:l:L:s:x:w:md: OPTION
 do
     case "${OPTION}" in
         h) HELP=true;;
@@ -83,12 +89,19 @@ do
         x) EXCLUDED_TYPES=${OPTARG};;
         w) GATCV_WHITELIST=${OPTARG};;
         o) OUTPUT_DIR=${OPTARG};;
+        b) OUTPUT_REPO=${OPTARG};;
         m) METADATA=true;;
         l) LOGLEVEL=${OPTARG};;
         L) LOGFILE=${OPTARG};;
         d) ADDITION=${OPTARG};;
     esac
 done
+
+if [ -z $OUTPUT_REPO ]; then
+    OUTPUT_REPO_DIR=$OUTPUT_DIR
+else
+    OUTPUT_REPO_DIR=$OUTPUT_DIR/$OUTPUT_REPO
+fi
 
 if ${HELP}; then
     help $0
@@ -106,7 +119,7 @@ MRB_PARAMS=()
 isvarset CONFIG && MRB_PARAMS+=("-c") && MRB_PARAMS+=("${CONFIG}")
 isvarset URL && MRB_PARAMS+=("-u") && MRB_PARAMS+=("${URL}")
 isvarset CLASSIFIERS && MRB_PARAMS+=("-a") && MRB_PARAMS+=("${CLASSIFIERS}")
-isvarset OUTPUT_DIR && MRB_PARAMS+=("-o") && MRB_PARAMS+=("${OUTPUT_DIR}")
+isvarset OUTPUT_REPO_DIR && MRB_PARAMS+=("-o") && MRB_PARAMS+=("${OUTPUT_REPO_DIR}")
 isvarset CHECKSUM_MODE && MRB_PARAMS+=("-s") && MRB_PARAMS+=("${CHECKSUM_MODE}")
 isvarset EXCLUDED_TYPES && MRB_PARAMS+=("-x") && MRB_PARAMS+=("${EXCLUDED_TYPES}")
 isvarset GATCV_WHITELIST && MRB_PARAMS+=("-w") && MRB_PARAMS+=("${GATCV_WHITELIST}")
@@ -117,7 +130,7 @@ isvarset LOGFILE && MRB_PARAMS+=("-L") && MRB_PARAMS+=("${LOGFILE}")
 if [ $# -gt 0 ]; then
     while [ $# -gt 0 ] && [ ${1:0:1} = '-' ]; do
         L=${1:1:2}
-        if [ $L = 'c' ] || [ $L = 'r' ] || [ $L = 'a' ] || [ $L = 'o' ] || [ $L = 'u' ] || [ $L = 's' ] || [ $L = 'x' ] || [ $L = 'w' ] || [ $L = 'l' ] || [ $L = 'L' ] || [ $L = 'd' ] ; then
+        if [ $L = 'c' ] || [ $L = 'r' ] || [ $L = 'a' ] || [ $L = 'o' ] || [ $L = 'b' ] || [ $L = 'u' ] || [ $L = 's' ] || [ $L = 'x' ] || [ $L = 'w' ] || [ $L = 'l' ] || [ $L = 'L' ] || [ $L = 'd' ] ; then
             shift
         fi
         shift
@@ -142,8 +155,15 @@ if [ -d "$ADDITION" ]; then
     cp -rf $ADDITION/. ${OUTPUT_DIR}
 fi
 if ${METADATA}; then
-    $WORKDIR/generate_maven_metadata.sh ${OUTPUT_DIR}
+    $WORKDIR/generate_maven_metadata.sh ${OUTPUT_REPO_DIR}
 fi
 if [ ! -z ${REPO_FILE} ]; then
-    zip -qr ${REPO_FILE} ${OUTPUT_DIR}
+    REPO_FILE_DIR=$(dirname ${REPO_FILE})
+    if [ ! -d "${REPO_FILE_DIR}" ]; then
+        mkdir -p "${REPO_FILE_DIR}"
+    fi
+    ABS_REPO_FILE=$(cd "${REPO_FILE_DIR}" && pwd -P)/$(basename ${REPO_FILE})
+    cd `dirname ${OUTPUT_DIR}`
+    zip -qr ${ABS_REPO_FILE} $(basename ${OUTPUT_DIR})
+    cd $WORKDIR
 fi

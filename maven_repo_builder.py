@@ -249,7 +249,7 @@ def main():
     )
     cliOptParser.add_option(
         '-o', '--output',
-        default='local-maven-repository',
+        default='local-maven-repository/maven-repository',
         help='Local output directory for the new repository'
     )
     cliOptParser.add_option(
