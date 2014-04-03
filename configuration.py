@@ -23,6 +23,7 @@ class Configuration:
     _configFiles = set()
     addClassifiers = set()
     gatcvWhitelist = []
+    useCache = True
 
     def load(self, opts):
         """
@@ -39,6 +40,8 @@ class Configuration:
         self.excludedTypes = opts.excludedtypes.split(':')
         if opts.whitelist:
             self.gatcvWhitelist = maven_repo_util.loadArtifactFile(opts.whitelist)
+        if hasattr(opts, "cache"):
+            self.useCache = opts.cache
 
         self.loadFromFile(opts.config)
 
@@ -66,6 +69,8 @@ class Configuration:
         if opts.whitelist:
             # TODO read the file properly (skip comments, enable regexps, ...)
             self.gatcvWhitelist = maven_repo_util.loadArtifactFile(opts.whitelist)
+        if hasattr(opts, "cache"):
+            self.useCache = opts.cache
 
     def loadFromFile(self, filename):
         self._loadFromFile(filename)

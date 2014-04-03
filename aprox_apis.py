@@ -3,6 +3,7 @@ from maven_repo_util import slashAtTheEnd
 import httplib
 import json
 import logging
+import os
 import urllib
 import urlparse
 from configuration import Configuration
@@ -66,6 +67,7 @@ class AproxApi10(UrlRequester):
     """
 
     API_PATH = "api/1.0/"
+    CACHE_PATH = "cache"
 
     def __init__(self, aprox_url):
         self._aprox_url = slashAtTheEnd(aprox_url)
@@ -118,6 +120,23 @@ class AproxApi10(UrlRequester):
 
     def urlmap(self, wsid, sourceKey, gavs, addclassifiers, excludedSources, preset, patcherIds, resolve=True):
         """
+        See urlmap_nocache() for method docs. This is caching version of the method.
+        """
+        cached = self.get_cached_urlmap(wsid, sourceKey, gavs, addclassifiers, excludedSources, preset, patcherIds,
+                                        resolve)
+        if cached:
+            logging.info("Using cached version of AProx urlmap for roots %s", "-".join(gavs))
+            return json.loads(cached)
+        else:
+            response = self.urlmap_response(wsid, sourceKey, gavs, addclassifiers, excludedSources, preset, patcherIds,
+                                            resolve)
+            if response != "{}":
+                self.store_urlmap_cache(response, wsid, sourceKey, gavs, addclassifiers, excludedSources, preset,
+                                        patcherIds, resolve)
+            return json.loads(response)
+
+    def urlmap_nocache(self, wsid, sourceKey, gavs, addclassifiers, excludedSources, preset, patcherIds, resolve=True):
+        """
         Requests creation of the urlmap. It creates the configfile, posts it to AProx server
         and process the result, which has following structure:
             {
@@ -158,6 +177,50 @@ class AproxApi10(UrlRequester):
         :param resolve: flag to tell AProx to run resolve for given roots
         :returns: the requested urlmap
         """
+        return json.loads(self.urlmap_response(wsid, sourceKey, gavs, addclassifiers, excludedSources, preset, patcherIds, resolve))
+
+    def urlmap_response(self, wsid, sourceKey, gavs, addclassifiers, excludedSources, preset, patcherIds, resolve=True):
+        """
+        Requests creation of the urlmap. It creates the configfile, posts it to AProx server
+        and process the result, which has following structure:
+            {
+                "group:artifact:1.0": {
+                    "files": [
+                        "artifact-1.0.pom",
+                        "artifact-1.0.pom.md5",
+                        "artifact-1.0.pom.sha1"
+                    ],
+                    "repoUrl": "http://maven.repo.org/repos/repo1/"
+                },
+                "group:artifact2:1.1": {
+                    "files": [
+                        "artifact2-1.1.pom",
+                        "artifact2-1.1.pom.md5",
+                        "artifact2-1.1.pom.sha1"
+                        "artifact2-1.1.jar",
+                        "artifact2-1.1.jar.md5",
+                        "artifact2-1.1.jar.sha1"
+                        "artifact2-1.1-sources.jar",
+                        "artifact2-1.1-sources.jar.md5",
+                        "artifact2-1.1-sources.jar.sha1"
+                    ],
+                    "repoUrl": "http://maven.repo.org/repos/repo1/"
+                },
+                ...
+            }
+
+        :param wsid: AProx workspace ID
+        :param sourceKey: the AProx artifact source key, consisting of the source type and
+                          its name of the form <{repository|deploy|group}:<name>>
+        :param gavs: list of GAV as strings
+        :param addclassifiers: list of dictionaries with structure {"type": "<type>", "classifier": "<classifier>"}, any
+                               value can be replaced by a star to include all types/classifiers
+        :param excludedSources: list of excluded sources' keys
+        :param preset: preset used while creating the urlmap
+        :param patcherIds: list of patcher ID strings for AProx
+        :param resolve: flag to tell AProx to run resolve for given roots
+        :returns: the response string of the requested urlmap
+        """
         url = self._aprox_url + self.API_PATH + "depgraph/repo/urlmap"
 
         request = {}
@@ -183,8 +246,72 @@ class AproxApi10(UrlRequester):
         if response.status == 200:
             responseContent = response.read()
             logging.debug("AProx urlmap created. Response content:\n%s", responseContent)
-            return json.loads(responseContent)
+            return responseContent
         else:
             logging.warning("An error occurred while creating AProx urlmap, status code %i, content '%s'.",
                             response.status, response.read())
-            return {}
+            return "{}"
+
+    def get_cached_urlmap(self, wsid, sourceKey, gavs, addclassifiers, excludedSources, preset, patcherIds, resolve):
+        """
+        Gets cache urlmap response if exists for given parameters.
+
+        :param wsid: AProx workspace ID
+        :param sourceKey: the AProx artifact source key, consisting of the source type and
+                          its name of the form <{repository|deploy|group}:<name>>
+        :param gavs: list of GAV as strings
+        :param addclassifiers: list of dictionaries with structure {"type": "<type>", "classifier": "<classifier>"}, any
+                               value can be replaced by a star to include all types/classifiers
+        :param excludedSources: list of excluded sources' keys
+        :param preset: preset used while creating the urlmap
+        :param patcherIds: list of patcher ID strings for AProx
+        :param resolve: flag to tell AProx to run resolve for given roots
+        :returns: the cached response or None if no cached response exists
+        """
+        cache_filename = self.get_cache_filename(sourceKey, gavs, addclassifiers, excludedSources, preset, patcherIds)
+        if os.path.isfile(cache_filename):
+            with open(cache_filename) as cache_file:
+                return cache_file.read()
+        else:
+            logging.info("Cache file %s not found.", cache_filename)
+            return None
+
+    def store_urlmap_cache(self, response, wsid, sourceKey, gavs, addclassifiers, excludedSources, preset, patcherIds,
+                    resolve):
+        """
+        Stores urlmap response to cache.
+
+        :param response: the response to store
+        :param wsid: AProx workspace ID
+        :param sourceKey: the AProx artifact source key, consisting of the source type and
+                          its name of the form <{repository|deploy|group}:<name>>
+        :param gavs: list of GAV as strings
+        :param addclassifiers: list of dictionaries with structure {"type": "<type>", "classifier": "<classifier>"}, any
+                               value can be replaced by a star to include all types/classifiers
+        :param excludedSources: list of excluded sources' keys
+        :param preset: preset used while creating the urlmap
+        :param patcherIds: list of patcher ID strings for AProx
+        :param resolve: flag to tell AProx to run resolve for given roots
+        """
+        cache_filename = self.get_cache_filename(sourceKey, gavs, addclassifiers, excludedSources, preset, patcherIds)
+        if not os.path.exists(self.CACHE_PATH):
+            os.makedirs(self.CACHE_PATH)
+        with open(cache_filename, "w") as cache_file:
+            cache_file.write(response)
+
+    def get_cache_filename(self, sourceKey, gavs, addclassifiers, excludedSources, preset, patcherIds):
+        """
+        Creates a cache filename to use for urlmap request.
+
+        :param sourceKey: the AProx artifact source key, consisting of the source type and
+                          its name of the form <{repository|deploy|group}:<name>>
+        :param gavs: list of GAV as strings
+        :param addclassifiers: list of dictionaries with structure {"type": "<type>", "classifier": "<classifier>"}, any
+                               value can be replaced by a star to include all types/classifiers
+        :param excludedSources: list of excluded sources' keys
+        :param preset: preset used while creating the urlmap
+        :param patcherIds: list of patcher ID strings for AProx
+        :param resolve: flag to tell AProx to run resolve for given roots
+        """
+        return "%s/%s_%s_%s_%s_%s_%s.cache" % (self.CACHE_PATH, sourceKey, "-".join(gavs), addclassifiers,
+                                                  "-".join(excludedSources), preset, "-".join(patcherIds))

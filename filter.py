@@ -1,3 +1,4 @@
+import copy
 import logging
 from multiprocessing.pool import ThreadPool
 
@@ -45,12 +46,34 @@ class Filter:
 
         logging.debug("Filtering artifacts with excluded GAVs.")
         regExps = maven_repo_util.getRegExpsFromStrings(self.config.excludedGAVs)
+        gavRegExps = []
+        gatcvRegExps = []
+        for regExp in regExps:
+            if regExp.pattern.count(":") > 2:
+                gatcvRegExps.append(regExp)
+            else:
+                gavRegExps.append(regExp)
         for ga in artifactList.keys():
             for priority in artifactList[ga].keys():
                 for version in artifactList[ga][priority].keys():
-                    gav = ga + ":" + version
-                    if maven_repo_util.somethingMatch(regExps, gav):
+                    gav = "%s:%s" % (ga, version)
+                    if maven_repo_util.somethingMatch(gavRegExps, gav):
                         del artifactList[ga][priority][version]
+                    else:
+                        artSpec = artifactList[ga][priority][version]
+                        for artType in copy.deepcopy(artSpec.artTypes.keys()):
+                            at = artSpec.artTypes[artType]
+                            for classifier in copy.deepcopy(at.classifiers):
+                                if classifier:
+                                    gatcv = "%s:%s:%s:%s" % (ga, artType, classifier, version)
+                                else:
+                                    gatcv = "%s:%s:%s" % (ga, artType, version)
+                                if maven_repo_util.somethingMatch(gatcvRegExps, gatcv):
+                                    at.classifiers.remove(classifier)
+                            if not at.classifiers:
+                                del artSpec.artTypes[artType]
+                        if not artSpec.containsMain():
+                            del artifactList[ga][priority][version]
                 if not artifactList[ga][priority]:
                     del artifactList[ga][priority]
             if not artifactList[ga]:

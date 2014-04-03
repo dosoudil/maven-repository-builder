@@ -107,6 +107,13 @@ def main():
              'zip:ear:war:tar:gz:tar.gz:bz2:tar.bz2:7z:tar.7z.'
     )
     cliOptParser.add_option(
+        '--nocache',
+        dest="cache",
+        default=True,
+        action='store_false',
+        help='Don\'t use any cache (dependency graph cache etc.).'
+    )
+    cliOptParser.add_option(
         '-w', '--whitelist',
         help='Name of a file containing GATCV patterns allowing usage of stars or regular expressions when enclosed '
              'in "r/pattern/". It can force inclusion of artifacts with excluded types.'

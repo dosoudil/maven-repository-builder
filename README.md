@@ -176,9 +176,10 @@ For an example config with full config structure see [Sample Config](https://git
     overwritten by curernt config or in case of lists they will be merged. If order in a list matters (like in
     **artifact-sources**) then the items from the included file will be added before and after for high and low
     priority includes respectively. Neither of them is required.
-*   **excluded-gav-patterns-ref** - list of references to files with list of top GAV patterns to be excluded, every GAV
-    pattern should be on separate line. Stars are allowed to represent any string. To use regular expressions prefix
-    the expression with "r" and enclose it in slashes ("r/regular-expression/"). Not required.
+*   **excluded-gav-patterns-ref** - list of references to files with list of GAV (or GATCV) patterns to be excluded, every
+    pattern should be on separate line. GATCV patterns are recoginized by more than two colons included in the string.
+    Stars are allowed to represent any string. To use regular expressions prefix the expression with "r" and enclose it in
+    slashes ("r/regular-expression/"). Not required.
 *   **excluded-repositories** - list of repository URLs which will be searched for any artifact found in specified
     artifact sources and when found, the artifact will be disposed. Not required.
 *   **single-version** - flag to forbid multiple versions of one groupId:artifactId, there can be allowed multiple

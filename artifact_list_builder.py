@@ -282,8 +282,12 @@ class ArtifactListBuilder:
             deleteWS = True
 
         # Resolve graph MANIFEST for GAVs
-        urlmap = aprox.urlmap(wsid, sourceKey, gavs, self.configuration.addClassifiers, excludedSources, preset,
-                              patcherIds)
+        if self.configuration.useCache:
+            urlmap = aprox.urlmap(wsid, sourceKey, gavs, self.configuration.addClassifiers, excludedSources, preset,
+                                  patcherIds)
+        else:
+            urlmap = aprox.urlmap_nocache(wsid, sourceKey, gavs, self.configuration.addClassifiers, excludedSources,
+                                          preset, patcherIds)
 
         # parse returned map
         artifacts = {}
@@ -739,6 +743,17 @@ class ArtifactSpec():
                                  % (str(self.artTypes.keys()), str(other.artTypes.keys())))
 
         self.artTypes.update(other.artTypes)
+
+    def containsMain(self):
+        """
+        Checks if there is a main artifact type in this instance.
+
+        :returns: True if a main type exists, False otherwise
+        """
+        for artType in self.artTypes.keys():
+            if self.artTypes[artType].mainType:
+                return True
+        return False
 
     def __str__(self):
         return "%s %s" % (self.url, str(self.artTypes))
