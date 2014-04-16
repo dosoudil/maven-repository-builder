@@ -154,7 +154,7 @@ class Filter:
         pool.close()
         pool.join()
         for artifact, priority in delArtifacts:
-            del artifactList[artifact.getGAT()][priority][artifact.version]
+            del artifactList[artifact.getGA()][priority][artifact.version]
 
         return artifactList
 
