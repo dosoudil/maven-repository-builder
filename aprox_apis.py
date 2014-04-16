@@ -1,5 +1,6 @@
 from maven_repo_util import slashAtTheEnd
 
+import hashlib
 import httplib
 import json
 import logging
@@ -313,5 +314,11 @@ class AproxApi10(UrlRequester):
         :param patcherIds: list of patcher ID strings for AProx
         :param resolve: flag to tell AProx to run resolve for given roots
         """
-        return "%s/%s_%s_%s_%s_%s_%s.cache" % (self.CACHE_PATH, sourceKey, "-".join(gavs), addclassifiers,
-                                                  "-".join(excludedSources), preset, "-".join(patcherIds))
+        cache_filename = "%s_%s_%s_%s_%s_%s" % (sourceKey, "-".join(gavs), addclassifiers, "-".join(excludedSources),
+                                               preset, "-".join(patcherIds))
+        if len(cache_filename) > 250:
+            sha256 = hashlib.sha256(cache_filename)
+            cache_filename = "%s_%s" % ("-".join(gavs), sha256.hexdigest())
+            if len(cache_filename) > 250:
+                cache_filename = sha256.hexdigest()
+        return "%s/%s.cache" % (self.CACHE_PATH, cache_filename)
