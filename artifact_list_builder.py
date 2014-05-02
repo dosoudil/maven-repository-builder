@@ -22,16 +22,18 @@ class ArtifactListBuilder:
     """
 
     SETTINGS_TPL = """
-         <settings>
-           <localRepository>${temp}.m2/repository</localRepository>
-           <mirrors>
-             <mirror>
-               <id>maven-repo-builder-override</id>
-               <mirrorOf>*</mirrorOf>
-               <url>${url}</url>
-             </mirror>
-           </mirrors>
-         </settings>"""
+        <settings>
+          <localRepository>${temp}.m2/repository</localRepository>
+          <mirrors>
+            <mirror>
+              <id>maven-repo-builder-override</id>
+              <mirrorOf>*</mirrorOf>
+              <url>${url}</url>
+            </mirror>
+          </mirrors>
+        </settings>"""
+         
+    notMainExtClassifiers = set(["pom:", "jar:javadoc", "jar:sources", "jar:tests", "jar:test-sources"])
 
     def __init__(self, configuration):
         self.configuration = configuration
@@ -517,12 +519,19 @@ class ArtifactListBuilder:
 
     def _addArtifact(self, artifacts, groupId, artifactId, version, extsAndClass, suffix, url):
         pomMain = True
-        if len(extsAndClass) > 1 and self._containsNonPomWithoutClassifier(extsAndClass) and "pom" in extsAndClass:
+        # The pom is main only if no other main artifact is available
+        if len(extsAndClass) > 1 and self._containsMainArtifact(extsAndClass) and "pom" in extsAndClass:
             pomMain = False
 
         artTypes = []
         for ext, classifiers in extsAndClass.iteritems():
-            main = ext != "pom" or pomMain
+            main = ext == "pom" and pomMain
+            if not main:
+                for classifier in classifiers:
+                    extClassifier = "%s:%s" % (ext, classifier or "")
+                    main = extClassifier not in self.notMainExtClassifiers
+                    if main:
+                        break
             artTypes.append(ArtifactType(ext, main, classifiers))
 
         mavenArtifact = MavenArtifact(groupId, artifactId, None, version)
@@ -534,19 +543,21 @@ class ArtifactListBuilder:
             logging.debug("Adding artifact %s", str(mavenArtifact))
             artifacts[mavenArtifact] = ArtifactSpec(url, artTypes)
 
-    def _containsNonPomWithoutClassifier(self, extsAndClass):
+    def _containsMainArtifact(self, extsAndClass):
         """
-        Checks if the given dictionary with structure extension -> classifier[] contains an extension
-        different from "pom" with an empty classifier.
+        Checks if the given dictionary with structure extension -> classifier[] contains a combination
+        of extension and classifier other than those included in notMainExtClassifiers.
 
         :param extsAndClass: the dictionary
-        :returns: True if such an extesion is found, False otherwise
+        :returns: True if such a combination is found, False otherwise
         """
         result = False
         for ext in extsAndClass:
-            if ext != "pom" and "" in extsAndClass[ext]:
-                result = True
-                break
+            for classifier in extsAndClass[ext]:
+                extClassifier = "%s:%s" % (ext, classifier or "")
+                if extClassifier not in self.notMainExtClassifiers:
+                    result = True
+                    break
         return result
 
     def _updateExtensionsAndClassifiers(self, d, u, classifiersFilter=None):
