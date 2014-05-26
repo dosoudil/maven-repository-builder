@@ -142,7 +142,7 @@ while [ $# -gt 0 ]; do
     shift
 done
 
-python maven_repo_builder.py "${MRB_PARAMS[@]}"
+python $WORKDIR/maven_repo_builder.py "${MRB_PARAMS[@]}"
 if test $? != 0; then
     echo "Creation of repository failed."
     exit 1
