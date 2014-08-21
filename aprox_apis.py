@@ -31,7 +31,11 @@ class UrlRequester:
         if not headers:
             headers = {}
         connection.request(method, parsedUrl[2] + "?" + encParams, data, headers)
-        return connection.getresponse()
+        response = connection.getresponse()
+        if response.status in (301, 302):
+            return self._request(method, response.getheader("Location"), params, data, headers)
+        else:
+            return response
 
     def _getUrl(self, url, params=None, headers=None):
         return self._request("GET", url, params, None, headers)
