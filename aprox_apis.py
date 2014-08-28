@@ -18,22 +18,29 @@ class UrlRequester:
 
         :returns: instance of httplib.HTTPResponse
         """
-        parsedUrl = urlparse.urlparse(url)
-        protocol = parsedUrl[0]
+        parsed_url = urlparse.urlparse(url)
+        protocol = parsed_url[0]
         if params:
             encParams = urllib.urlencode(params)
         else:
             encParams = ""
         if protocol == 'http':
-            connection = httplib.HTTPConnection(parsedUrl[1])
+            connection = httplib.HTTPConnection(parsed_url[1])
         else:
-            connection = httplib.HTTPSConnection(parsedUrl[1])
+            connection = httplib.HTTPSConnection(parsed_url[1])
         if not headers:
             headers = {}
-        connection.request(method, parsedUrl[2] + "?" + encParams, data, headers)
+        connection.request(method, parsed_url[2] + "?" + encParams, data, headers)
         response = connection.getresponse()
         if response.status in (301, 302):
-            return self._request(method, response.getheader("Location"), params, data, headers)
+            location = response.getheader("Location")
+            parsed_loc = urlparse.urlparse(location)
+            if not parsed_loc.scheme:
+                target = urlparse.urlunparse([parsed_url.scheme, parsed_url.netloc, parsed_loc.path, parsed_loc.params,
+                                              parsed_loc.query, parsed_loc.fragment])
+            else:
+                target = location
+            return self._request(method, target, params, data, headers)
         else:
             return response
 
