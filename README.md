@@ -114,14 +114,27 @@ maven_repo_builder.py or it can be used as a separate tool. Configuration struct
     groupId:artifactId:fileType:version. The output is printed on stdout.
 
     Options:
-      -h                    show this help message and exit
-      -c CONFIG, --config CONFIG
-                            Configuration file to use to generate an artifact list
-                            for the repository builder
-      -a, --allclassifiers
-                            Find all available classifiers
+      -h, --help            show this help message and exit
+      -c CONFIG, --config=CONFIG
+                            Configuration file to use for generation of an
+                            artifact list for the repository builder
+      -a CLASSIFIERS, --classifiers=CLASSIFIERS
+                            Comma-separated list of additional classifiers to
+                            download. It is possible to use "__all__" to request
+                            all available classifiers. There can be a type
+                            specified with each classifiers separated by colon,
+                            e.g. sources:jar.
+      -x EXCLUDEDTYPES, --excludedtypes=EXCLUDEDTYPES
+                            Colon-separated list of filetypes to exclude. Defaults
+                            to zip:ear:war:tar:gz:tar.gz:bz2:tar.bz2:7z:tar.7z.
+      --nocache             Don't use any cache (dependency graph cache etc).
+      -w WHITELIST, --whitelist=WHITELIST
+                            Name of a file containing GATCV patterns allowing
+                            usage of stars or regular expressions when enclosed in
+                            "r/pattern/". It can force inclusion of artifacts with
+                            excluded types.
       -l LOGLEVEL, --loglevel=LOGLEVEL
-                            Set the level of log output.  Can be set to debug,
+                            Set the level of log output. Can be set to debug,
                             info, warning, error, or critical
       -L LOGFILE, --logfile=LOGFILE
                             Set the file in which the log output should be
