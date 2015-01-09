@@ -21,6 +21,8 @@ from filter import Filter
 
 class Tests(unittest.TestCase):
 
+    aproxUrl = 'http://dev208.mw.lab.eng.bos.redhat.com:8080/'
+
     artifactList = {
       "com.google.guava:guava": {
         "1": {
@@ -414,7 +416,6 @@ class Tests(unittest.TestCase):
     def test_listDependencyGraph_allclassifiers(self):
         config = configuration.Configuration()
         config.addClassifiers = "__all__"
-        aproxUrl = 'http://aprox-dev.app.eng.bos.redhat.com:8080/aprox/'
         sourceKey = "repository:central"
         topGavs = [
             'org.apache.ant:ant:1.8.0'
@@ -434,17 +435,16 @@ class Tests(unittest.TestCase):
             'xml-resolver:xml-resolver:pom:1.2': set(['']),
             'xml-resolver:xml-resolver:jar:1.2': set(['', 'sources'])
         }
-        expectedArtifacts = self._getExpectedArtifacts(aproxUrl, dependencies)
+        expectedArtifacts = self._getExpectedArtifacts(self.aproxUrl, dependencies)
 
         builder = artifact_list_builder.ArtifactListBuilder(config)
-        actualArtifacts = builder._listDependencyGraph(aproxUrl, None, sourceKey, topGavs)
+        actualArtifacts = builder._listDependencyGraph(self.aproxUrl, None, sourceKey, topGavs)
 
         self.assertEqualArtifactList(expectedArtifacts, actualArtifacts)
 
     def test_listDependencyGraph_specified_classifiers(self):
         config = configuration.Configuration()
         config.addClassifiers = config._parseClassifiers("sources,dummy")
-        aproxUrl = 'http://aprox-dev.app.eng.bos.redhat.com:8080/aprox/'
         sourceKey = "repository:central"
         topGavs = [
             'org.apache.ant:ant:1.8.0'
@@ -464,17 +464,16 @@ class Tests(unittest.TestCase):
             'xml-resolver:xml-resolver:pom:1.2': set(['']),
             'xml-resolver:xml-resolver:jar:1.2': set(['', 'sources'])
         }
-        expectedArtifacts = self._getExpectedArtifacts(aproxUrl, dependencies)
+        expectedArtifacts = self._getExpectedArtifacts(self.aproxUrl, dependencies)
 
         builder = artifact_list_builder.ArtifactListBuilder(config)
-        actualArtifacts = builder._listDependencyGraph(aproxUrl, None, sourceKey, topGavs)
+        actualArtifacts = builder._listDependencyGraph(self.aproxUrl, None, sourceKey, topGavs)
 
         self.assertEqualArtifactList(expectedArtifacts, actualArtifacts)
 
     def test_listDependencyGraph(self):
         config = configuration.Configuration()
         config.addClassifiers = ""
-        aproxUrl = 'http://aprox-dev.app.eng.bos.redhat.com:8080/aprox/'
         sourceKey = "repository:central"
         topGavs = [
             'org.apache.ant:ant:1.8.0'
@@ -494,16 +493,15 @@ class Tests(unittest.TestCase):
             'xml-resolver:xml-resolver:pom:1.2': set(['']),
             'xml-resolver:xml-resolver:jar:1.2': set([''])
         }
-        expectedArtifacts = self._getExpectedArtifacts(aproxUrl, dependencies)
+        expectedArtifacts = self._getExpectedArtifacts(self.aproxUrl, dependencies)
 
         builder = artifact_list_builder.ArtifactListBuilder(config)
-        actualArtifacts = builder._listDependencyGraph(aproxUrl, None, sourceKey, topGavs)
+        actualArtifacts = builder._listDependencyGraph(self.aproxUrl, None, sourceKey, topGavs)
 
         self.assertEqualArtifactList(expectedArtifacts, actualArtifacts)
 
     def test_aproxCreateDeleteWorkspace(self):
-        aproxUrl = 'http://aprox-dev.app.eng.bos.redhat.com:8080/aprox/'
-        aproxApi = AproxApi10(aproxUrl)
+        aproxApi = AproxApi10(self.aproxUrl)
 
         ws = aproxApi.createWorkspace()
         wsid = ws["id"]
