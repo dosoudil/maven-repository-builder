@@ -496,12 +496,21 @@ class ArtifactListBuilder:
         av = self._getArtifactVersionREString(artifactId, version)
         # artifactId-(version)-(classifier).(extension)
         #                          (classifier)   (   extension   )
-        ceRegEx = re.compile(av + "(?:-([^.]+))?\.((?:tar\.)?[^.]+)$")
+        checksumRegEx = re.compile(av + ".+\.(md5|sha1|sha256|asc)$")
+        ceRegEx1 = re.compile(av + "(?:-(.+))?\.(tar\.[^.]+)$")
+        ceRegEx2 = re.compile(av + "(?:-(.+))?\.([^.]+)$")
 
         suffix = None
         extensions = {}
         for filename in filenames:
-            ce = ceRegEx.match(filename)
+            cs = checksumRegEx.match(filename)
+            if cs:
+                # the file is a checksum, not an artifact
+                continue
+
+            ce = ceRegEx1.match(filename)
+            if not ce:
+                ce = ceRegEx2.match(filename)
             if ce:
                 realVersion = ce.group(1)
                 classifier = ce.group(2)

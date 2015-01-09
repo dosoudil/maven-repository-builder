@@ -589,6 +589,86 @@ class Tests(unittest.TestCase):
 
         self.assertEqualArtifactList(expectedArtifacts, actualArtifacts)
 
+    def test__getExtensionsAndClassifiers_dot_in_classifier(self):
+        config = configuration.Configuration()
+        config.addClassifiers = "__all__"
+        artifactId = 'showcase-distribution-wars'
+        version = '0.3.3-redhat-8'
+        filenames = ['showcase-distribution-wars-0.3.3-redhat-8-jboss-as7.0.war']
+
+        builder = artifact_list_builder.ArtifactListBuilder(config)
+        extsAndClasss = builder._getExtensionsAndClassifiers(artifactId, version, filenames)[0]
+
+        self.assertEqual(len(extsAndClasss), 1)
+        self.assertTrue("war" in extsAndClasss)
+        self.assertEqual(extsAndClasss["war"], set(["jboss-as7.0"]))
+
+    def test__getExtensionsAndClassifiers_md5_of_dot_in_classifier(self):
+        config = configuration.Configuration()
+        config.addClassifiers = "__all__"
+        artifactId = 'showcase-distribution-wars'
+        version = '0.3.3-redhat-8'
+        filenames = ["showcase-distribution-wars-0.3.3-redhat-8-jboss-as7.0.war.md5"]
+
+        builder = artifact_list_builder.ArtifactListBuilder(config)
+        extsAndClasss = builder._getExtensionsAndClassifiers(artifactId, version, filenames)[0]
+
+        self.assertEqual(len(extsAndClasss), 0)
+
+    def test__getExtensionsAndClassifiers_dot_in_classifier_tar_gz(self):
+        config = configuration.Configuration()
+        config.addClassifiers = "__all__"
+        artifactId = 'showcase-distribution-wars'
+        version = '0.3.3-redhat-8'
+        filenames = ["showcase-distribution-wars-0.3.3-redhat-8-jboss-as7.0.tar.gz"]
+
+        builder = artifact_list_builder.ArtifactListBuilder(config)
+        extsAndClasss = builder._getExtensionsAndClassifiers(artifactId, version, filenames)[0]
+
+        self.assertEqual(len(extsAndClasss), 1)
+        self.assertTrue("tar.gz" in extsAndClasss)
+        self.assertEqual(extsAndClasss["tar.gz"], set(["jboss-as7.0"]))
+
+    def test__getExtensionsAndClassifiers_md5_of_dot_in_classifier_tar_gz(self):
+        config = configuration.Configuration()
+        config.addClassifiers = "__all__"
+        artifactId = 'showcase-distribution-wars'
+        version = '0.3.3-redhat-8'
+        filenames = ["showcase-distribution-wars-0.3.3-redhat-8-jboss-as7.0.tar.gz.md5"]
+
+        builder = artifact_list_builder.ArtifactListBuilder(config)
+        extsAndClasss = builder._getExtensionsAndClassifiers(artifactId, version, filenames)[0]
+
+        self.assertEqual(len(extsAndClasss), 0)
+
+    def test__getExtensionsAndClassifiers_no_classifier(self):
+        config = configuration.Configuration()
+        config.addClassifiers = "__all__"
+        artifactId = 'showcase-distribution-wars'
+        version = '0.3.3-redhat-8'
+        filenames = ["showcase-distribution-wars-0.3.3-redhat-8.pom"]
+
+        builder = artifact_list_builder.ArtifactListBuilder(config)
+        extsAndClasss = builder._getExtensionsAndClassifiers(artifactId, version, filenames)[0]
+
+        self.assertEqual(len(extsAndClasss), 1)
+        self.assertTrue("pom" in extsAndClasss)
+        self.assertEqual(extsAndClasss["pom"], set([""]))
+
+    def test__getExtensionsAndClassifiers_tar_gz(self):
+        config = configuration.Configuration()
+        config.addClassifiers = "__all__"
+        artifactId = 'showcase-distribution-wars'
+        version = '0.3.3-redhat-8'
+        filenames = ["showcase-distribution-wars-0.3.3-redhat-8.tar.gz"]
+
+        builder = artifact_list_builder.ArtifactListBuilder(config)
+        extsAndClasss = builder._getExtensionsAndClassifiers(artifactId, version, filenames)[0]
+
+        self.assertEqual(len(extsAndClasss), 1)
+        self.assertTrue("tar.gz" in extsAndClasss)
+        self.assertEqual(extsAndClasss["tar.gz"], set([""]))
+
     def test_parseClassifiers(self):
         config = Configuration()
         classifiers = config._parseClassifiers("sources")
