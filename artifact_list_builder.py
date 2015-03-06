@@ -34,7 +34,8 @@ class ArtifactListBuilder:
         </settings>"""
          
     notMainExtClassifiers = set(["pom:", "jar:javadoc", "jar:sources", "jar:tests", "jar:test-sources",
-                                 "tar.gz:project-sources", "zip:patches", "zip:scm-sources"])
+                                 "tar.gz:project-sources", "xml:site", "zip:patches",
+                                 "zip:scm-sources"])
 
     def __init__(self, configuration):
         self.configuration = configuration
